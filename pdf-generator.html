@@ -6,6 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<script src="config.js"></script>
 	<link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+	<link rel="stylesheet" href="assets/css/dashboard-template.css" />
 	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 	<style>
 		body {
@@ -343,7 +345,7 @@
 <body>
 	<div id="page-wrapper">
 		<nav class="top-nav">
-			<div class="top-nav-brand-group">
+			<div class="top-nav-brand-group top-nav-left">
 				<a class="top-nav-back" href="#" onclick="window.history.back(); return false;">← Back</a>
 				<div class="top-nav-brand">PDF Generator</div>
 			</div>
@@ -356,18 +358,18 @@
 			</div>
 		</nav>
 
-		<div class="pdf-container">
-			<div class="pdf-header">
+		<div class="pdf-container page">
+			<div class="pdf-header card">
 				<h1 class="pdf-title">Multi-Client PDF Generator</h1>
 				<p class="pdf-subtitle">Select one team or one client and generate a populated PDF</p>
 			</div>
 
-			<div class="section-card" id="adminOnlyNotice" style="display:none; border-color:#ffd8d8; background:#fff5f5; color:#8b2b2b;">
+			<div class="section-card card" id="adminOnlyNotice" style="display:none; border-color:#ffd8d8; background:#fff5f5; color:#8b2b2b;">
 				<div class="section-title" style="color:#8b2b2b;">Admin Access Required</div>
 				<div>Only admin users can access PDF generation on this page.</div>
 			</div>
 
-			<div class="section-card">
+			<div class="section-card card">
 				<div class="section-title">Select PDF Language</div>
 				<select id="language" name="language" style="padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Source Sans Pro', sans-serif; width: 200px;">
 					<option value="english" selected>English</option>
@@ -375,7 +377,7 @@
 				</select>
 			</div>
 
-			<div class="section-card">
+			<div class="section-card card">
 				<div class="section-title">Team Selection</div>
 				<select id="teamSelect" style="padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; margin-bottom: 12px;">
 					<option value="">Select a team...</option>
@@ -389,7 +391,7 @@
 				<div class="selection-count" id="selection-count" style="margin-top:12px;">No selection yet</div>
 			</div>
 
-			<div class="section-card">
+			<div class="section-card card">
 				<button class="generate-btn" id="generate-btn" disabled>Generate PDF</button>
 			</div>
 		</div>
@@ -657,5 +659,6 @@
 			}
 		})();
 	</script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>

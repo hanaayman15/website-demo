@@ -272,16 +272,18 @@
         .alert.ok { display: block; background: #effcf2; border: 1px solid #c3eecf; color: var(--ok); }
         .alert.bad { display: block; background: #fff1f1; border: 1px solid #ffd0d0; color: var(--bad); }
     </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
 </head>
 <body>
 <div class="page">
-    <div class="card">
+    <div class="card top-nav">
         <div class="toolbar">
-            <div>
+            <div class="top-nav-left">
                 <h1 class="title" id="pageTitle">Add Team</h1>
                 <p class="subtitle">Dynamic roster builder with full player profiles and auto calculations.</p>
             </div>
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div class="top-nav-links" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <button class="btn dark" type="button" id="historyBackBtn">Back</button>
                 <button class="btn brand" type="button" id="autofillBtn">Autofill Empty Fields</button>
             </div>
@@ -1137,5 +1139,6 @@ if (editingTeamId) {
     loadTeamForEdit(editingTeamId);
 }
 </script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>

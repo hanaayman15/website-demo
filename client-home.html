@@ -25,6 +25,8 @@
         .accent-bg { background-color: #6eabf2; }
         .accent-border { border-color: #6eabf2; }
     </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans leading-normal">
 
@@ -38,22 +40,45 @@
         sessionStorage.setItem('portalType', 'client');
     </script>
 
-    <nav class="bg-white shadow-sm py-4 sticky top-0 z-50">
-        <div class="container mx-auto px-6 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
-                    ← Back
-                </button>
-                <div class="text-2xl font-bold accent-text">Client Nutrition Portal</div>
+    <nav class="top-nav bg-white shadow-sm py-4 sticky top-0 z-50" data-no-auto-menu="true">
+        <div class="container mx-auto px-6">
+            <div class="flex justify-between items-center">
+                <div class="top-nav-left flex items-center gap-3">
+                    <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                        ← Back
+                    </button>
+                    <div class="text-xl font-bold accent-text">Client Nutrition Portal</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Desktop nav links (hidden on mobile via Tailwind) -->
+                    <div class="top-nav-links hidden md:flex items-center space-x-6">
+                        <a href="client-home.html" class="font-semibold border-b-2 accent-text accent-border">Home</a>
+                        <a href="client-dashboard.html" class="text-black hover:text-gray-600">Nutrition</a>
+                        <a href="mental-coaching.html" class="text-black hover:text-gray-600">Mental Coaching</a>
+                        <a href="anti-doping.html" class="text-black hover:text-gray-600">Anti-Doping</a>
+                        <a href="progress-tracking.html" class="text-black hover:text-gray-600">Progress</a>
+                        <a href="settings.html" class="text-black hover:text-gray-600">Settings</a>
+                        <a id="navAuthButton" href="client-login.html" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90 accent-bg">Log In</a>
+                    </div>
+                    <!-- Hamburger button (visible only on mobile) -->
+                    <button id="client-home-nav-toggle" class="md:hidden flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 text-gray-700" aria-label="Toggle navigation" aria-expanded="false" onclick="
+                        var links = document.getElementById('client-home-nav-links');
+                        var expanded = this.getAttribute('aria-expanded') === 'true';
+                        links.classList.toggle('hidden');
+                        this.setAttribute('aria-expanded', !expanded);
+                        this.innerHTML = !expanded ? '&#10005;' : '&#9776;';
+                    ">&#9776;</button>
+                </div>
             </div>
-            <div class="space-x-6">
-                <a href="client-home.html" class="font-semibold border-b-2 accent-text accent-border">Home</a>
-                <a href="client-dashboard.html" class="text-black hover:text-gray-600">Nutrition</a>
-                <a href="mental-coaching.html" class="text-black hover:text-gray-600">Mental Coaching</a>
-                <a href="anti-doping.html" class="text-black hover:text-gray-600">Anti-Doping</a>
-                <a href="progress-tracking.html" class="text-black hover:text-gray-600">Progress</a>
-                <a href="settings.html" class="text-black hover:text-gray-600">Settings</a>
-                <a id="navAuthButton" href="client-login.html" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90 accent-bg">Log In</a>
+            <!-- Mobile nav links panel (shown when open class is added) -->
+            <div id="client-home-nav-links" class="hidden md:hidden flex-col gap-2 pt-3 pb-1 border-t border-gray-100 mt-3">
+                <a href="client-home.html" class="py-2 font-semibold accent-text">Home</a>
+                <a href="client-dashboard.html" class="py-2 text-gray-700 hover:text-gray-900">Nutrition</a>
+                <a href="mental-coaching.html" class="py-2 text-gray-700 hover:text-gray-900">Mental Coaching</a>
+                <a href="anti-doping.html" class="py-2 text-gray-700 hover:text-gray-900">Anti-Doping</a>
+                <a href="progress-tracking.html" class="py-2 text-gray-700 hover:text-gray-900">Progress</a>
+                <a href="settings.html" class="py-2 text-gray-700 hover:text-gray-900">Settings</a>
+                <a id="navAuthButtonMobile" href="client-login.html" class="py-2 text-center accent-bg text-white rounded-lg px-4">Log In</a>
             </div>
         </div>
     </nav>
@@ -429,9 +454,23 @@
 
         function setNavAuthButtonLoggedOut() {
             const navAuthButton = document.getElementById('navAuthButton');
-            if (!navAuthButton) return;
-            navAuthButton.textContent = 'Log In';
-            navAuthButton.href = 'client-login.html';
+            const navAuthButtonMobile = document.getElementById('navAuthButtonMobile');
+            if (navAuthButton) {
+                navAuthButton.textContent = 'Log In';
+                navAuthButton.href = 'client-login.html';
+            }
+            if (navAuthButtonMobile) {
+                navAuthButtonMobile.textContent = 'Log In';
+                navAuthButtonMobile.href = 'client-login.html';
+            }
+        }
+
+        function syncMobileAuthButton() {
+            const navAuthButton = document.getElementById('navAuthButton');
+            const navAuthButtonMobile = document.getElementById('navAuthButtonMobile');
+            if (!navAuthButton || !navAuthButtonMobile) return;
+            navAuthButtonMobile.textContent = navAuthButton.textContent || 'Log In';
+            navAuthButtonMobile.href = navAuthButton.href || 'client-login.html';
         }
 
         function setPersonalizedSnapshotVisible(isVisible) {
@@ -482,11 +521,13 @@
         if (typeof initGlobalNavbarAuthState === 'function') {
             initGlobalNavbarAuthState();
         }
+        syncMobileAuthButton();
         if (typeof highlightActiveDashboardNav === 'function') {
             highlightActiveDashboardNav();
         }
 
         loadPersonalizedHomeSummary();
     </script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>

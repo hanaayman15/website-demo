@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
     <script src="config.js"></script>
     <style>
         body {
@@ -225,7 +227,8 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="dashboard-layout">
+        <div class="card span-12">
             <div class="toolbar">
                 <input id="globalSearch" class="search" placeholder="Search teams and clients by name, email, coach, source..." />
                 <div class="count-strip">
@@ -237,8 +240,9 @@
             <div id="teamsError" class="error"></div>
         </div>
 
-        <div class="card" style="overflow:auto;">
+        <div class="card span-12" style="overflow:auto;">
             <h2 class="section-title">Teams Section</h2>
+            <div class="table-scroll" role="region" aria-label="Teams table" tabindex="0">
             <table>
                 <thead>
                     <tr>
@@ -251,10 +255,12 @@
                 </thead>
                 <tbody id="teamsTableBody"></tbody>
             </table>
+            </div>
         </div>
 
-        <div class="card" id="addClientSection" style="overflow:auto;">
+        <div class="card span-12" id="addClientSection" style="overflow:auto;">
             <h2 class="section-title">Clients Created From Add Client Page</h2>
+            <div class="table-scroll" role="region" aria-label="Add client profiles table" tabindex="0">
             <table>
                 <thead>
                     <tr>
@@ -270,10 +276,12 @@
                 </thead>
                 <tbody id="addClientTableBody"></tbody>
             </table>
+            </div>
         </div>
 
-        <div class="card" id="profileSetupSection" style="overflow:auto;">
+        <div class="card span-12" id="profileSetupSection" style="overflow:auto;">
             <h2 class="section-title">Clients Created From Profile Setup Page</h2>
+            <div class="table-scroll" role="region" aria-label="Profile setup clients table" tabindex="0">
             <table>
                 <thead>
                     <tr>
@@ -289,6 +297,8 @@
                 </thead>
                 <tbody id="profileSetupTableBody"></tbody>
             </table>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -834,5 +844,6 @@
         applyRoleVisibility();
         Promise.all([loadTeams(), loadClients()]).then(() => applySearch());
     </script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>

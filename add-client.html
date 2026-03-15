@@ -150,13 +150,15 @@
             .phone-row { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
 </head>
 <body>
     <div class="page">
         <div class="top-nav">
             <a href="#" onclick="window.history.back(); return false;">← Back</a>
             <div style="font-weight:800;">Add New Client</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="top-nav-links" style="display:flex;gap:8px;flex-wrap:wrap;">
                 <a href="index.html">Home</a>
                 <a href="clients.html">Clients</a>
                 <a href="add_team.html">Add Team</a>
@@ -637,5 +639,6 @@
                 el.addEventListener('change', persistAutofillDraft);
             });
     </script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>

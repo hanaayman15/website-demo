@@ -5,6 +5,8 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+	<link rel="stylesheet" href="assets/css/dashboard-template.css" />
 	<script src="config.js"></script>
 	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 	<style>
@@ -784,13 +786,13 @@
 </head>
 <body>
 	<div id="page-wrapper">
-		<div class="detail-container">
-			<div class="detail-nav">
-				<div class="nav-left">
+		<div class="detail-container page">
+			<div class="detail-nav top-nav">
+				<div class="nav-left top-nav-left">
 					<button class="back-btn" id="back-btn" onclick="window.history.back()">← Back</button>
 					<div class="nav-title" id="nav-client-name">Client</div>
 				</div>
-				<div class="nav-right">
+				<div class="nav-right top-nav-links">
 					<button class="nav-btn" id="pdf-btn">Generate PDF</button>
 					<button class="nav-btn" id="progress-btn">Progress</button>
 					<button class="nav-btn" id="diet-btn" onclick="window.location.href='diet-management.html'">Diet Management</button>
@@ -798,7 +800,7 @@
 			</div>
 
 			<!-- Profile Header -->
-			<div class="profile-header">
+			<div class="profile-header card">
 				<div class="profile-top">
 					<div class="profile-avatar" id="avatar">AM</div>
 					<div class="profile-info">
@@ -826,7 +828,7 @@
 			</div>
 
 			<!-- Tabs Section -->
-			<div class="tabs-container">
+			<div class="tabs-container card">
 				<div class="tabs">
 					<button class="tab active" onclick="switchTab(event, 'personal')">👤 Personal Info</button>
 					<button class="tab" onclick="switchTab(event, 'metabolism')">💪 Metabolism & Activity</button>
@@ -5617,6 +5619,7 @@ function restoreProgramsState() {
 		}
 	}
 	</script>
+    <script src="assets/js/responsive-ui.js"></script>
 </body>
 </html>
 

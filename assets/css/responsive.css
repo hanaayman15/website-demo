@@ -1,0 +1,1069 @@
+/*
+ * responsive.css
+ * Nutrition Management App — Mobile-First Responsive Layer
+ *
+ * Breakpoints:
+ *   Mobile  : max-width 767px
+ *   Tablet  : 768px – 1024px
+ *   Desktop : 1025px+
+ *
+ * Strategy
+ *   - Overrides the Helios base theme (main.css) and all page-specific
+ *     inline styles so every page adapts gracefully on any screen size.
+ *   - Does NOT alter colors, fonts, or design language – only layout /
+ *     spacing / overflow behaviour is changed.
+ */
+
+/* =====================================================================
+   1. GLOBAL BASE — applied at all breakpoints
+   ===================================================================== */
+
+/* Prevent any element from causing horizontal overflow */
+html {
+    overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    max-width: 100%;         /* Nothing wider than its container */
+}
+
+/* Images and media always scale proportionally */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Tables: enable horizontal scroll on small screens */
+.table-responsive-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+/* Utility classes injected via JS for dynamic tables */
+.responsive-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+}
+
+/* Ensure all interactive elements have minimum touch target size */
+a,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn,
+.nav-btn,
+.link-btn,
+.btn-view {
+    min-height: 40px;
+    touch-action: manipulation;
+}
+
+/* =====================================================================
+   2. TYPOGRAPHY SCALE
+   ===================================================================== */
+
+/* Tablet: slight reduction */
+@media screen and (max-width: 1024px) {
+    body, input, textarea, select {
+        font-size: 13pt;
+    }
+
+    h2 { font-size: 2.2em; }
+    h3 { font-size: 1.15em; }
+}
+
+/* Mobile: readable but compact */
+@media screen and (max-width: 767px) {
+    body, input, textarea, select {
+        font-size: 11pt;
+        line-height: 1.6em;
+    }
+
+    h2 { font-size: 1.6em; }
+    h3 { font-size: 1.05em; }
+    h4 { font-size: 0.95em; }
+}
+
+/* =====================================================================
+   3. HELIOS BASE THEME — NAV / HEADER / FOOTER
+   ===================================================================== */
+
+/* ---- Tablet (768-1024): tighten spacing ---- */
+@media screen and (max-width: 1024px) {
+    #header {
+        padding: 4em 1em 1.5em;
+    }
+
+    #nav > ul > li {
+        margin: -9px 0.25em 0 0.25em;
+        padding: 0.65em;
+    }
+
+    .wrapper {
+        padding-left: 1.5em;
+        padding-right: 1.5em;
+    }
+
+    #footer {
+        padding: 4em 1.5em 4em 1.5em;
+    }
+
+    .carousel article {
+        width: 15em;
+    }
+}
+
+/* ---- Mobile ≤767px ---- */
+@media screen and (max-width: 767px) {
+    /* Header hero */
+    #header {
+        padding: 2.5em 1em 1em;
+        background-attachment: scroll !important;
+    }
+
+    #header h1 {
+        font-size: 1.6em;
+    }
+
+    #header .inner {
+        padding: 0 1em;
+    }
+
+    #header .button {
+        font-size: 1em;
+        width: 3.5em;
+        height: 3.5em;
+        line-height: 3.5em;
+    }
+
+    /* Homepage hero full-screen variant */
+    body.homepage #header {
+        height: auto;
+        min-height: 0;
+        padding: 4em 1em 3em;
+    }
+
+    body.homepage #header h1 {
+        font-size: 2em;
+    }
+
+    body.homepage #header:before {
+        display: none;
+    }
+
+    /* Banner */
+    #banner {
+        padding: 2.5em 1em;
+        background-attachment: scroll !important;
+    }
+
+    #banner h2 {
+        font-size: 1.8em;
+    }
+
+    /* Wrapper */
+    .wrapper {
+        padding: 2.5em 1em;
+    }
+
+    /* Carousel */
+    .carousel {
+        padding: 0.5em 0;
+    }
+
+    .carousel .reel {
+        padding: 0 0.5em;
+    }
+
+    .carousel article {
+        width: 14em;
+        padding-bottom: 1.5em;
+        margin-right: 0.5em;
+    }
+
+    /* Footer */
+    #footer {
+        padding: 3em 1em;
+        background-attachment: scroll !important;
+    }
+
+    .container {
+        padding: 0 1em;
+    }
+
+    /* Column grid: stack to single column on mobile */
+    .row > [class*="col-"] {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* =====================================================================
+   4. HELIOS DESKTOP NAV → Mobile Hamburger Panel
+   ===================================================================== */
+
+/*
+ * The Helios jQuery bundle (main.js) already creates #navButton and
+ * #navPanel dynamically at ≤736px.  These rules ensure the button
+ * and panel are fully visible and usable on all mobile screens.
+ */
+
+@media screen and (max-width: 767px) {
+    #nav {
+        display: none;
+    }
+
+    /* navButton overlay bar */
+    #navButton {
+        display: block !important;
+        height: 44px;
+        left: 0;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 10001;
+        backface-visibility: hidden;
+    }
+
+    #navButton .toggle::before {
+        font-size: 14px;
+        width: 80px;
+        height: 30px;
+        line-height: 30px;
+        position: absolute;
+        left: 50%;
+        margin-left: -40px;
+        background: rgba(132, 128, 136, 0.85);
+        border-radius: 0 0 0.35em 0.35em;
+        top: 0;
+        color: #fff;
+        text-align: center;
+        content: '\f0c9';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+    }
+
+    /* Slide-down panel */
+    #navPanel {
+        display: block !important;
+        height: 50vh;
+        left: 0;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 10002;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: #1f1920;
+        box-shadow: inset 0 -2px 5px rgba(0,0,0,0.25);
+        transform: translateY(-50vh);
+        transition: transform 0.5s ease;
+    }
+
+    #navPanel .link {
+        display: block;
+        padding: 0.75em 1em;
+        color: #ddd;
+        text-decoration: none;
+        border: 0;
+        border-top: 1px dotted rgba(255,255,255,0.05);
+        position: relative;
+        z-index: 1;
+    }
+
+    #navPanel .link.depth-0 {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    body.navPanel-visible #page-wrapper,
+    body.navPanel-visible #navButton {
+        transform: translateY(50vh);
+    }
+
+    body.navPanel-visible #navPanel {
+        transform: translateY(0);
+    }
+}
+
+/* =====================================================================
+   5. CUSTOM TOP-NAV BARS (non-Helios pages)
+   Fix pages like clients.html, client-detail.html, add-client*.html
+   that use .top-nav / .detail-nav / .nav-btn elements.
+   ===================================================================== */
+
+/* ---- Tablet ---- */
+@media screen and (max-width: 1024px) {
+    .top-nav,
+    .detail-nav {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 14px;
+    }
+
+    .top-nav-links,
+    .nav-right {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .top-nav-left,
+    .nav-left {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---- Mobile hamburger for custom nav bars ---- */
+@media screen and (max-width: 767px) {
+    .top-nav,
+    .detail-nav {
+        position: relative;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    /* Show hamburger toggle button */
+    .mobile-menu-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: #f4f8fd;
+        border: 1px solid #d8e3f2;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        font-size: 18px;
+        color: #1b3b5f;
+        flex-shrink: 0;
+    }
+
+    /* The link groups collapse on mobile */
+    .top-nav-links,
+    .nav-right {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .top-nav-links.mobile-open,
+    .nav-right.mobile-open {
+        display: flex;
+    }
+
+    .link-btn,
+    .nav-btn {
+        text-align: center;
+        width: 100%;
+        padding: 10px 12px;
+    }
+
+    .top-nav-left,
+    .nav-left {
+        flex: 1;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .top-nav-title,
+    .nav-title {
+        font-size: 15px;
+    }
+}
+
+/* Hide hamburger on larger screens */
+.mobile-menu-btn {
+    display: none;
+}
+
+/* =====================================================================
+   6. TABLES
+   ===================================================================== */
+
+/* Wrap every table in an overflow container on tablet and mobile */
+@media screen and (max-width: 1024px) {
+    /* For tables already inside a wrapper */
+    .card table,
+    .page table,
+    #clients-table-wrapper,
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        display: block;
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    table {
+        min-width: 480px; /* Ensure columns don't collapse to unreadable widths */
+    }
+
+    /* Outer container scrolls horizontally */
+    .card,
+    .page > .card,
+    section {
+        overflow-x: auto;
+    }
+
+    /* Reduce cell padding */
+    th, td {
+        padding: 8px 7px !important;
+        font-size: 12px;
+    }
+
+    /* Actions column buttons: stack */
+    .actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .btn-view {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* =====================================================================
+   7. FORMS & INPUTS
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Generic forms */
+    form .row,
+    form .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    form .field.full {
+        grid-column: span 1 !important;
+    }
+
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form input[type="number"],
+    form input[type="date"],
+    form input[type="tel"],
+    form select,
+    form textarea,
+    input,
+    select,
+    textarea {
+        font-size: 16px !important; /* Prevent iOS zoom on focus */
+        width: 100%;
+    }
+
+    /* Form action rows */
+    .row-actions,
+    ul.actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .row-actions .btn,
+    ul.actions li {
+        width: 100%;
+        text-align: center;
+    }
+
+    ul.actions li {
+        margin: 0;
+        display: block;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    /* 3-column grids → 2-column */
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .field.full {
+        grid-column: span 2 !important;
+    }
+}
+
+/* =====================================================================
+   8. BUTTONS
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Full-width buttons on mobile */
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    button.block-mobile,
+    .button.block-mobile {
+        display: block;
+        width: 100%;
+        text-align: center;
+        line-height: 2.8em;
+        padding: 0;
+    }
+
+    /* Fixed floating action buttons: keep accessible but move inward */
+    .edit-btn,
+    .save-btn,
+    .cancel-btn {
+        bottom: 16px !important;
+        right: 16px !important;
+        font-size: 12px;
+        padding: 10px 16px;
+    }
+}
+
+/* =====================================================================
+   9. PAGE-LEVEL LAYOUT — .page wrapper & card padding
+   ===================================================================== */
+
+@media screen and (max-width: 1024px) {
+    .page {
+        padding: 0 12px 20px;
+        margin-top: 16px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .page {
+        padding: 0 8px 16px;
+        margin-top: 12px;
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    /* Count strip: wrap badges */
+    .count-strip {
+        flex-wrap: wrap;
+    }
+
+    .count-pill {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    /* Toolbar (search + actions row) */
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .search {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/* =====================================================================
+   10. CLIENT DETAIL PAGE — specific overrides
+   ===================================================================== */
+
+/* Tablet */
+@media screen and (max-width: 1024px) {
+    .detail-container {
+        padding: 0 12px;
+        margin-top: 16px;
+        margin-bottom: 20px;
+    }
+
+    .profile-header {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .profile-top {
+        gap: 16px;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 28px;
+    }
+
+    .profile-name {
+        font-size: 20px;
+    }
+
+    .tabs-container {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 767px) {
+    .detail-container {
+        padding: 0 8px;
+        margin-top: 8px;
+    }
+
+    /* Stack profile avatar above name/info */
+    .profile-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .profile-avatar {
+        width: 70px;
+        height: 70px;
+        font-size: 24px;
+        align-self: center;
+    }
+
+    .profile-name {
+        font-size: 18px;
+        margin-bottom: 6px;
+    }
+
+    .profile-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    /* Tabs: horizontal scroll */
+    .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        gap: 2px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        white-space: nowrap;
+        padding: 8px 12px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .tabs-container {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    /* Info grid: reduce column minimum */
+    .info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 14px;
+    }
+
+    .section-card {
+        padding: 14px;
+    }
+
+    /* Section row: allow wrapping */
+    .section-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .detail-nav {
+        padding: 8px 10px;
+    }
+
+    .detail-nav .nav-right {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .detail-nav .nav-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    /* Fixed buttons: safe zone above bottom navigation on iOS */
+    .edit-btn,
+    .save-btn,
+    .cancel-btn {
+        bottom: 20px !important;
+        right: 12px !important;
+        font-size: 12px;
+        padding: 8px 14px;
+        border-radius: 18px;
+    }
+}
+
+/* =====================================================================
+   11. CLIENTS LIST PAGE
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Table cells: hide less-critical columns via data-hide-mobile
+       (columns flagged with this class are hidden on small screens) */
+    .hide-mobile {
+        display: none !important;
+    }
+
+    /* Row action buttons: smaller and stacked */
+    tr td:last-child {
+        white-space: nowrap;
+    }
+}
+
+/* =====================================================================
+   12. ADD-CLIENT / FORM PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Multi-column form rows collapse to single column */
+    .form-grid,
+    .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-col {
+        width: 100% !important;
+    }
+
+    /* Large save/submit button at bottom */
+    .form-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-actions button,
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* =====================================================================
+   13. HELIOS FEATURE / ARTICLE GRIDS
+   (.col-4, .col-6, etc. inside .row)
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .row > .col-4,
+    .row > .col-3,
+    .row > .col-6,
+    .row > .col-8 {
+        width: 100%;
+    }
+
+    .row > .col-4-mobile,
+    .row > article.col-4 {
+        width: 100%;
+    }
+
+    /* Stack feature articles */
+    #features .row {
+        flex-direction: column;
+    }
+
+    #features article {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .row > .col-4 {
+        width: 50%;
+    }
+}
+
+/* =====================================================================
+   14. CLIENT HOME PAGE (Tailwind-based)
+   ===================================================================== */
+
+/* Collapsible desktop nav on mobile for Tailwind pages */
+@media screen and (max-width: 767px) {
+    /* Tailwind-generated space-x-6 nav links */
+    #client-home-nav-links {
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        padding-top: 8px;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 8px;
+    }
+
+    #client-home-nav-toggle {
+        display: flex !important;
+    }
+
+    /* Hero section: reduce huge fonts */
+    .hero-header h1 {
+        font-size: 2.2rem !important;
+    }
+
+    .hero-header p {
+        font-size: 1rem !important;
+    }
+
+    /* CTA button row: stack */
+    .hero-header .flex.justify-center.gap-4 {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+#client-home-nav-toggle {
+    display: none;
+}
+
+/* =====================================================================
+   15. CLIENT DASHBOARD / NUTRITION PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Stat summary strips */
+    .stats-strip,
+    .summary-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .stat-pill,
+    .summary-card {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 120px;
+    }
+
+    /* Diet plan cards */
+    .diet-plan-grid,
+    .plans-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Meal day columns */
+    .day-columns {
+        flex-direction: column;
+    }
+
+    .day-column {
+        width: 100% !important;
+    }
+}
+
+/* =====================================================================
+   16. PDF GENERATOR & PRINT PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .pdf-controls,
+    .pdf-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pdf-controls button,
+    .pdf-toolbar button {
+        width: 100%;
+    }
+
+    .pdf-preview-frame {
+        width: 100%;
+        height: 60vh;
+    }
+}
+
+/* =====================================================================
+   17. SETTINGS / PROFILE / SUBSCRIPTION PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .settings-grid,
+    .profile-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .subscription-card {
+        width: 100%;
+    }
+
+    .plan-cards {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .plan-card {
+        width: 100%;
+    }
+}
+
+/* =====================================================================
+   18. PROGRESS / TRACKING CHARTS
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .chart-canvas,
+    canvas {
+        max-height: 200px;
+        width: 100% !important;
+    }
+
+    .chart-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* =====================================================================
+   19. MODALS & OVERLAYS
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    /* Full-screen modals on mobile */
+    .modal,
+    [class*="modal-"],
+    [id*="modal"],
+    [id*="Modal"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+    }
+
+    .modal-content,
+    [class*="modal-content"] {
+        padding: 16px !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        height: auto !important;
+    }
+
+    .modal-body,
+    [class*="modal-body"] {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+}
+
+/* =====================================================================
+   20. DOCTOR AUTH / LOGIN / SIGNUP PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .auth-card,
+    .login-card,
+    .signup-card {
+        margin: 12px;
+        padding: 20px;
+        border-radius: 12px;
+        width: auto;
+    }
+
+    .auth-title {
+        font-size: 22px;
+    }
+}
+
+/* =====================================================================
+   21. TEAM VIEW / TEAM MANAGEMENT PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .team-grid,
+    .player-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .team-card,
+    .player-card {
+        width: 100%;
+    }
+}
+
+/* =====================================================================
+   22. ANTI-DOPING / MENTAL COACHING / RESOURCES PAGES
+   ===================================================================== */
+
+@media screen and (max-width: 767px) {
+    .content-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .accordion-header {
+        font-size: 14px;
+        padding: 12px;
+    }
+}
+
+/* =====================================================================
+   23. PRINT MEDIA — never show mobile-only elements in print
+   ===================================================================== */
+
+@media print {
+    #navButton,
+    #navPanel,
+    .mobile-menu-btn,
+    #client-home-nav-toggle {
+        display: none !important;
+    }
+
+    .top-nav-links,
+    .nav-right {
+        display: flex !important;
+    }
+
+    * {
+        overflow: visible !important;
+    }
+}
+
+/* =====================================================================
+   24. ACCESSIBILITY & FOCUS INDICATORS
+   ===================================================================== */
+
+/* Visible focus ring for keyboard navigation */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #4a9ff5;
+    outline-offset: 2px;
+}
+
+/* =====================================================================
+   25. SCROLL BEHAVIOUR
+   ===================================================================== */
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Offset anchors for sticky navbars */
+:target {
+    scroll-margin-top: 60px;
+}

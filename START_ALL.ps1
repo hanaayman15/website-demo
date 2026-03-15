@@ -1,44 +1,45 @@
 # ========================================
-# Start Both Backend and Frontend Servers
-# Backend: http://127.0.0.1:8001
-# Frontend: http://localhost:3000
+# Start All Services
+# Launches backend and frontend in separate windows
 # ========================================
 
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Starting Client Nutrition Management System" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
+Write-Host "`n===========================================" -ForegroundColor Cyan
+Write-Host "  Nutrition Management - Start All Services" -ForegroundColor Cyan
+Write-Host "===========================================`n" -ForegroundColor Cyan
 
-# Get the script directory
-$rootDir = $PSScriptRoot
+$projectRoot = $PSScriptRoot
+$backendScript = Join-Path $projectRoot "backend\start_backend.ps1"
+$frontendScript = Join-Path $projectRoot "start_frontend.ps1"
 
-# Start Backend in new window
-Write-Host "Starting Backend Server..." -ForegroundColor Green
-$backendPath = Join-Path $rootDir "backend"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendPath'; .\start_backend.ps1"
+if (-not (Test-Path $backendScript)) {
+	Write-Host "Backend starter not found: $backendScript" -ForegroundColor Red
+	exit 1
+}
 
-# Wait a bit for backend to start
-Write-Host "Waiting for backend to initialize..." -ForegroundColor Yellow
-Start-Sleep -Seconds 3
+if (-not (Test-Path $frontendScript)) {
+	Write-Host "Frontend starter not found: $frontendScript" -ForegroundColor Red
+	exit 1
+}
 
-# Start Frontend in new window
-Write-Host "Starting Frontend Server..." -ForegroundColor Green
-$frontendPath = Join-Path $rootDir "frontend"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendPath'; .\start_frontend.ps1"
+Write-Host "Starting backend in a new PowerShell window..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList @(
+	"-NoExit",
+	"-ExecutionPolicy", "Bypass",
+	"-File", "`"$backendScript`""
+)
+
+Start-Sleep -Seconds 2
+
+Write-Host "Starting frontend in a new PowerShell window..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList @(
+	"-NoExit",
+	"-ExecutionPolicy", "Bypass",
+	"-File", "`"$frontendScript`""
+)
 
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "Both servers starting in separate windows!" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
+Write-Host "Services launched." -ForegroundColor Green
+Write-Host "Frontend: http://localhost:3000/" -ForegroundColor White
+Write-Host "Backend:  http://127.0.0.1:8001/docs" -ForegroundColor White
 Write-Host ""
-Write-Host "Backend API:" -ForegroundColor Cyan
-Write-Host "   http://127.0.0.1:8001" -ForegroundColor White
-Write-Host "   http://127.0.0.1:8001/docs (API Documentation)" -ForegroundColor White
-Write-Host ""
-Write-Host "Frontend:" -ForegroundColor Cyan
-Write-Host "   http://localhost:3000" -ForegroundColor White
-Write-Host "   http://localhost:3000/client-login.html" -ForegroundColor White
-Write-Host ""
-Write-Host "Press any key to close this window..." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "Close the two service windows (or press CTRL+C inside them) to stop servers." -ForegroundColor Yellow
