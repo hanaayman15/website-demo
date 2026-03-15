@@ -157,6 +157,16 @@ input[type="reset"],
         font-size: 2em;
     }
 
+    body.homepage #logo {
+        display: inline-block;
+        text-align: center;
+    }
+
+    body.homepage #logo .logo-line {
+        display: block;
+        line-height: 1.1;
+    }
+
     body.homepage #header:before {
         display: none;
     }
@@ -236,21 +246,25 @@ input[type="reset"],
     }
 
     #navButton .toggle::before {
-        font-size: 14px;
-        width: 80px;
-        height: 30px;
-        line-height: 30px;
+        font-size: 18px;
+        width: 52px;
+        height: 52px;
+        line-height: 52px;
         position: absolute;
-        left: 50%;
-        margin-left: -40px;
-        background: rgba(132, 128, 136, 0.85);
-        border-radius: 0 0 0.35em 0.35em;
-        top: 0;
-        color: #fff;
+        right: 12px;
+        left: auto;
+        margin-left: 0;
+        background: rgba(18, 35, 53, 0.78);
+        border-radius: 999px;
+        top: 10px;
+        color: #f5f8fa;
         text-align: center;
         content: '\f0c9';
         font-family: 'Font Awesome 5 Free';
         font-weight: 900;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(4px);
     }
 
     /* Slide-down panel */

@@ -29,12 +29,12 @@
 					<!-- Inner -->
 						<div class="inner">
 							<header>
-								<h1><a href="index.html" id="logo">client nutrition management</a></h1>
+								<h1><a href="index.html" id="logo"><span class="logo-line">client nutrition</span><span class="logo-line">management</span></a></h1>
 
 						
 							</header>
 							<footer>
-								<a href="#banner" class="button circled scrolly">Start</a>
+								<a href="#quick-actions" class="button circled scrolly" id="start-button">Start</a>
 							</footer>
 						</div>
 
@@ -54,7 +54,8 @@
 				</div>
 
 			<!-- Banner -->
-				<section id="banner">
+				<section id="banner" data-scroll-target="quick-actions">
+					<a id="quick-actions" aria-hidden="true"></a>
 					<header>
 						<h2>Quick Actions.</h2>
 						<p>
@@ -215,5 +216,18 @@ Fuel like a pro with targeted nutrition designed for athletes. Whether you are t
 			<script src="assets/js/main.js"></script>
 
 	    <script src="assets/js/responsive-ui.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				var startBtn = document.getElementById('start-button');
+				var target = document.getElementById('quick-actions');
+				if (!startBtn || !target) return;
+
+				startBtn.addEventListener('click', function (event) {
+					event.preventDefault();
+					var targetTop = target.getBoundingClientRect().top + window.pageYOffset;
+					window.scrollTo({ top: targetTop - 10, behavior: 'smooth' });
+				});
+			});
+		</script>
 </body>
 </html>
