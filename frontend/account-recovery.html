@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Recovery | Nutrition Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .recovery-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="recovery-card">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Account Recovery</h1>
+            <p class="text-gray-600">Retrieve your account information</p>
+        </div>
+
+        <button onclick="retrieveAccountInfo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg mb-4 transition">
+            📧 Show Stored Email
+        </button>
+
+        <!-- Stored Email Display -->
+        <div id="email-section" style="display: none;" class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="text-sm text-gray-600 mb-2">Your Registered Email:</p>
+            <div id="stored-email" class="text-xl font-bold text-blue-600 p-3 bg-white rounded border border-blue-300 break-all">
+            </div>
+            <button onclick="copyEmail()" class="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition">
+                📋 Copy Email
+            </button>
+        </div>
+
+        <!-- Password Reset Info -->
+        <div class="p-4 bg-amber-50 rounded-lg border border-amber-200 mb-6">
+            <h3 class="font-bold text-amber-900 mb-2">🔐 Password Reset</h3>
+            <p class="text-sm text-amber-800 mb-3">
+                Passwords are securely hashed and cannot be displayed. To access your account:
+            </p>
+            <ol class="text-sm text-amber-800 list-decimal list-inside space-y-2">
+                <li>Click "Forgot Password" on the login page</li>
+                <li>Enter your email address (shown above)</li>
+                <li>Follow the password reset instructions</li>
+            </ol>
+        </div>
+
+        <!-- All Stored Accounts -->
+        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h3 class="font-bold text-green-900 mb-3">📱 All Stored Accounts</h3>
+            <button onclick="showAllAccounts()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded transition mb-3">
+                Show All Registered Accounts
+            </button>
+            <div id="accounts-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 flex gap-4">
+            <a href="client-login.html" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-900 font-bold py-2 rounded text-center transition">
+                ← Back to Login
+            </a>
+            <a href="client-signup.html" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-center transition">
+                Create New Account →
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function retrieveAccountInfo() {
+            let foundEmail = null;
+            const emailSection = document.getElementById('email-section');
+            const storedEmailDiv = document.getElementById('stored-email');
+            
+            // Check 1: Direct localStorage
+            const clientEmail = localStorage.getItem('clientEmail');
+            if (clientEmail && clientEmail !== 'null' && clientEmail !== 'undefined') {
+                foundEmail = clientEmail;
+            }
+            
+            // Check 2: Current client ID's specific data
+            if (!foundEmail) {
+                const currentClientId = localStorage.getItem('currentClientId');
+                if (currentClientId) {
+                    const clientData = localStorage.getItem(`clientData_${currentClientId}`);
+                    if (clientData) {
+                        try {
+                            const parsed = JSON.parse(clientData);
+                            if (parsed.email && parsed.email !== 'N/A') {
+                                foundEmail = parsed.email;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+            
+            // Check 3: Clients list
+            if (!foundEmail) {
+                try {
+                    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                    const clientWithEmail = clients.find(c => c.email && c.email !== 'N/A');
+                    if (clientWithEmail) {
+                        foundEmail = clientWithEmail.email;
+                    }
+                } catch (e) {}
+            }
+            
+            // Display result
+            if (foundEmail) {
+                storedEmailDiv.textContent = foundEmail;
+                storedEmailDiv.className = 'text-xl font-bold text-blue-600 p-3 bg-white rounded border border-blue-300 break-all';
+                emailSection.style.display = 'block';
+                // Save it to localStorage for next time
+                localStorage.setItem('clientEmail', foundEmail);
+            } else {
+                storedEmailDiv.innerHTML = `
+                    <div class="text-lg font-bold text-yellow-600">⚠️ No email found</div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        This could happen if:<br>
+                        • You added the client manually without completing signup<br>
+                        • The email wasn't captured during profile creation<br>
+                        • You're using a different browser/device
+                    </p>
+                    <p class="text-sm font-semibold text-blue-600 mt-3">
+                        💡 Solution: Click "Show All Registered Accounts" to add emails manually
+                    </p>
+                `;
+                storedEmailDiv.className = 'text-xl font-bold text-red-600 p-3 bg-amber-50 rounded border border-amber-300 break-all';
+                emailSection.style.display = 'block';
+            }
+        }
+
+        function copyEmail() {
+            const email = localStorage.getItem('clientEmail');
+            if (email) {
+                navigator.clipboard.writeText(email).then(() => {
+                    alert('Email copied to clipboard!');
+                });
+            }
+        }
+
+        function showAllAccounts() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const accountsList = document.getElementById('accounts-list');
+            const currentEmail = localStorage.getItem('clientEmail');
+            const currentClientId = localStorage.getItem('currentClientId');
+            
+            if (clients.length === 0) {
+                accountsList.innerHTML = '<p class="text-gray-600 text-sm">No accounts found in browser storage</p>';
+                return;
+            }
+
+            let html = '';
+            clients.forEach((client, index) => {
+                const clientId = client.id || client.displayId;
+                
+                // Try to get email from multiple sources
+                let email = client.email || client.emailAddress;
+                
+                // If no email in client object, check clientData_ID
+                if ((!email || email === 'N/A') && clientId) {
+                    try {
+                        const specificData = localStorage.getItem(`clientData_${clientId}`);
+                        if (specificData) {
+                            const parsed = JSON.parse(specificData);
+                            if (parsed.email && parsed.email !== 'N/A') {
+                                email = parsed.email;
+                            }
+                        }
+                    } catch (e) {}
+                }
+                
+                // If still no email and this is the current client, use currentEmail
+                if ((!email || email === 'N/A') && currentClientId && String(clientId) === String(currentClientId)) {
+                    email = currentEmail;
+                }
+                
+                // Final fallback
+                if (!email || email === 'N/A') {
+                    email = '<span class="text-red-500">No email stored</span>';
+                }
+                
+                const name = client.name || client.fullName || 'No name';
+                const isActive = (currentClientId && String(clientId) === String(currentClientId)) ? 'border-blue-500 bg-blue-50' : 'border-green-300';
+                const badge = (currentClientId && String(clientId) === String(currentClientId)) ? '<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded">Current Client</span>' : '';
+                
+                html += `
+                    <div class="p-3 bg-white rounded border ${isActive}">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="font-semibold text-gray-900">${name}</p>
+                            ${badge}
+                        </div>
+                        <p class="text-sm text-gray-600 break-all">📧 ${email}</p>
+                        <p class="text-xs text-gray-500 mt-1">ID: ${clientId || 'N/A'}</p>
+                        <button onclick="setEmailForClient('${clientId}', '${(client.name || client.fullName || '').replace(/'/g, "\\'")}')" 
+                                class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded mt-2 transition">
+                            📝 Add/Update Email
+                        </button>
+                    </div>
+                `;
+            });
+            
+            accountsList.innerHTML = html;
+        }
+        
+        function setEmailForClient(clientId, clientName) {
+            const email = prompt(`Enter email for ${clientName}:`, localStorage.getItem('clientEmail') || '');
+            if (email && email.trim()) {
+                // Update in localStorage
+                localStorage.setItem('clientEmail', email.trim());
+                
+                // Update in clientData_ID
+                try {
+                    const clientDataKey = `clientData_${clientId}`;
+                    const existing = localStorage.getItem(clientDataKey);
+                    if (existing) {
+                        const parsed = JSON.parse(existing);
+                        parsed.email = email.trim();
+                        localStorage.setItem(clientDataKey, JSON.stringify(parsed));
+                    }
+                } catch (e) {}
+                
+                // Update in clients array
+                try {
+                    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                    const index = clients.findIndex(c => String(c.id || c.displayId) === String(clientId));
+                    if (index >= 0) {
+                        clients[index].email = email.trim();
+                        localStorage.setItem('clients', JSON.stringify(clients));
+                    }
+                } catch (e) {}
+                
+                alert(`✅ Email updated for ${clientName}`);
+                showAllAccounts(); // Refresh the list
+            }
+        }
+    </script>
+</body>
+</html>

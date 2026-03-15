@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal | Vitality Nutrition Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hero-header {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .hero-header::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+        .hero-header > div { position: relative; z-index: 2; }
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <script src="config.js"></script>
+    <script>
+        // If already logged in, send directly to the authenticated Main Page
+        if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+            window.location.replace('client-main.html');
+        }
+        // Mark that user is in client portal
+        sessionStorage.setItem('portalType', 'client');
+    </script>
+
+    <nav class="bg-white shadow-sm py-4 sticky top-0 z-50">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold accent-text">Client Nutrition Portal</div>
+            </div>
+            <div class="space-x-6">
+                <a href="client-home.html" class="font-semibold border-b-2 accent-text accent-border">Home</a>
+                <a href="client-dashboard.html" class="text-black hover:text-gray-600">Nutrition</a>
+                <a href="mental-coaching.html" class="text-black hover:text-gray-600">Mental Coaching</a>
+                <a href="anti-doping.html" class="text-black hover:text-gray-600">Anti-Doping</a>
+                <a href="progress-tracking.html" class="text-black hover:text-gray-600">Progress</a>
+                <a href="settings.html" class="text-black hover:text-gray-600">Settings</a>
+                <a id="navAuthButton" href="client-login.html" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90 accent-bg">Log In</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-header py-24">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-gray-900 mb-4">Elevate Your <span class="accent-text">Game</span></h1>
+            <p class="text-2xl text-gray-700 font-medium mb-4">Personalized Nutrition & Mental Coaching for Athletes Who Want More</p>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-10">We help athletes optimize performance through customized nutrition plans, mental training, and science-backed supplementation.</p>
+            <div class="flex justify-center gap-4">
+                <a href="client-signup.html" class="accent-bg text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition">Get Started</a>
+                <a href="client-login.html" class="bg-white border-2 accent-border accent-text px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition">Client Login</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="personalized-snapshot-section" class="hidden py-12 bg-white border-b border-gray-100">
+        <div class="container mx-auto px-6">
+            <div class="flex items-start justify-between flex-wrap gap-6">
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-gray-500">Personalized Snapshot</p>
+                    <h2 class="text-3xl font-bold text-gray-900 mt-1">Welcome, <span id="home-client-name" class="accent-text">Athlete</span></h2>
+                    <p class="text-gray-600 mt-2">Your current plan, consultation, and focus recommendations.</p>
+                </div>
+                <a href="client-dashboard.html" class="px-5 py-3 rounded-xl accent-bg text-white font-semibold">Open Dashboard</a>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-4 mt-8">
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <p class="text-xs text-gray-500">Current Weight</p>
+                    <p id="home-current-weight" class="text-2xl font-bold text-gray-900">--</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <p class="text-xs text-gray-500">Target Weight</p>
+                    <p id="home-target-weight" class="text-2xl font-bold text-gray-900">--</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <p class="text-xs text-gray-500">Calories Target</p>
+                    <p id="home-calories-target" class="text-2xl font-bold text-gray-900">--</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <p class="text-xs text-gray-500">Subscription Plan</p>
+                    <p id="home-subscription-plan" class="text-2xl font-bold text-gray-900">--</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mt-6">
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+                    <p class="text-sm font-semibold text-blue-700 mb-1">Supplement Advice</p>
+                    <p id="home-supplement-advice" class="text-gray-800">No supplement notes yet.</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
+                    <p class="text-sm font-semibold text-emerald-700 mb-1">Consultation Type</p>
+                    <p id="home-consultation-type" class="text-gray-800">Not selected.</p>
+                    <p id="home-anti-doping-focus" class="text-sm text-gray-600 mt-2">No anti-doping focus set.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900">Train Smarter. Perform Stronger.</h2>
+                <div class="w-20 h-1 accent-bg mx-auto mt-4 rounded-full"></div>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">🥗</div>
+                    <h3 class="font-bold text-xl mb-2">Personalized Nutrition</h3>
+                    <p class="text-gray-600 text-sm">Custom meal plans tailored to your sport and body composition.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">🧠</div>
+                    <h3 class="font-bold text-xl mb-2">Mental coaching</h3>
+                    <p class="text-gray-600 text-sm">Focus, discipline, stress control, and confidence training.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h3 class="font-bold text-xl mb-2">Progress Tracking</h3>
+                    <p class="text-gray-600 text-sm">Monitor weight, strength, sleep, and mental readiness.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">💊</div>
+                    <h3 class="font-bold text-xl mb-2">Smart Supplements</h3>
+                    <p class="text-gray-600 text-sm">Safe, science-based supplement recommendations.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">🧪</div>
+                    <h3 class="font-bold text-xl mb-2">Doping</h3>
+                    <p class="text-gray-600 text-sm">Guidance on banned substances and safe performance strategies.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
+                    <div class="text-4xl mb-4">💬</div>
+                    <h3 class="font-bold text-xl mb-2">Consultation</h3>
+                    <p class="text-gray-600 text-sm">One-on-one consultations for personalized athlete support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">What You Get as a Client</h2>
+                <p class="text-gray-500 mt-2">Everything you need to reach your athletic goals</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Personal Dashboard</h4>
+                        <p class="text-gray-600 text-sm">Track your meals, weight, and progress all in one place</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Custom Meal Plans</h4>
+                        <p class="text-gray-600 text-sm">Tailored nutrition based on your sport and goals</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Direct Coach Access</h4>
+                        <p class="text-gray-600 text-sm">Message your nutritionist anytime with questions</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Weekly Check-ins</h4>
+                        <p class="text-gray-600 text-sm">Regular progress reviews and plan adjustments</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Recipe Library</h4>
+                        <p class="text-gray-600 text-sm">Access to performance-focused meal recipes</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Supplement Guidance</h4>
+                        <p class="text-gray-600 text-sm">Science-backed recommendations for your needs</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Doping Education</h4>
+                        <p class="text-gray-600 text-sm">Clear guidance on banned substances and safer alternatives</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-3xl">✅</div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2">Consultation Sessions</h4>
+                        <p class="text-gray-600 text-sm">Regular one-on-one consultations to fine-tune your plan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-gray-900 mb-12 text-center">Performance Recipes</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition">
+                    <img src="images/steak.jpg" class="w-full h-48 object-cover" alt="Protein Bowl">
+                    <div class="p-6">
+                        <h4 class="font-bold text-xl mb-2">Steak Power plate</h4>
+                        <div class="flex justify-between text-sm text-gray-500 mb-4">
+                            <span>🔥 520 Cal</span>
+                            <span>💪 38g Protein</span>
+                        </div>
+                        <div class="text-sm text-gray-500 mb-4">⚖️ 460g serving</div>
+                        <button class="w-full py-2 rounded-xl border accent-border accent-text font-bold hover:accent-bg hover:text-white transition" onclick="window.location.href='subscription-plan.html?upgrade=recipes'">View Recipe</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition">
+                    <img src="images/pexels-crysnet-12431192.jpg" class="w-full h-48 object-cover" alt="Salmon Dinner">
+                    <div class="p-6">
+                        <h4 class="font-bold text-xl mb-2">Grilled Salmon Plate</h4>
+                        <div class="flex justify-between text-sm text-gray-500 mb-4">
+                            <span>🔥 580 Cal</span>
+                            <span>💪 45g Protein</span>
+                        </div>
+                        <div class="text-sm text-gray-500 mb-4">⚖️ 430g serving</div>
+                        <button class="w-full py-2 rounded-xl border accent-border accent-text font-bold hover:accent-bg hover:text-white transition" onclick="window.location.href='subscription-plan.html?upgrade=recipes'">View Recipe</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition">
+                    <img src="images/pexels-janetrangdoan-1099680.jpg" class="w-full h-48 object-cover" alt="Smoothie Bowl">
+                    <div class="p-6">
+                        <h4 class="font-bold text-xl mb-2">Recovery Smoothie Bowl</h4>
+                        <div class="flex justify-between text-sm text-gray-500 mb-4">
+                            <span>🔥 380 Cal</span>
+                            <span>💪 28g Protein</span>
+                        </div>
+                        <div class="text-sm text-gray-500 mb-4">⚖️ 350g serving</div>
+                        <button class="w-full py-2 rounded-xl border accent-border accent-text font-bold hover:accent-bg hover:text-white transition" onclick="window.location.href='subscription-plan.html?upgrade=recipes'">View Recipe</button>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-12">
+                <a href="subscription-plan.html?upgrade=recipes" class="accent-text font-bold hover:underline">View All Recipes &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">Trusted by Athletes Like You</h2>
+            <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <div class="text-4xl mb-4">⭐⭐⭐⭐⭐</div>
+                    <p class="text-gray-600 italic mb-4">"Best nutrition guidance I've ever received. My performance has improved dramatically!"</p>
+                    <p class="font-bold">- Ahmed M., Footballer</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <div class="text-4xl mb-4">⭐⭐⭐⭐⭐</div>
+                    <p class="text-gray-600 italic mb-4">"The meal plans are easy to follow and the results speak for themselves."</p>
+                    <p class="font-bold">- Sara K., Swimmer</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <div class="text-4xl mb-4">⭐⭐⭐⭐⭐</div>
+                    <p class="text-gray-600 italic mb-4">"Finally reached my goal weight while maintaining strength. Highly recommend!"</p>
+                    <p class="font-bold">- Omar T., Runner</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="bg-gradient-to-br from-blue-50 to-white rounded-3xl p-12 text-center border border-gray-100">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Ready to elevate Your Performance?</h2>
+                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">Join hundreds of athletes who have taken their nutrition to the next level. Get started with a personalized plan today.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="client-signup.html" class="accent-bg text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition">Create Account</a>
+                    <a href="client-login.html" class="bg-white border-2 accent-border accent-text px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition">Already a Client? Login</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white">
+        &copy; 2026 Client Nutrition Management. All rights reserved.
+    </footer>
+
+    <!-- Recipe Modal -->
+    <div id="recipeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-8">
+                <button onclick="closeRecipeModal()" class="float-right text-2xl text-gray-400 hover:text-gray-600">✕</button>
+                <div id="recipeContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="dashboard-nav.js"></script>
+    <script>
+        // Recipe Modal Script
+        const homePageRecipes = {
+            'steak': {
+                name: 'Steak Power Bowl',
+                type: 'Lunch',
+                description: 'Grilled ribeye steak with sweet potato, roasted broccoli, and garlic butter sauce',
+                servingGrams: 460,
+                ingredients: ['Ribeye Steak', 'Sweet Potato', 'Broccoli', 'Garlic', 'Butter', 'Sea Salt', 'Black Pepper'],
+                instructions: ['Grill ribeye steak', 'Roast sweet potato and broccoli', 'Dice steak', 'Arrange in bowl', 'Drizzle with garlic butter'],
+                nutrition: { protein: 38, carbs: 40, fats: 14, calories: 520 }
+            },
+            'salmon': {
+                name: 'Grilled Salmon Plate',
+                type: 'Dinner',
+                description: 'Omega-3 rich salmon fillet with roasted vegetables and brown rice',
+                servingGrams: 430,
+                ingredients: ['Salmon Fillet', 'Brown Rice', 'Broccoli', 'Asparagus', 'Lemon', 'Olive Oil', 'Herbs'],
+                instructions: ['Grill salmon fillet', 'Cook brown rice', 'Roast vegetables', 'Season with lemon and herbs', 'Plate together'],
+                nutrition: { protein: 45, carbs: 50, fats: 12, calories: 580 }
+            },
+            'smoothie': {
+                name: 'Recovery Smoothie Bowl',
+                type: 'Snack',
+                description: 'Protein-packed smoothie bowl with granola and fresh fruit',
+                servingGrams: 350,
+                ingredients: ['Greek Yogurt', 'Protein Powder', 'Banana', 'Berries', 'Granola', 'Coconut', 'Honey'],
+                instructions: ['Blend yogurt and protein powder', 'Add berries and banana', 'Pour into bowl', 'Top with granola', 'Drizzle with honey'],
+                nutrition: { protein: 28, carbs: 52, fats: 8, calories: 380 }
+            }
+        };
+
+        function showRecipeModal(recipeKey) {
+            const recipe = homePageRecipes[recipeKey];
+            if (!recipe) return;
+
+            const typeColors = {
+                'breakfast': 'bg-yellow-100 text-yellow-700',
+                'lunch': 'bg-green-100 text-green-700',
+                'dinner': 'bg-blue-100 text-blue-700',
+                'snack': 'bg-purple-100 text-purple-700',
+                'pre-workout': 'bg-red-100 text-red-700',
+                'post-workout': 'bg-orange-100 text-orange-700'
+            };
+            const typeColor = typeColors[recipe.type.toLowerCase()] || 'bg-gray-100 text-gray-700';
+
+            const contentHTML = `
+                <div class="mb-6">
+                    <span class="inline-block ${typeColor} px-4 py-2 rounded-full font-semibold text-sm mb-4">${recipe.type}</span>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">${recipe.name}</h2>
+                    <p class="text-gray-600 text-lg">${recipe.description}</p>
+                    <p class="text-gray-500 font-semibold mt-2">Serving Size: ${recipe.servingGrams || 'N/A'}g</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-red-50 p-4 rounded-2xl">
+                        <p class="text-gray-600 font-semibold text-sm">Protein</p>
+                        <p class="text-2xl font-bold text-red-600">${recipe.nutrition.protein}g</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-2xl">
+                        <p class="text-gray-600 font-semibold text-sm">Carbs</p>
+                        <p class="text-2xl font-bold text-yellow-600">${recipe.nutrition.carbs}g</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-2xl">
+                        <p class="text-gray-600 font-semibold text-sm">Fats</p>
+                        <p class="text-2xl font-bold text-blue-600">${recipe.nutrition.fats}g</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-2xl">
+                        <p class="text-gray-600 font-semibold text-sm">Calories</p>
+                        <p class="text-2xl font-bold text-purple-600">${recipe.nutrition.calories}</p>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Ingredients</h3>
+                    <ul class="space-y-2">
+                        ${recipe.ingredients.map(ing => `<li class="text-gray-700 flex items-center"><span class="text-green-500 mr-3">✓</span>${ing}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Instructions</h3>
+                    <ol class="space-y-2">
+                        ${recipe.instructions.map((instr, idx) => `<li class="text-gray-700"><span class="font-semibold">${idx + 1}.</span> ${instr}</li>`).join('')}
+                    </ol>
+                </div>
+            `;
+
+            document.getElementById('recipeContent').innerHTML = contentHTML;
+            document.getElementById('recipeModal').classList.remove('hidden');
+        }
+
+        function closeRecipeModal() {
+            document.getElementById('recipeModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('recipeModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeRecipeModal();
+        });
+
+        function safeText(value, fallback) {
+            const resolved = (value ?? '').toString().trim();
+            return resolved || fallback;
+        }
+
+        function setNavAuthButtonLoggedOut() {
+            const navAuthButton = document.getElementById('navAuthButton');
+            if (!navAuthButton) return;
+            navAuthButton.textContent = 'Log In';
+            navAuthButton.href = 'client-login.html';
+        }
+
+        function setPersonalizedSnapshotVisible(isVisible) {
+            const snapshotSection = document.getElementById('personalized-snapshot-section');
+            if (!snapshotSection) return;
+            if (isVisible) {
+                snapshotSection.classList.remove('hidden');
+            } else {
+                snapshotSection.classList.add('hidden');
+            }
+        }
+
+        async function loadPersonalizedHomeSummary() {
+            setPersonalizedSnapshotVisible(false);
+
+            if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+                setNavAuthButtonLoggedOut();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/api/client/home-summary`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    setNavAuthButtonLoggedOut();
+                    return;
+                }
+
+                const summary = await response.json();
+                document.getElementById('home-client-name').textContent = safeText(summary.full_name, 'Athlete');
+                document.getElementById('home-current-weight').textContent = summary.current_weight ? `${summary.current_weight} kg` : '--';
+                document.getElementById('home-target-weight').textContent = summary.target_weight ? `${summary.target_weight} kg` : '--';
+                document.getElementById('home-calories-target').textContent = summary.calories_target ? `${summary.calories_target} kcal` : '--';
+                document.getElementById('home-subscription-plan').textContent = safeText(summary.subscription_plan, 'Starter');
+                document.getElementById('home-supplement-advice').textContent = safeText(summary.supplements, 'No supplement notes yet.');
+                document.getElementById('home-consultation-type').textContent = safeText(summary.consultation_type, 'Not selected.');
+                document.getElementById('home-anti-doping-focus').textContent = safeText(summary.anti_doping_focus, 'No anti-doping focus set.');
+                setPersonalizedSnapshotVisible(true);
+            } catch (error) {
+                console.error('[client-home] failed to load personalized summary', error);
+                setNavAuthButtonLoggedOut();
+            }
+        }
+
+        if (typeof initGlobalNavbarAuthState === 'function') {
+            initGlobalNavbarAuthState();
+        }
+        if (typeof highlightActiveDashboardNav === 'function') {
+            highlightActiveDashboardNav();
+        }
+
+        loadPersonalizedHomeSummary();
+    </script>
+</body>
+</html>

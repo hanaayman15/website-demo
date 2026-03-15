@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Team View - Nutrition Management</title>
+    <script src="config.js"></script>
+    <style>
+        body {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: "Source Sans Pro", sans-serif;
+            margin: 0;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(233, 243, 244, 0.65);
+            z-index: -1;
+        }
+        .page { max-width: 1250px; margin: 18px auto; padding: 0 14px 30px; }
+        .card { background: #fff; border: 1px solid #dbe6f2; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .title { margin: 0; color: #18324c; }
+        .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; }
+        .meta-item { border: 1px solid #dbe6f2; border-radius: 9px; padding: 8px; background: #f8fbff; }
+        .meta-label { font-size: 11px; color: #60758b; }
+        .meta-value { font-size: 15px; font-weight: 700; color: #1f3d5a; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border-bottom: 1px solid #e4edf6; padding: 8px; text-align: left; vertical-align: top; }
+        th { background: #f3f8fe; color: #355573; }
+        .small { font-size: 12px; color: #5d7288; }
+        .btn-detail {
+            display: inline-block;
+            border: 1px solid #c9daee;
+            border-radius: 8px;
+            padding: 5px 9px;
+            color: #1c466f;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f3f8ff;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #1b3b5f;
+            background: #f4f8fd;
+            border: 1px solid #d8e3f2;
+            border-radius: 9px;
+            padding: 8px 12px;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            background: #4a9ff5;
+            border-color: #4a9ff5;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="card"><a class="back-link" href="clients.html">← Back to Teams</a></div>
+
+    <div class="card">
+        <h1 class="title" id="teamTitle">Team</h1>
+        <div class="meta">
+            <div class="meta-item"><div class="meta-label">Team Name</div><div class="meta-value" id="teamName">-</div></div>
+            <div class="meta-item"><div class="meta-label">Coach</div><div class="meta-value" id="teamCoach">-</div></div>
+            <div class="meta-item"><div class="meta-label">Sport</div><div class="meta-value" id="teamSport">-</div></div>
+            <div class="meta-item"><div class="meta-label">Package Size</div><div class="meta-value" id="teamPackage">-</div></div>
+            <div class="meta-item"><div class="meta-label">Players</div><div class="meta-value" id="teamPlayers">-</div></div>
+        </div>
+    </div>
+
+    <div class="card" style="overflow:auto;">
+        <h2 style="margin-top:0;color:#204366;">Players</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Gender</th>
+                    <th>Height/Weight</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="playersBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const API_BASE_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://127.0.0.1:8001';
+
+function getAuthHeader() {
+    const token =
+        localStorage.getItem('authToken') ||
+        sessionStorage.getItem('authToken') ||
+        localStorage.getItem('access_token') ||
+        sessionStorage.getItem('access_token');
+    if (!token) return null;
+    const tokenType =
+        localStorage.getItem('authTokenType') ||
+        sessionStorage.getItem('authTokenType') ||
+        localStorage.getItem('token_type') ||
+        sessionStorage.getItem('token_type') ||
+        'bearer';
+    return `${tokenType.charAt(0).toUpperCase() + tokenType.slice(1)} ${token}`;
+}
+
+function getCurrentRole() {
+    const fromStorage = (sessionStorage.getItem('role') || localStorage.getItem('authRole') || sessionStorage.getItem('authRole') || '').toLowerCase();
+    if (fromStorage) return fromStorage;
+
+    const token =
+        localStorage.getItem('authToken') ||
+        sessionStorage.getItem('authToken') ||
+        localStorage.getItem('access_token') ||
+        sessionStorage.getItem('access_token');
+
+    if (!token) return '';
+    try {
+        const parts = token.split('.');
+        if (parts.length < 2) return '';
+        const payload = JSON.parse(atob(parts[1]));
+        return String(payload?.role || '').toLowerCase();
+    } catch (_) {
+        return '';
+    }
+}
+
+function parseInfoText(value) {
+    if (!value) return '-';
+    try {
+        const obj = JSON.parse(value);
+        return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(' | ');
+    } catch (_) {
+        return String(value);
+    }
+}
+
+async function loadTeam() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (!id) {
+        alert('Missing team id');
+        location.href = 'clients.html';
+        return;
+    }
+
+    const authHeader = getAuthHeader();
+    const headers = authHeader ? { Authorization: authHeader } : {};
+    const response = await fetch(`${API_BASE_URL}/api/teams/${encodeURIComponent(id)}`, {
+        credentials: 'include',
+        headers,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            alert('Doctor or admin login required to view team details.');
+            location.href = 'doctor-auth.html?next=team_view.html';
+            return;
+        }
+        alert(data.detail || 'Failed to load team');
+        return;
+    }
+
+    document.getElementById('teamTitle').textContent = `${data.team_name || 'Team'} Details`;
+    document.getElementById('teamName').textContent = data.team_name || '-';
+    document.getElementById('teamCoach').textContent = data.coach_name || '-';
+    document.getElementById('teamSport').textContent = data.sport_type || '-';
+    document.getElementById('teamPackage').textContent = String(data.package_size || '-');
+    document.getElementById('teamPlayers').textContent = String(data.players_count || 0);
+
+    const role = getCurrentRole();
+    const canOpenPlayerDetails = role === 'admin' || role === 'doctor';
+
+    const rows = (data.players || []).map((p) => {
+        const detailsCell = canOpenPlayerDetails
+            ? `<a class="btn-detail" href="client-detail.html?team_id=${encodeURIComponent(data.id)}&player_id=${encodeURIComponent(p.id || p.player_number)}&tab=programs">Player Details</a>`
+            : '<span class="small" style="font-weight:700;color:#8b2b2b;">Doctor or admin only</span>';
+        return `
+            <tr>
+                <td>${p.player_number || '-'}</td>
+                <td>${p.client_id || '-'}</td>
+                <td>${p.full_name || '-'}</td>
+                <td>${p.email || '-'}</td>
+                <td>${p.phone || '-'}</td>
+                <td>${p.gender || '-'}</td>
+                <td>${p.height || '-'} / ${p.weight || '-'}</td>
+                <td>${detailsCell}</td>
+            </tr>`;
+    }).join('');
+
+    document.getElementById('playersBody').innerHTML = rows || '<tr><td colspan="8">No players found.</td></tr>';
+}
+
+loadTeam().catch((err) => alert(err.message));
+</script>
+</body>
+</html>

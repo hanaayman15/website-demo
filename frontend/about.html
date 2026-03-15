@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Vitality Nutrition Management</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .about-header {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .about-header::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 1;
+        }
+        .about-header > div { position: relative; z-index: 2; }
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold" style="color: #6eabf2;">Client Nutrition Management</div>
+            </div>
+            <div class="space-x-6">
+                <a href="index.html" id="nav-home" class="text-black">Home</a>
+                <a href="about.html" class="font-semibold border-b-2" style="color: #6eabf2; border-color: #6eabf2;">About</a>
+                <a href="features.html" class="text-black">Features</a>
+                <a href="resources.html" class="text-black">Our Clinic</a>
+                <a href="success-stories.html" class="text-black">Success Stories</a>
+                <a href="contact.html" class="text-black">Contact Us</a>
+                <a href="add-client.html" id="nav-action" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style="background-color: #6eabf2;">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        if (typeof initGlobalNavbarAuthState === 'function') {
+            initGlobalNavbarAuthState();
+        }
+    </script>
+
+    <header class="about-header py-16">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Nutrition Powered by Science, <br><span class="accent-text">Tailored for Life.</span></h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">We believe health shouldn't be a guessing game. Our mission is to provide evidence-based nutrition management that fits your unique lifestyle.</p>
+        </div>
+    </header>
+
+    <section class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Q&A of the Day</h2>
+                <div class="w-16 h-1 accent-bg mx-auto mt-4 rounded-full"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="accent-text">Q:</span> Should I focus on fat loss or weight loss?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Understanding the difference is key to reaching your fitness goals. Weight can fluctuate for various reasons (water, muscle, etc.), but <strong>fat loss</strong> is a more gradual and sustainable change.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="accent-text">Q:</span> How much sleep should I be getting?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        For athletes, <strong>7-9 hours</strong> of quality sleep per night is recommended. Does quality matter? <strong>YES</strong>. To maximize recovery and performance, quality sleep is non-negotiable.
+                    </p>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="accent-text">Q:</span> How can I improve my reaction time?
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Reaction time improves with <strong>consistent sleep</strong>, proper hydration, and targeted drills (like ball-drop, sprint-start, or decision-making exercises). Short, focused sessions 2-3 times per week can sharpen speed and accuracy over time.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 bg-white border-b border-gray-100">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto bg-blue-50 border-l-4 accent-border p-8 rounded-r-2xl">
+                <h4 class="text-sm font-bold uppercase tracking-widest accent-text mb-2">Daily Reminder</h4>
+                <p class="text-2xl md:text-3xl font-light text-gray-800 italic">
+                    "If you don't make time for your <span class="font-bold">wellness</span>, you will be forced to make time for your <span class="font-bold">sickness</span>."
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center gap-12 max-w-4xl mx-auto">
+                <div class="shrink-0">
+                    <div class="w-64 h-64 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+                        <img src="images/dr.mohamed.jpg" alt="Dr. Mohamed Alaa" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Meet Our Lead Expert</h2>
+                    <h4 class="text-xl font-bold accent-text mb-4">Dr. Mohamed Alaa</h4>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center gap-2">🔹 Performance Nutrition at Smouha Sporting Club</li>
+                        <li class="flex items-center gap-2">🔹 CASN Level 1 & 2</li>
+                        <li class="flex items-center gap-2">🔹 Certified Sports Mental Coach</li>
+                        <li class="flex items-center gap-2">🔹 Clinical Pharmacist</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-extrabold text-gray-900 mb-4">Simple Tips for Everyday Wellness</h2>
+                <p class="text-gray-500">Small adjustments that lead to lasting benefits.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="p-6 border border-gray-100 rounded-2xl hover:shadow-lg transition">
+                    <span class="text-3xl font-black opacity-10 block mb-2">01</span>
+                    <h5 class="font-bold text-lg mb-2">Balance Meals</h5>
+                    <p class="text-sm text-gray-600">Aim for colorful plates filled with fruits and vegetables for range of nutrients.</p>
+                </div>
+                <div class="p-6 border border-gray-100 rounded-2xl hover:shadow-lg transition">
+                    <span class="text-3xl font-black opacity-10 block mb-2">02</span>
+                    <h5 class="font-bold text-lg mb-2">Stay Active</h5>
+                    <p class="text-sm text-gray-600">Find activities you enjoy, from walking to dancing, and make them routine.</p>
+                </div>
+                <div class="p-6 border border-gray-100 rounded-2xl hover:shadow-lg transition">
+                    <span class="text-3xl font-black opacity-10 block mb-2">03</span>
+                    <h5 class="font-bold text-lg mb-2">Keep Hydrated</h5>
+                    <p class="text-sm text-gray-600">Carry a water bottle to remind you to function at your best throughout the day.</p>
+                </div>
+                <div class="p-6 border border-gray-100 rounded-2xl hover:shadow-lg transition">
+                    <span class="text-3xl font-black opacity-10 block mb-2">04</span>
+                    <h5 class="font-bold text-lg mb-2">Prioritize Sleep</h5>
+                    <p class="text-sm text-gray-600">Consistent schedules help your body and mind rest and recover properly.</p>
+                </div>
+            </div>
+
+            <div class="mt-12 text-center text-gray-500 max-w-2xl mx-auto">
+                Adopting a healthier lifestyle doesn't have to be about drastic changes. It's about small, manageable adjustments. <a href="client-signup.html" class="accent-text font-bold">Start small and celebrate your progress!</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 accent-bg">
+        <div class="container mx-auto px-6 text-center text-white">
+            <h2 class="text-3xl font-bold mb-4">Unlock Your Peak Performance</h2>
+            <p class="mb-8 opacity-90 text-lg">Join over 500+ clients who have redefined their relationship with food.</p>
+            <a href="client-signup.html" class="bg-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition accent-text inline-block">Book a Consultation</a>
+        </div>
+    </section>
+
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white">
+        &copy; 2026 VitalityPath Nutrition Management. All rights reserved.
+    </footer>
+
+</body>
+</html>

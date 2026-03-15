@@ -1,0 +1,120 @@
+{
+  "generatedAt": "2026-03-11T00:51:32.850Z",
+  "pageChecks": [
+    {
+      "pageName": "client-home.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    },
+    {
+      "pageName": "client-dashboard.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    },
+    {
+      "pageName": "mental-coaching.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    },
+    {
+      "pageName": "anti-doping.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    },
+    {
+      "pageName": "progress-tracking.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    },
+    {
+      "pageName": "settings.html",
+      "hasInit": true,
+      "hasSessionAlert": false
+    }
+  ],
+  "configChecks": {
+    "missingTokenResults": [
+      {
+        "page": "client-home.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      },
+      {
+        "page": "client-dashboard.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      },
+      {
+        "page": "mental-coaching.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      },
+      {
+        "page": "anti-doping.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      },
+      {
+        "page": "progress-tracking.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      },
+      {
+        "page": "settings.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "delay": 2500,
+        "protected": true
+      }
+    ],
+    "forced401Results": [
+      {
+        "page": "client-home.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      },
+      {
+        "page": "client-dashboard.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      },
+      {
+        "page": "mental-coaching.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      },
+      {
+        "page": "anti-doping.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      },
+      {
+        "page": "progress-tracking.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      },
+      {
+        "page": "settings.html",
+        "hasOverlay": true,
+        "redirected": true,
+        "protected": true
+      }
+    ],
+    "messageTextOk": true
+  }
+}

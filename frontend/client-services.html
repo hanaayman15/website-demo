@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Services</title>
+    <style>
+        body { margin:0; font-family:"Source Sans Pro",Arial,sans-serif; background:#eef5fb; color:#17324b; }
+        .page { max-width:1000px; margin:24px auto; padding:0 16px; }
+        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+        .top a { text-decoration:none; color:#17324b; font-weight:700; border:1px solid #dbe7f3; background:#f4f8fd; border-radius:9px; padding:8px 11px; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+        .card { background:#fff; border:1px solid #dbe7f3; border-radius:14px; box-shadow:0 8px 20px rgba(15,42,64,.08); padding:20px; }
+        .card h3 { margin:0 0 10px; }
+        .card p { margin:0 0 14px; color:#5f748a; }
+        .client-summary { margin-bottom:14px; border:1px solid #dbe7f3; border-radius:12px; background:#f7fbff; padding:11px 13px; }
+        .client-summary strong { color:#11304d; }
+        .btn { display:inline-block; text-decoration:none; border:1px solid #4a9ff5; background:#4a9ff5; color:#fff; border-radius:9px; padding:9px 13px; font-weight:700; }
+        .btn:hover { background:#2f80d5; border-color:#2f80d5; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="top">
+            <h1>Client Services</h1>
+            <a id="backToClients" href="clients.html">← Back to Clients</a>
+        </div>
+
+        <div class="client-summary" id="clientSummary">
+            <strong>Client:</strong> <span id="clientSummaryName">-</span>
+            <span style="margin-left:10px;"><strong>ID:</strong> <span id="clientSummaryId">-</span></span>
+            <span style="margin-left:10px;"><strong>Email:</strong> <span id="clientSummaryEmail">-</span></span>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Nutrition</h3>
+                <p>Open and manage the nutrition profile for this client.</p>
+                <a id="nutritionLink" class="btn" href="client-nutrition-profile.html">Open Nutrition</a>
+            </div>
+            <div class="card">
+                <h3>Mental Coaching</h3>
+                <p>Mental coaching module for this client.</p>
+                <a id="mentalLink" class="btn" href="mental-coaching.html">Open Mental Coaching</a>
+            </div>
+            <div class="card">
+                <h3>Anti-Doping</h3>
+                <p>Anti-doping resources for this client.</p>
+                <a id="antiDopingLink" class="btn" href="anti-doping.html">Open Anti-Doping</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LAST_CLIENT_CONTEXT_KEY = 'lastClientContextV1';
+        const params = new URLSearchParams(window.location.search);
+        let clientId = params.get('client_id');
+
+        let clientContext = null;
+        try {
+            const raw = localStorage.getItem(LAST_CLIENT_CONTEXT_KEY);
+            clientContext = raw ? JSON.parse(raw) : null;
+        } catch (_) {
+            clientContext = null;
+        }
+
+        if (!clientId && clientContext && clientContext.user_id) {
+            clientId = String(clientContext.user_id);
+            params.set('client_id', clientId);
+            const nextQuery = params.toString();
+            const nextUrl = nextQuery ? `client-services.html?${nextQuery}` : 'client-services.html';
+            window.history.replaceState({}, '', nextUrl);
+        }
+
+        if (clientContext) {
+            document.getElementById('clientSummaryName').textContent = clientContext.full_name || '-';
+            document.getElementById('clientSummaryId').textContent = clientContext.display_id || clientContext.user_id || '-';
+            document.getElementById('clientSummaryEmail').textContent = clientContext.email || '-';
+        }
+
+        if (clientId) {
+            document.getElementById('nutritionLink').href = `client-nutrition-profile.html?client_id=${encodeURIComponent(clientId)}`;
+            document.getElementById('mentalLink').href = `mental-coaching.html?client_id=${encodeURIComponent(clientId)}`;
+            document.getElementById('antiDopingLink').href = `anti-doping.html?client_id=${encodeURIComponent(clientId)}`;
+            if (!clientContext) {
+                document.getElementById('clientSummaryId').textContent = clientId;
+            }
+        }
+    </script>
+</body>
+</html>

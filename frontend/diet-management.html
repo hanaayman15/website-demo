@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="config.js"></script>
+	<title>Diet Management</title>
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background-image: url("images/pexels-jplenio-1103970.jpg");
+			background-size: cover;
+			background-position: center;
+			min-height: 100vh;
+			padding: 20px;
+		}
+
+		.top-nav {
+			background: white;
+			border-radius: 15px;
+			padding: 12px 20px;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			max-width: 1200px;
+			margin: 0 auto 20px;
+		}
+
+		.top-nav-brand-group {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.top-nav-back {
+			color: #1b3b5f;
+			text-decoration: none;
+			padding: 6px 10px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			background: #f7f9fc;
+			border: 1px solid #e0e0e0;
+			transition: background 0.2s, color 0.2s, border-color 0.2s;
+		}
+
+		.top-nav-back:hover {
+			background: #eef3fb;
+		}
+
+		.top-nav-brand {
+			font-size: 16px;
+			font-weight: 700;
+			color: #1b3b5f;
+		}
+
+		.top-nav-links {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.top-nav-link {
+			color: #1b3b5f;
+			text-decoration: none;
+			padding: 8px 12px;
+			border-radius: 8px;
+			font-size: 14px;
+			font-weight: 600;
+			background: #f7f9fc;
+			border: 1px solid #e0e0e0;
+			transition: background 0.2s, color 0.2s, border-color 0.2s;
+		}
+
+		.top-nav-link:hover {
+			background: #eef3fb;
+		}
+
+		.top-nav-link.is-active {
+			background: #4a9ff5;
+			border-color: #4a9ff5;
+			color: white;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 15px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+			overflow: hidden;
+		}
+
+		.header {
+			background: white;
+			color: #333;
+			padding: 30px;
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			align-items: center;
+			border-bottom: 2px solid #e0e0e0;
+			gap: 20px;
+		}
+
+		.header h1 {
+			font-size: 28px;
+			font-weight: 600;
+			text-align: center;
+		}
+
+		.header-actions {
+			display: flex;
+			gap: 10px;
+		}
+
+		.btn {
+			padding: 10px 20px;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 600;
+			transition: all 0.3s;
+		}
+
+		.btn-primary {
+			background: #28a745;
+			color: white;
+		}
+
+		.btn-primary:hover {
+			background: #218838;
+			transform: translateY(-2px);
+		}
+
+		.btn-secondary {
+			background: #4a9ff5;
+			color: white;
+		}
+
+		.btn-secondary:hover {
+			background: #3a8fe5;
+			transform: translateY(-2px);
+		}
+
+		.btn-danger {
+			background: #dc3545;
+			color: white;
+		}
+
+		.btn-danger:hover {
+			background: #c82333;
+		}
+
+		.back-btn {
+			background: #f0f0f0;
+			color: #333;
+			border: 1px solid #ddd;
+		}
+
+		.back-btn:hover {
+			background: #e0e0e0;
+		}
+
+		.content {
+			padding: 30px;
+		}
+
+		.section-title {
+			font-size: 22px;
+			font-weight: 600;
+			color: #1b3b5f;
+			margin-bottom: 20px;
+			border-bottom: 2px solid #667eea;
+			padding-bottom: 10px;
+		}
+
+		.diet-plans-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+			gap: 20px;
+			margin-bottom: 40px;
+		}
+
+		.diet-card {
+			border: 1px solid #e0e0e0;
+			border-radius: 12px;
+			padding: 20px;
+			background: #f9f9f9;
+			transition: all 0.3s;
+		}
+
+		.diet-card:hover {
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+			transform: translateY(-2px);
+		}
+
+		.diet-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: start;
+			margin-bottom: 15px;
+		}
+
+		.diet-card-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #1b3b5f;
+		}
+
+		.diet-card-subtitle {
+			font-size: 13px;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		.menu-btn {
+			background: none;
+			border: none;
+			font-size: 20px;
+			cursor: pointer;
+			color: #999;
+		}
+
+		.menu-btn:hover {
+			color: #333;
+		}
+
+		.menu-dropdown {
+			position: relative;
+			display: inline-block;
+		}
+
+		.menu-dropdown-content {
+			display: none;
+			position: absolute;
+			right: 0;
+			background: white;
+			min-width: 150px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			border-radius: 6px;
+			z-index: 1;
+			top: 100%;
+		}
+
+		.menu-dropdown-content a {
+			color: #1b3b5f;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+			cursor: pointer;
+			border-bottom: 1px solid #eee;
+			font-size: 14px;
+		}
+
+		.menu-dropdown-content a:last-child {
+			border-bottom: none;
+		}
+
+		.menu-dropdown-content a:hover {
+			background: #f0f0f0;
+		}
+
+		@media (max-width: 768px) {
+			.top-nav {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 10px;
+			}
+		}
+
+		.menu-dropdown-content a.delete {
+			color: #dc3545;
+		}
+
+		.menu-dropdown.active .menu-dropdown-content {
+			display: block;
+		}
+
+		.diet-card-stats {
+			display: flex;
+			gap: 15px;
+			margin-bottom: 15px;
+		}
+
+		.stat {
+			flex: 1;
+			text-align: center;
+			padding: 10px;
+			background: white;
+			border-radius: 8px;
+			border: 1px solid #eee;
+		}
+
+		.stat-value {
+			font-size: 18px;
+			font-weight: 600;
+			color: #667eea;
+		}
+
+		.stat-label {
+			font-size: 12px;
+			color: #999;
+			margin-top: 5px;
+		}
+
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 2000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			overflow-y: auto;
+		}
+
+		.modal.active {
+			display: block;
+		}
+
+		.modal-content {
+			background: white;
+			margin: 30px auto;
+			padding: 30px;
+			border-radius: 12px;
+			max-width: 900px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+		}
+
+		.modal-header {
+			font-size: 24px;
+			font-weight: 600;
+			color: #1b3b5f;
+			margin-bottom: 20px;
+			border-bottom: 2px solid #667eea;
+			padding-bottom: 15px;
+		}
+
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-row {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+
+		.form-label {
+			display: block;
+			font-weight: 600;
+			color: #1b3b5f;
+			margin-bottom: 8px;
+			font-size: 14px;
+		}
+
+		.form-input {
+			width: 100%;
+			padding: 10px 12px;
+			border: 1px solid #e0e0e0;
+			border-radius: 6px;
+			font-size: 14px;
+			font-family: inherit;
+		}
+
+		.form-input:focus {
+			outline: none;
+			border-color: #667eea;
+			box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+		}
+
+		.day-section {
+			background: #f9f9f9;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 20px;
+		}
+
+		.day-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #1b3b5f;
+			margin-bottom: 15px;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #667eea;
+		}
+
+		.meal-items {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+			gap: 15px;
+		}
+
+		.meal-item {
+			background: white;
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			padding: 12px;
+		}
+
+		.meal-item-type {
+			font-weight: 600;
+			color: #1b3b5f;
+			font-size: 14px;
+			margin-bottom: 8px;
+		}
+
+		.meal-item-input {
+			width: 100%;
+			padding: 8px;
+			border: 1px solid #e0e0e0;
+			border-radius: 4px;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+
+		.meal-item-input::placeholder {
+			color: #999;
+		}
+
+		.modal-actions {
+			display: flex;
+			gap: 10px;
+			justify-content: flex-end;
+			padding-top: 20px;
+			border-top: 1px solid #e0e0e0;
+			margin-top: 30px;
+		}
+
+		.btn-save {
+			background: #28a745;
+			color: white;
+			padding: 12px 30px;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-weight: 600;
+		}
+
+		.btn-save:hover {
+			background: #218838;
+		}
+
+		.btn-cancel {
+			background: #6c757d;
+			color: white;
+			padding: 12px 30px;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-weight: 600;
+		}
+
+		.btn-cancel:hover {
+			background: #5a6268;
+		}
+
+		.empty-state {
+			text-align: center;
+			padding: 40px 20px;
+			color: #999;
+		}
+
+		.empty-state-icon {
+			font-size: 48px;
+			margin-bottom: 15px;
+		}
+
+		.tabs {
+			display: flex;
+			gap: 0;
+			border-bottom: 2px solid #e0e0e0;
+			margin-bottom: 20px;
+		}
+
+		.tab {
+			padding: 15px 20px;
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-weight: 600;
+			color: #999;
+			font-size: 14px;
+			position: relative;
+			transition: color 0.3s;
+		}
+
+		.tab.active {
+			color: #667eea;
+		}
+
+		.tab.active::after {
+			content: '';
+			position: absolute;
+			bottom: -2px;
+			left: 0;
+			right: 0;
+			height: 2px;
+			background: #667eea;
+		}
+
+		.tab-content {
+			display: none;
+		}
+
+		.tab-content.active {
+			display: block;
+		}
+
+		.preview-section {
+			background: #f9f9f9;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 20px;
+		}
+
+		.preview-title {
+			font-size: 18px;
+			font-weight: 600;
+			color: #1b3b5f;
+			margin-bottom: 15px;
+		}
+
+		.preview-content {
+			font-size: 14px;
+			line-height: 1.8;
+			color: #333;
+			white-space: pre-wrap;
+		}
+	</style>
+</head>
+<body>
+	<nav class="top-nav">
+		<div class="top-nav-brand-group">
+			<a class="top-nav-back" href="#" onclick="window.history.back(); return false;">← Back</a>
+			<div class="top-nav-brand">Diet Management</div>
+		</div>
+		<div class="top-nav-links">
+			<a class="top-nav-link" href="index.html">Home</a>
+			<a class="top-nav-link" href="clients.html">Clients</a>
+			<a class="top-nav-link" href="add-client.html">Add Client</a>
+			<a class="top-nav-link" href="pdf-generator.html">PDF Generator</a>
+			<a class="top-nav-link is-active" href="diet-management.html">Diet Management</a>
+		</div>
+	</nav>
+
+	<div class="container">
+		<div class="header">
+			<h1>💪 Diet Management</h1>
+			<div class="header-actions">
+				<button class="btn btn-primary" onclick="openCreatePlanModal()">+ Create New Plan</button>
+			</div>
+		</div>
+
+		<div class="content">
+			<!-- Default Diet Plans Section -->
+			<div id="plansView">
+				<div class="section-title">Default Diet Plans</div>
+				<p style="color: #666; margin-bottom: 20px;">Manage templates that will be auto-assigned to clients</p>
+				
+				<div class="diet-plans-grid" id="dietPlansContainer">
+					<!-- Diet cards will be generated here -->
+				</div>
+
+				<!-- Empty state -->
+				<div id="emptyState" class="empty-state" style="display: none;">
+					<div class="empty-state-icon">📋</div>
+					<p>No diet plans yet. Create your first plan to get started!</p>
+				</div>
+			</div>
+
+			<!-- Create/Edit Plan Modal -->
+			<div id="planModal" class="modal">
+				<div class="modal-content">
+					<div class="modal-header" id="modalTitle">Create New Diet Plan</div>
+
+					<div class="form-group">
+						<div class="form-row">
+							<div>
+								<label class="form-label">Min Calories</label>
+								<input type="number" class="form-input" id="minCalories" placeholder="e.g. 1500" />
+							</div>
+							<div>
+								<label class="form-label">Max Calories</label>
+								<input type="number" class="form-input" id="maxCalories" placeholder="e.g. 2000" />
+							</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Diet Type (Optional)</label>
+						<input type="text" class="form-input" id="dietType" placeholder="e.g. summer 1500, winter 2000" />
+					</div>
+
+					<!-- Days Tabs -->
+					<div class="tabs">
+						<button class="tab active" onclick="switchDay(event, 'sunday')">الأحد / Sunday</button>
+						<button class="tab" onclick="switchDay(event, 'monday')">الاثنين / Monday</button>
+						<button class="tab" onclick="switchDay(event, 'tuesday')">الثلاثاء / Tuesday</button>
+						<button class="tab" onclick="switchDay(event, 'wednesday')">الأربعاء / Wednesday</button>
+						<button class="tab" onclick="switchDay(event, 'thursday')">الخميس / Thursday</button>
+						<button class="tab" onclick="switchDay(event, 'friday')">الجمعة / Friday</button>
+						<button class="tab" onclick="switchDay(event, 'saturday')">السبت / Saturday</button>
+					</div>
+
+					<!-- Day Sections -->
+					<div id="days-container">
+						<!-- Sunday -->
+						<div id="sunday" class="tab-content active day-section">
+							<div class="day-title">الأحد / Sunday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-sunday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-sunday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-sunday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-sunday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-sunday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-sunday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-sunday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-sunday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Monday -->
+						<div id="monday" class="tab-content day-section">
+							<div class="day-title">الاثنين / Monday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-monday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-monday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-monday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-monday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-monday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-monday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-monday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-monday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Tuesday -->
+						<div id="tuesday" class="tab-content day-section">
+							<div class="day-title">الثلاثاء / Tuesday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-tuesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-tuesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-tuesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-tuesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-tuesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-tuesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-tuesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-tuesday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Wednesday -->
+						<div id="wednesday" class="tab-content day-section">
+							<div class="day-title">الأربعاء / Wednesday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-wednesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-wednesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-wednesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-wednesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-wednesday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-wednesday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-wednesday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-wednesday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Thursday -->
+						<div id="thursday" class="tab-content day-section">
+							<div class="day-title">الخميس / Thursday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-thursday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-thursday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-thursday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-thursday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-thursday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-thursday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-thursday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-thursday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Friday -->
+						<div id="friday" class="tab-content day-section">
+							<div class="day-title">الجمعة / Friday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-friday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-friday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-friday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-friday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-friday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-friday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-friday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-friday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+
+						<!-- Saturday -->
+						<div id="saturday" class="tab-content day-section">
+							<div class="day-title">السبت / Saturday Meals</div>
+							<div class="meal-items">
+								<div class="meal-item">
+									<div class="meal-item-type">Breakfast | فطور</div>
+									<input type="time" class="meal-item-input" id="breakfast-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="breakfast-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="breakfast-saturday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Snack 1 | سناك 1</div>
+									<input type="time" class="meal-item-input" id="snack1-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="snack1-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="snack1-saturday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Lunch | الغداء</div>
+									<input type="time" class="meal-item-input" id="lunch-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="lunch-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="lunch-saturday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Dinner | العشاء</div>
+									<input type="time" class="meal-item-input" id="dinner-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="dinner-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="dinner-saturday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Pre-Workout | قبل التمرين</div>
+									<input type="time" class="meal-item-input" id="preworkout-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="preworkout-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="preworkout-saturday-ar" rows="2"></textarea>
+								</div>
+								<div class="meal-item">
+									<div class="meal-item-type">Post-Workout | بعد التمرين</div>
+									<input type="time" class="meal-item-input" id="postworkout-saturday-time">
+									<textarea class="meal-item-input" placeholder="English Description" id="postworkout-saturday-en" rows="2"></textarea>
+									<textarea class="meal-item-input" placeholder="الوصف بالعربية" id="postworkout-saturday-ar" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="modal-actions">
+						<button class="btn-cancel" onclick="closePlanModal()">Cancel</button>
+						<button class="btn-save" onclick="savePlan()">Save Plan</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		let dietPlans = JSON.parse(localStorage.getItem('dietPlans')) || [];
+		let editingPlanId = null;
+
+		const defaultArabicDietPlan = {
+			minCalories: 0,
+			maxCalories: 1500,
+			dietType: 'summer 1500',
+			sunday: {
+				breakfast: { time: '10:00', en: 'Skimmed milk + half cup cornflakes or biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب كورن فليكس او بليلة + ثمرة فاكهة' },
+				snack1: { time: '13:00', en: 'Toast + 2 eggs + salad', ar: 'توست 2 بيضة + سلطة' },
+				lunch: { time: '16:00', en: '6 tbsp pasta + 120g grilled meat + vegetables + salad', ar: 'معالق مكرونة +120 جم لحمة مشوية+ خضار + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 2 falafel + 3 tbsp cottage cheese + egg + salad + yogurt + fruit', ar: 'نصف رغيف+ 2 فول +3 معالق جبنة قريش + بيضة+ سلطة + رايب لايت + ثمرة فاكهة' },
+				preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربى لايت' },
+				postworkout: { time: '', en: '5 tbsp cottage cheese + salad + fruit', ar: 'سلطة 5 معالق جبنة قريش + فاكهة' }
+			},
+			monday: {
+				breakfast: { time: '', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم +2 بيضة + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 4 tbsp cottage cheese + salad', ar: 'توست 4 معالق جبنة قريش + سلطة' },
+				lunch: { time: '16:00', en: '6 tbsp rice + grilled chicken breast + vegetables + salad', ar: 'معالق ارز + صدر فرخة مشوية+ خضار + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف = 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+				preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة او بطاطا+ عصير برتقال 4' },
+				postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+			},
+			tuesday: {
+				breakfast: { time: '', en: 'Skimmed milk + half cup oats + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب شوفان + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 4 tbsp cottage cheese + salad + 2 eggs', ar: 'توست 4 معالق جبنة قريش + سلطة + 2 بيضة' },
+				lunch: { time: '16:00', en: '6 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt', ar: 'نصف رغيف + 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت' },
+				preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة اوبطاطا+ عصير برتقال 4' },
+				postworkout: { time: '', en: 'Tuna salad + fruit', ar: 'سلطة تونة + ثمرة فاكهة' }
+			},
+			wednesday: {
+				breakfast: { time: '', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم +2 بيضة + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 4 tbsp cottage cheese + salad', ar: 'توست 4 معالق جبنة قريش + سلطة' },
+				lunch: { time: '16:00', en: '6 tbsp rice + grilled chicken breast + vegetables + salad', ar: 'معالق ارز + صدر فرخة مشوية+ خضار + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف = 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+				preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة او بطاطا+ عصير برتقال 4' },
+				postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+			},
+			thursday: {
+				breakfast: { time: '', en: 'Skimmed milk + half cup cornflakes or biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب كورن فليكس او بليلة + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 2 eggs + salad', ar: 'توست 2 بيضة + سلطة' },
+				lunch: { time: '16:00', en: '6 tbsp pasta + 120g grilled meat + vegetables + salad', ar: 'معالق مكرونة +120 جم لحمة مشوية+ خضار + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 2 falafel + 3 tbsp cottage cheese + egg + salad + yogurt + fruit', ar: 'نصف رغيف+ 2 فول +3 معالق جبنة قريش + بيضة+ سلطة + رايب لايت + ثمرة فاكهة' },
+				preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربي لايت' },
+				postworkout: { time: '', en: '5 tbsp cottage cheese + salad + fruit', ar: 'سلطة 5 معالق جبنة قريش + فاكهة' }
+			},
+			friday: {
+				breakfast: { time: '', en: 'Skimmed milk + half cup oats + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب شوفان + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 4 tbsp cottage cheese + salad + 2 eggs', ar: 'توست 4 معالق جبنة قريش + سلطة + 2 بيضة' },
+				lunch: { time: '16:00', en: '6 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt', ar: 'نصف رغيف + 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت' },
+				preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة اوبطاطا+ عصير برتقال 4' },
+				postworkout: { time: '', en: 'Tuna salad + fruit', ar: 'سلطة تونة + ثمرة فاكهة' }
+			},
+			saturday: {
+				breakfast: { time: '', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم +2 بيضة + ثمرة فاكهة' },
+				snack1: { time: '', en: 'Toast + 4 tbsp cottage cheese + salad', ar: 'توست 4 معالق جبنة قريش + سلطة' },
+				lunch: { time: '16:00', en: '6 tbsp rice + grilled chicken breast + vegetables + salad', ar: 'معالق ارز + صدر فرخة مشوية+ خضار + سلطة 6' },
+				dinner: { time: '', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف = 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+				preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة او بطاطا+ عصير برتقال 4' },
+				postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+			}
+		};
+
+		function goBack() {
+			window.history.back();
+		}
+
+		function renderDietPlans() {
+			const container = document.getElementById('dietPlansContainer');
+			const emptyState = document.getElementById('emptyState');
+
+			if (dietPlans.length === 0) {
+				container.innerHTML = '';
+				emptyState.style.display = 'block';
+				return;
+			}
+
+			emptyState.style.display = 'none';
+			container.innerHTML = dietPlans.map((plan, index) => `
+				<div class="diet-card">
+					<div class="diet-card-header">
+						<div>
+							<div class="diet-card-title">${plan.minCalories}-${plan.maxCalories} kcal</div>
+							<div class="diet-card-subtitle">${plan.dietType || 'No type specified'}</div>
+							<div class="diet-card-subtitle" style="margin-top: 8px;">42 meals</div>
+						</div>
+						<div class="menu-dropdown">
+							<button class="menu-btn" onclick="this.parentElement.classList.toggle('active')">⋯</button>
+							<div class="menu-dropdown-content">
+								<a onclick="editPlan(${index})">✏️ Edit</a>
+								<a class="delete" onclick="deletePlan(${index})">🗑️ Delete</a>
+							</div>
+						</div>
+					</div>
+					<div class="diet-card-stats">
+						<div class="stat">
+							<div class="stat-value">${plan.minCalories}</div>
+							<div class="stat-label">Min</div>
+						</div>
+						<div class="stat">
+							<div class="stat-value">${plan.maxCalories}</div>
+							<div class="stat-label">Max</div>
+						</div>
+					</div>
+				</div>
+			`).join('');
+		}
+
+		function openCreatePlanModal() {
+			editingPlanId = null;
+			document.getElementById('modalTitle').textContent = 'Create New Diet Plan';
+			clearPlanForm();
+			document.getElementById('planModal').classList.add('active');
+		}
+
+		function editPlan(index) {
+			editingPlanId = index;
+			const plan = dietPlans[index];
+			document.getElementById('modalTitle').textContent = 'Edit Meal Plan';
+			
+			document.getElementById('minCalories').value = plan.minCalories;
+			document.getElementById('maxCalories').value = plan.maxCalories;
+			document.getElementById('dietType').value = plan.dietType || '';
+
+			// Load existing meal data
+			const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+			days.forEach(day => {
+				const dayData = plan[day] || {};
+				const mealTypes = ['breakfast', 'snack1', 'lunch', 'dinner', 'preworkout', 'postworkout'];
+				mealTypes.forEach(mealType => {
+					const meal = dayData[mealType] || {};
+					document.getElementById(`${mealType}-${day}-time`).value = meal.time || '';
+					document.getElementById(`${mealType}-${day}-en`).value = meal.en || '';
+					document.getElementById(`${mealType}-${day}-ar`).value = meal.ar || '';
+				});
+			});
+
+			document.getElementById('planModal').classList.add('active');
+		}
+
+		function closePlanModal() {
+			document.getElementById('planModal').classList.remove('active');
+			clearPlanForm();
+		}
+
+		function clearPlanForm() {
+			document.getElementById('minCalories').value = '';
+			document.getElementById('maxCalories').value = '';
+			document.getElementById('dietType').value = '';
+
+			const inputs = document.querySelectorAll('.meal-item-input');
+			inputs.forEach(input => input.value = '');
+		}
+
+		function savePlan() {
+			const minCalories = parseInt(document.getElementById('minCalories').value);
+			const maxCalories = parseInt(document.getElementById('maxCalories').value);
+			const dietType = document.getElementById('dietType').value;
+
+			if (!minCalories || !maxCalories) {
+				alert('Please enter both min and max calories');
+				return;
+			}
+
+			const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+			const plan = {
+				minCalories,
+				maxCalories,
+				dietType
+			};
+
+			days.forEach(day => {
+				const dayData = {};
+				const mealTypes = ['breakfast', 'snack1', 'lunch', 'dinner', 'preworkout', 'postworkout'];
+				mealTypes.forEach(mealType => {
+					dayData[mealType] = {
+						time: document.getElementById(`${mealType}-${day}-time`).value,
+						en: document.getElementById(`${mealType}-${day}-en`).value,
+						ar: document.getElementById(`${mealType}-${day}-ar`).value
+					};
+				});
+				plan[day] = dayData;
+			});
+
+			if (editingPlanId !== null) {
+				dietPlans[editingPlanId] = plan;
+			} else {
+				dietPlans.push(plan);
+			}
+
+			localStorage.setItem('dietPlans', JSON.stringify(dietPlans));
+			renderDietPlans();
+			closePlanModal();
+			alert('Plan saved successfully!');
+		}
+
+		function deletePlan(index) {
+			if (confirm('Are you sure you want to delete this plan?')) {
+				dietPlans.splice(index, 1);
+				localStorage.setItem('dietPlans', JSON.stringify(dietPlans));
+				renderDietPlans();
+			}
+		}
+
+		function switchDay(evt, dayName) {
+			const tabContents = document.querySelectorAll('.tab-content');
+			tabContents.forEach(tab => tab.classList.remove('active'));
+			
+			const tabs = document.querySelectorAll('.tab');
+			tabs.forEach(tab => tab.classList.remove('active'));
+
+			document.getElementById(dayName).classList.add('active');
+			evt.currentTarget.classList.add('active');
+		}
+
+		// Initialize when DOM is ready
+		window.addEventListener('DOMContentLoaded', () => {
+			const summerPlan = {
+				minCalories: 1500,
+				maxCalories: 2000,
+				dietType: '2000 summer',
+				sunday: {
+					breakfast: { time: '10:00', en: '1 cup semi-skimmed milk + 40g cornflakes + 1 banana (120g) + toast with light cheese (30g)', ar: 'نصف رغيف + رومي مدخن + بيضة+ كوب لبن خالي الدسم+ نصف كوب كورن فليكس' },
+					snack1: { time: '13:00', en: 'Cottage cheese salad (6 tbsp = 90g) + vegetables + half a loaf of bread (50g)', ar: 'زبادي لايت+ ثمرة فاكهة' },
+					lunch: { time: '16:00', en: '12 tbsp rice (300g) + 150g grilled chicken + vegetable dish + salad', ar: 'معالق مكرونة + 150 جم لحمة مشوية+ خضار + سلطة 9' },
+					dinner: { time: '', en: '1 loaf of bread (100g) + 3 eggs + 6 tbsp fava beans (120g) + salad + Greek yogurt + fruit', ar: 'نصف رغيف +4 فول + 2 بيضة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes (180g) + natural orange juice (250ml)', ar: 'معالق بطاطس مهروسة + ثمرة فاكهة 6' },
+					postworkout: { time: '', en: 'Chicken shawarma (100g) + half a loaf of bread (50g) + vegetables', ar: 'جم شاورما لحمة + سلطة100' }
+				},
+				monday: {
+					breakfast: { time: '', en: 'Skimmed milk + half pita + light cheese + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + نصف رغيف + جبنة لايت + 2بيضة + ثمرة فاكهة' },
+					snack1: { time: '', en: 'Fruit + light yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروم+ 4 معالق جبنة قريش+ سلطة +كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة اوبطاطا + عصير برتقال 6' },
+					postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+				},
+				tuesday: {
+					breakfast: { time: '', en: 'Skimmed milk + half cup oats or biliela + fruit + honey', ar: 'كوب لبن خالي الدسم + نصف كوب شوفان او بليلة + ثمرة فاكهة + عسل' },
+					snack1: { time: '', en: 'Toast + light cheese + egg', ar: '+ توست جبنة لايت + بيضة' },
+					lunch: { time: '', en: '9 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 6 tbsp cottage cheese + 2 eggs + salad + Greek yogurt', ar: 'نصف رغيف + 6 معالق جبنة قريش +2 بيضة + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Tuna toast + fruit', ar: 'توست تونة + ثمرة فاكهة' }
+				},
+				wednesday: {
+					breakfast: { time: '', en: 'Skimmed milk + half pita + light cheese + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + نصف رغيف + جبنة لايت + 2بيضة + ثمرة فاكهة' },
+					snack1: { time: '', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروم+ 4 معالق جبنة قريش+ سلطة +كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة اوبطاطا + عصير برتقال 6' },
+					postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+				},
+				thursday: {
+					breakfast: { time: '', en: 'Half pita + smoked cheese + egg + skimmed milk + half cup cornflakes', ar: 'نصف رغيف + رومي مدخن + بيضة+ كوب لبن خالي الدسم+ نصف كوب كورن فليكس' },
+					snack1: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت+ ثمرة فاكهة' },
+					lunch: { time: '', en: '9 tbsp pasta + 150g grilled meat + vegetables + salad', ar: 'معالق مكرونة + 150 جم لحمة مشوية+ خضار + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 4 falafel + 2 eggs + salad + yogurt', ar: 'نصف رغيف +4 فول + 2 بيضة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + fruit', ar: 'معالق بطاطس مهروسة + ثمرة فاكهة 6' },
+					postworkout: { time: '', en: '100g meat shawarma + salad', ar: 'جم شاورما لحمة + سلطة100' }
+				},
+				friday: {
+					breakfast: { time: '', en: 'Skimmed milk + half pita + light cheese + 3 falafel + salad', ar: 'كوب لبن خالي الدسم + نصف رغيف= جبنة لايت + 3 فول + سلطة' },
+					snack1: { time: '', en: 'Tuna salad + fruit', ar: 'سلطة تونة + ثمرة فاكهة' },
+					lunch: { time: '', en: '9 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 3 eggs with pastrami + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 3 بيضة بالبسطرمة+ سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato with honey', ar: 'بطاطا بالعسل' },
+					postworkout: { time: '', en: 'Banana with milk + nuts', ar: 'موز باللبن +مكسرات' }
+				},
+				saturday: {
+					breakfast: { time: '', en: 'Skimmed milk + half pita + light cheese + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + نصف رغيف + جبنة لايت + 2بيضة + ثمرة فاكهة' },
+					snack1: { time: '', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 9' },
+					dinner: { time: '', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروم+ 4 معالق جبنة قريش+ سلطة +كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة اوبطاطا + عصير برتقال 6' },
+					postworkout: { time: '', en: '100g chicken + salad', ar: 'سلطة 100 جم فراخ' }
+				}
+			};
+
+			const summer2500Plan = {
+				minCalories: 2000,
+				maxCalories: 2500,
+				dietType: 'summer 2500',
+				sunday: {
+					breakfast: { time: '10:00', en: '1 cup whole milk + 50g cornflakes + 1 large banana (150g) + cheddar cheese toast (40g)', ar: 'نصف رغيف = جبنة لايت + رومي مدخن + 2 بيضة+ كوب لبن خالي الدسم' },
+					snack1: { time: '13:00', en: 'Cottage cheese salad (6 tbsp = 90g) + vegetables + half a loaf of bread (50g) + 5 nuts', ar: 'زبادي لايت+ فاكهة' },
+					lunch: { time: '16:00', en: '15 tbsp rice (375g) + 200g grilled beef + vegetable dish + salad', ar: 'معالق ارز + 150 جم لحمة مشوية+ خضار + سلطة 12' },
+					dinner: { time: '', en: '1 loaf of bread (100g) + 3 eggs + 6 tbsp fava beans (120g) + 6 tbsp cottage cheese (75g) + Greek yogurt + fruit + salad', ar: 'نصف رغيف +6 فول + 2 بيضة + سلطة +رايب لايت +فاكهة' },
+					preworkout: { time: '', en: '8 tbsp mashed potatoes (180g) + natural orange juice (300ml)', ar: 'معالق بطاطس مهروسة + فاكهة 6' },
+					postworkout: { time: '', en: 'Beef shawarma (120g) + half a loaf of bread (50g) + vegetables + 1 fruit', ar: 'نصف رغيف+ 100 جم شاورما لحمة + سلطة' }
+				},
+				monday: {
+					breakfast: { time: '10:30', en: 'Skimmed milk + cornflakes + fruit + cheese toast + smoked ham', ar: 'كوب لبن خالي الدسم + كورن فليكس + فاكهة + توست جبنة + رومي مدخن' },
+					snack1: { time: '13:00', en: 'Fruit + Greek yogurt', ar: 'فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '16:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروم + 4 معالق جبنة قريش+ سلطة +كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Half pita + 100g chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ + سلطة' }
+				},
+				tuesday: {
+					breakfast: { time: '10:30', en: 'Skimmed milk + half cup oats + fruit + honey', ar: 'كوب لبن خالي الدسم + نصف كوب شوفان + فاكهة + عسل' },
+					snack1: { time: '13:00', en: 'Half pita + cheese + 2 eggs + salad', ar: 'نصف رغيف+ جبنة + 2 بيضة + سلطة' },
+					lunch: { time: '16:00', en: '12 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 6 tbsp cottage cheese + 3 eggs + salad + Greek yogurt', ar: 'نصف رغيف + 6 معالق جبنة قريش +3 بيضة + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: 'Potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Tuna toast + fruit', ar: 'توست تونة + فاكهة' }
+				},
+				wednesday: {
+					breakfast: { time: '10:30', en: 'Skimmed milk + biliela + fruit + cheese toast + smoked ham', ar: 'كوب لبن خالي الدسم + بليلة + فاكهة + توست جبنة +رومي مدخن' },
+					snack1: { time: '13:00', en: 'Fruit + Greek yogurt', ar: 'فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '16:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروم+ 4 معالق جبنة قريش + سلطة +كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Half pita + 100g chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ + سلطة' }
+				},
+				thursday: {
+					breakfast: { time: '10:00', en: 'Half pita + light cheese + smoked ham + 2 eggs + skimmed milk', ar: 'نصف رغيف = جبنة لايت + رومي مدخن + 2 بيضة+ كوب لبن خالي الدسم' },
+					snack1: { time: '13:00', en: 'Light yogurt + fruit', ar: 'زبادي لايت+ فاكهة' },
+					lunch: { time: '16:00', en: '12 tbsp rice + 150g grilled meat + vegetables + salad', ar: 'معالق ارز + 150 جم لحمة مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 6 falafel + 2 eggs + salad + yogurt + fruit', ar: 'نصف رغيف +6 فول + 2 بيضة + سلطة + رايب لايت +فاكهة' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + fruit', ar: 'معالق بطاطس مهروسة + فاكهة 6' },
+					postworkout: { time: '', en: 'Half pita + 100g meat shawarma + salad', ar: 'نصف رغيف + 100 جم شاورما لحمة + سلطة' }
+				},
+				friday: {
+					breakfast: { time: '10:30', en: 'Skimmed milk + pita + cheese + 2 eggs + 3 falafel + salad', ar: 'كوب لبن خالي الدسم + رغيف+جبنة + 2 بيضة + 3 فول + سلطة' },
+					snack1: { time: '13:00', en: 'Tuna toast + salad + fruit', ar: 'توست تونة + سلطة + فاكهة' },
+					lunch: { time: '16:00', en: '12 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 2 eggs with pastrami + 3 tbsp cottage cheese + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 2 بيضة بالبسطرمة+ 3 معالق جبنة قريش + سلطة + زبادي يوناني لايت + فاكهة' },
+					preworkout: { time: '', en: 'Potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Banana with milk + nuts', ar: 'موز باللبن +مكسرات' }
+				},
+				saturday: {
+					breakfast: { time: '10:30', en: 'Skimmed milk + cornflakes + fruit + cheese toast + smoked ham', ar: 'كوب لبن خالي الدسم + كورن فليكس + فاكهة + توست جبنة + رومي مدخن' },
+					snack1: { time: '13:00', en: 'Fruit + Greek yogurt', ar: 'فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '16:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز + 150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 2 eggs with mushroom + 4 tbsp cottage cheese + salad + skimmed milk', ar: 'نصف رغيف + 2 بيضة بالمشروح+ 4 معالق جبنة قريش+ سلطة +كوب لبن خالى الدسم' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Half pita + 100g chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ + سلطة' }
+				}
+			};
+
+			const schoolPlan = {
+				minCalories: 0,
+				maxCalories: 1500,
+				dietType: '1500 school',
+				sunday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + smoked ham + light cheese + salad', ar: 'نصف رغيف + رومي مدخن + جبنة لايت +سلطة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled meat + vegetables + salad', ar: 'معالق ارز + 120 جم لحمة مشوية+ خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 2 falafel + 3 tbsp cottage cheese + egg + salad + yogurt', ar: 'نصف رغيف + 2 فول + 3 معالق جبنة قريش + بيضة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربي لايت' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت + ثمرة فاكهة' }
+				},
+				monday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Toast + 100g chicken shawarma + salad', ar: 'توست 100 جم شاورما فراخ + سلطة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled chicken + vegetables + salad', ar: 'معالق ارز + 120 جم فراخ مشوية+ خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs omelet + salad + Greek yogurt', ar: 'نصف رغيف +3 بيضة اومليت + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة او بطاطا + عصير برتقال 4' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت + ثمرة فاكهة' }
+				},
+				tuesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 100g meat shawarma + salad', ar: 'نصف رغيف + 100 جم شاورما لحمة +سلطة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled meat + vegetables + salad', ar: 'معالق ارز + 120 جم لحمة مشوية+ خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 2 falafel + 3 tbsp cottage cheese + egg + salad + yogurt', ar: 'نصف رغيف + 2 فول + 3 معالق جبنة قريش + بيضة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: '4 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 4' },
+					postworkout: { time: '', en: 'Greek yogurt + fruit', ar: 'زبادي يوناني لايت + فاكهة' }
+				},
+				wednesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة' },
+					snack1: { time: '21:00', en: 'Toast + 100g chicken shawarma + salad', ar: 'توست 100 جم شاورما فراخ + سلطة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled chicken + vegetables + salad', ar: 'معالق ارز + 120 جم فراخ مشوية+ خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs omelet + salad + Greek yogurt', ar: 'نصف رغيف +3 بيضة اومليت + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '4 tbsp mashed potatoes or sweet potato + orange juice', ar: 'معالق بطاطس مهروسة او بطاطا + عصير برتقال 4' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت + ثمرة فاكهة' }
+				},
+				thursday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + smoked ham + light cheese + salad', ar: 'نصف رغيف + رومي مدخن + جبنة لايت +سلطة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled meat + vegetables + salad', ar: 'معالق ارز + 120 جم لحمة مشوية+ خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 2 falafel + 3 tbsp cottage cheese + egg + salad + yogurt', ar: 'نصف رغيف + 2 فول + 3 معالق جبنة قريش + بيضة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربي لايت' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت + ثمرة فاكهة' }
+				},
+				friday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + half pita + 3 falafel + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + نصف رغيف= 3 فول + 2 بيضة+ ثمرة فاكهة' },
+					snack1: { time: '13:00', en: 'Tuna + salad', ar: 'تونة + سلطة' },
+					lunch: { time: '16:00', en: '6 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 4 tbsp cottage cheese + 2 eggs + salad', ar: 'نصف رغيف + 4 معالق جبنة قريش + 2 بيضة+ سلطة' },
+					preworkout: { time: '', en: '4 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 4' },
+					postworkout: { time: '', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' }
+				},
+				saturday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + half cup cornflakes + fruit', ar: 'كوب لبن خالي الدسم +نصف كوب كورن فليكس + ثمرة فاكهة' },
+					snack1: { time: '13:00', en: 'Low salt cheese salad (6 tbsp) + egg', ar: 'سلطة جبنة ملح خفيف 6 معالق + بيضة' },
+					lunch: { time: '15:00', en: '6 tbsp rice + 120g grilled chicken + vegetables + salad', ar: 'معالق ارز + 120 جم فراخ مشوية + خضار + سلطة 6' },
+					dinner: { time: '22:00', en: 'Half pita + 3 falafel + 2 eggs + salad + Greek yogurt', ar: 'نصف رغيف + 3 فول + 2 بيضة + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '4 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 4' },
+					postworkout: { time: '', en: '100g chicken salad', ar: 'سلطة فراخ 100 جم' }
+				}
+			};
+
+			const school2000Plan = {
+				minCalories: 1500,
+				maxCalories: 2000,
+				dietType: '2000 school',
+				sunday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela or oats + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة او شوفان + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 2 slices smoked ham + light cheese + salad', ar: 'نصف رغيف + 2 شريحة رومي مدخن + جبنة لايت + سلطة' },
+					lunch: { time: '15:00', en: '9 tbsp pasta + 150g grilled meat + vegetables + salad', ar: 'معالق مكرونة + 150 جم لحمة مشوية+ خضار + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs + 4 tbsp cottage cheese + salad + light yogurt', ar: 'نصف رغيف + 3 بيضة + 4 معالق جبنة قريش + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam + skimmed milk', ar: 'توست مربي لايت + كوب لبن خالي الدسم' },
+					postworkout: { time: '', en: 'Light yogurt + nuts + fruit', ar: 'زبادي لايت+ مكسرات + ثمرة فاكهة' }
+				},
+				monday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit + egg', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة +بيضة' },
+					snack1: { time: '09:00', en: 'Half pita + 100g chicken shawarma + salad', ar: 'نصف رغيف+ 100 جم شاورما فراخ + سلطة' },
+					lunch: { time: '15:00', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية+ خضار + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 4 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 4 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت+ ثمرة فاكهة' }
+				},
+				tuesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Tuna toast or 5 tbsp cottage cheese + salad', ar: 'توست تونة او 5 معالق جبنة قريش+ سلطة' },
+					lunch: { time: '15:00', en: '9 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 2 eggs + 3 tbsp light mozzarella + salad + Greek yogurt', ar: 'نصف رغيف + 2 بيضة +3 معالق جبنة موتزريلا لايت + سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت + ثمرة فاكهة' }
+				},
+				wednesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit + egg', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة +بيضة' },
+					snack1: { time: '09:00', en: 'Half pita + 100g chicken shawarma + salad', ar: 'نصف رغيف+ 100 جم شاورما فراخ + سلطة' },
+					lunch: { time: '15:00', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية + خضار + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 4 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 4 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Light yogurt + fruit', ar: 'زبادي لايت+ ثمرة فاكهة' }
+				},
+				thursday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela or oats + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة او شوفان + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 2 slices smoked ham + light cheese + salad', ar: 'نصف رغيف + 2 شريحة رومي مدخن + جبنة لايت + سلطة' },
+					lunch: { time: '15:00', en: '9 tbsp pasta + 150g grilled meat + vegetables + salad', ar: 'معالق مكرونة + 150 جم لحمة مشوية+ خضار + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs + 4 tbsp cottage cheese + salad + light yogurt', ar: 'نصف رغيف + 3 بيضة + 4 معالق جبنة قريش + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam + skimmed milk', ar: 'توست مربي لايت + كوب لبن خالي الدسم' },
+					postworkout: { time: '', en: 'Light yogurt + nuts + fruit', ar: 'زبادي لايت+ مكسرات + ثمرة فاكهة' }
+				},
+				friday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + half pita + 4 falafel + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + نصف رغيف= 4 فول + 2 بيضة+ ثمرة فاكهة' },
+					snack1: { time: '13:00', en: 'Tuna + salad + fruit', ar: 'تونة + سلطة + ثمرة فاكهة' },
+					lunch: { time: '16:00', en: '9 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 4 tbsp cottage cheese + 2 eggs + salad + skimmed milk', ar: 'نصف رغيف + 4 معالق جبنة قريش + 2 بيضة+ سلطة + كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' },
+					postworkout: { time: '', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' }
+				},
+				saturday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + cornflakes + fruit', ar: 'كوب لبن خالي الدسم + كورن فليكس +ثمرة فاكهة' },
+					snack1: { time: '13:00', en: 'Half pita + 4 tbsp cottage cheese + 2 eggs + salad', ar: 'نصف رغيف+ 4 معالق جبنة قريش +2 بيضة + سلطة' },
+					lunch: { time: '16:00', en: '9 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية+ خضار + سلطة 9' },
+					dinner: { time: '22:00', en: 'Half pita + 4 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 4 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: '100g chicken salad', ar: 'سلطة فراخ 100 جم' }
+				}
+			};
+
+			const school2500Plan = {
+				minCalories: 2000,
+				maxCalories: 2500,
+				dietType: 'school 2500',
+				sunday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 2 slices smoked ham + light cheese + salad', ar: 'نصف رغيف + 2 شريحة رومي مدخن + جبنة لايت + سلطة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + 150g grilled meat + vegetables + salad', ar: 'معالق ارز + 150 جم لحمة مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs with pastrami + salad + light yogurt', ar: 'نصف رغيف + 3 بيضة بالبسطرمة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربي لايت' },
+					postworkout: { time: '', en: 'Half pita + 100g meat shawarma + fruit', ar: 'نصف رغيف+ 100 جم شاورما لحمة + ثمرة فاكهة' }
+				},
+				monday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 100g grilled chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ مشوية+ سلطة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 4 tbsp low-salt cheese + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 4 معالق جبنة ملح خفيف + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Light cheese toast + fruit', ar: 'توست جبنة لايت + ثمرة فاكهة' }
+				},
+				tuesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup oats + fruit + honey + 2 eggs', ar: 'كوب لبن خالي الدسم + نصف كوب شوفان + ثمرة فاكهة + عسل +2بيضة' },
+					snack1: { time: '09:00', en: 'Half pita + light cheese + fruit', ar: 'نصف رغيف+ جبنة لايت + ثمرة فاكهة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 4 falafel + 3 tbsp cottage cheese + egg + salad + Greek yogurt', ar: 'نصف رغيف + 4 فول +3 معالق جبنة قريش +بيضة+ سلطة + زبادي يوناني لايت' },
+					preworkout: { time: '', en: '6 tbsp mashed potatoes + orange juice', ar: 'معالق بطاطس مهروسة + عصير برتقال 6' },
+					postworkout: { time: '', en: 'Tuna toast + salad + fruit', ar: 'توست تونة + سلطة + ثمرة فاكهة' }
+				},
+				wednesday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + 2 بيضة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 100g grilled chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ مشوية+ سلطة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 4 tbsp low-salt cheese + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 4 معالق جبنة ملح خفيف + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Sweet potato + orange juice', ar: 'بطاطا + عصير برتقال' },
+					postworkout: { time: '', en: 'Light cheese toast + fruit', ar: 'توست جبنة لايت + ثمرة فاكهة' }
+				},
+				thursday: {
+					breakfast: { time: '06:00', en: 'Skimmed milk + half cup biliela + fruit', ar: 'كوب لبن خالي الدسم + نصف كوب بليلة + ثمرة فاكهة' },
+					snack1: { time: '09:00', en: 'Half pita + 2 slices smoked ham + light cheese + salad', ar: 'نصف رغيف + 2 شريحة رومي مدخن + جبنة لايت + سلطة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + 150g grilled meat + vegetables + salad', ar: 'معالق ارز + 150 جم لحمة مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 3 eggs with pastrami + salad + light yogurt', ar: 'نصف رغيف + 3 بيضة بالبسطرمة + سلطة + رايب لايت' },
+					preworkout: { time: '', en: 'Toast light jam', ar: 'توست مربي لايت' },
+					postworkout: { time: '', en: 'Half pita + 100g meat shawarma + fruit', ar: 'نصف رغيف+ 100 جم شاورما لحمة + ثمرة فاكهة' }
+				},
+				friday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + pita + 3 falafel + falafel + 2 eggs + fruit', ar: 'كوب لبن خالي الدسم + رغيف+ 3 فول + فلافل+ 2 بيضة+ ثمرة فاكهة' },
+					snack1: { time: '13:00', en: 'Fruit + Greek yogurt', ar: 'ثمرة فاكهة + زبادي يوناني لايت' },
+					lunch: { time: '16:00', en: '12 tbsp rice + grilled fish + salad', ar: 'معالق ارز + سمكة مشوية + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 4 tbsp cottage cheese + 2 eggs + salad + skimmed milk', ar: 'نصف رغيف + 4 معالق جبنة قريش + 2 بيضة+ سلطة + كوب لبن خالي الدسم' },
+					preworkout: { time: '', en: 'Tuna toast + salad + fruit', ar: 'توست تونة + سلطة + ثمرة فاكهة' },
+					postworkout: { time: '', en: '', ar: '' }
+				},
+				saturday: {
+					breakfast: { time: '10:00', en: 'Skimmed milk + cornflakes + fruit + 2 eggs', ar: 'كوب لبن خالي الدسم + كورن فليكس + ثمرة فاكهة + 2 بيضة' },
+					snack1: { time: '13:00', en: 'Greek yogurt + fruit', ar: 'زبادي يوناني لايت + ثمرة فاكهة' },
+					lunch: { time: '15:00', en: '12 tbsp rice + 150g grilled chicken + vegetables + salad', ar: 'معالق ارز +150 جم فراخ مشوية+ خضار + سلطة 12' },
+					dinner: { time: '22:00', en: 'Half pita + 6 falafel + 2 eggs + salad + Greek yogurt + fruit', ar: 'نصف رغيف + 6 فول + 2 بيضة + سلطة + زبادي يوناني لايت + ثمرة فاكهة' },
+					preworkout: { time: '', en: 'Peanut butter toast + fruit', ar: 'توست زبدة فول سوداني + ثمرة فاكهة' },
+					postworkout: { time: '', en: 'Half pita + 100g grilled chicken + salad', ar: 'نصف رغيف+ 100 جم فراخ مشوية+ سلطة' }
+				}
+			};
+			
+			// Clear and rebuild with all six default plans
+			localStorage.removeItem('dietPlans');
+			dietPlans = [defaultArabicDietPlan, summerPlan, summer2500Plan, schoolPlan, school2000Plan, school2500Plan];
+			localStorage.setItem('dietPlans', JSON.stringify(dietPlans));
+			renderDietPlans();
+		});
+	</script>
+</body>
+</html>

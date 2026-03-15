@@ -1,0 +1,40 @@
+# =================================================================
+# PRODUCTION DEPENDENCIES
+# =================================================================
+
+# Core Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9  # PostgreSQL adapter
+
+# Data Validation
+pydantic[email]>=2.8.0
+pydantic-settings>=2.4.0
+
+# Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Utilities
+python-multipart>=0.0.9
+python-dotenv>=1.0.0
+reportlab>=4.2.0
+
+# Rate Limiting
+slowapi>=0.1.9
+
+# Logging
+python-json-logger>=2.0.7
+
+# Production Server
+gunicorn>=22.0.0
+
+# =================================================================
+# DEVELOPMENT DEPENDENCIES (Install separately for testing)
+# pip install pytest httpx
+# =================================================================
+# pytest>=8.0.0
+# httpx>=0.27.0

@@ -1,0 +1,116 @@
+﻿[
+    {
+        "Feature":  "Secret Key",
+        "Test":  "Backend Startup",
+        "Status":  "PASS",
+        "Detail":  "Server started successfully (validates SECRET_KEY \u003e= 32 chars)"
+    },
+    {
+        "Feature":  "Admin Credentials",
+        "Test":  "Environment Config",
+        "Status":  "PASS",
+        "Detail":  "Admin login successful with env credentials"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Registration Returns Token Pair",
+        "Status":  "PASS",
+        "Detail":  "Both access_token and refresh_token present"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Access Token Expiry",
+        "Status":  "PASS",
+        "Detail":  "Expires in ~15 minutes (15 min)"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Access Token Type Claim",
+        "Status":  "PASS",
+        "Detail":  "Token has type=\u0027access\u0027"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Refresh Endpoint Returns New Token",
+        "Status":  "PASS",
+        "Detail":  "New access_token generated"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Token Rotation",
+        "Status":  "PASS",
+        "Detail":  "New token differs from original"
+    },
+    {
+        "Feature":  "Refresh Tokens",
+        "Test":  "Token Type Enforcement",
+        "Status":  "PASS",
+        "Detail":  "Refresh token rejected for API access (401)"
+    },
+    {
+        "Feature":  "Rate Limiting",
+        "Test":  "Login Endpoint Limited",
+        "Status":  "PASS",
+        "Detail":  "Request blocked after 5 attempts (got 429 status)"
+    },
+    {
+        "Feature":  "Rate Limiting",
+        "Test":  "Rate Limit Window Reset",
+        "Status":  "PASS",
+        "Detail":  "Accepts requests after 60s (got 401 auth error, not 429)"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "X-Frame-Options",
+        "Status":  "PASS",
+        "Detail":  "Present: DENY"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "X-Content-Type-Options",
+        "Status":  "PASS",
+        "Detail":  "Present: nosniff"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "Content-Security-Policy",
+        "Status":  "PASS",
+        "Detail":  "Present: default-src \u0027self\u0027; script-src \u0027self\u0027; style-src \u0027self\u0027 \u0027unsafe-inline\u0027"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "Referrer-Policy",
+        "Status":  "PASS",
+        "Detail":  "Present: strict-origin-when-cross-origin"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "X-XSS-Protection",
+        "Status":  "PASS",
+        "Detail":  "Present: 1; mode=block"
+    },
+    {
+        "Feature":  "Security Headers",
+        "Test":  "Strict-Transport-Security",
+        "Status":  "INFO",
+        "Detail":  "Not set (expected in DEBUG mode)"
+    },
+    {
+        "Feature":  "JSON Logging",
+        "Test":  "Configuration Check",
+        "Status":  "INFO",
+        "Detail":  "Verify backend console shows JSON format logs"
+    },
+    {
+        "Feature":  "JSON Logging",
+        "Test":  "Auth Event Logging",
+        "Status":  "INFO",
+        "Detail":  "Check logs for \u0027event_type: auth_attempt\u0027 entries"
+    },
+    {
+        "Feature":  "JSON Logging",
+        "Test":  "Error Logging",
+        "Status":  "INFO",
+        "Detail":  "Check logs for \u0027event_type: api_error\u0027 entries"
+    }
+]

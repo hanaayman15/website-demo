@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>Add Team - Nutrition Management</title>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --ink: #18324c;
+            --muted: #62768d;
+            --line: #d9e4f0;
+            --bg-soft: #f6fafe;
+            --brand: #2f80d5;
+            --brand-2: #1f6ab8;
+            --ok: #1f7a3c;
+            --bad: #9f2d2d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Source Sans Pro", sans-serif;
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(237, 245, 248, 0.72);
+            z-index: -1;
+        }
+
+        .page {
+            max-width: 1280px;
+            margin: 20px auto 50px;
+            padding: 0 14px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 8px 22px rgba(15, 42, 64, 0.08);
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .title {
+            margin: 0;
+            color: var(--ink);
+            font-weight: 800;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 10px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .field label {
+            font-size: 12px;
+            color: #2f4761;
+            font-weight: 700;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            padding: 9px 10px;
+            font-size: 13px;
+            background: #fbfdff;
+        }
+
+        .field textarea { min-height: 65px; resize: vertical; }
+
+        .required::after {
+            content: " *";
+            color: #cf2c2c;
+        }
+
+        .btn {
+            border: 1px solid #d8e3f2;
+            border-radius: 9px;
+            background: #f4f8fd;
+            color: #1b3b5f;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 9px 12px;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #e9f3ff;
+            border-color: #bfd5ec;
+        }
+
+        .btn.brand {
+            border-color: #4a9ff5;
+            background: #4a9ff5;
+            color: #fff;
+        }
+
+        .btn.brand:hover {
+            background: #2f80d5;
+            border-color: #2f80d5;
+        }
+
+        .btn.dark {
+            background: #4a9ff5;
+            border-color: #4a9ff5;
+            color: #fff;
+        }
+
+        .btn.dark:hover {
+            background: #2f80d5;
+            border-color: #2f80d5;
+        }
+
+        .muted-pill {
+            border-radius: 999px;
+            border: 1px solid #d8e4f2;
+            background: #f1f7ff;
+            color: #36556f;
+            padding: 6px 11px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .player-card {
+            border: 1px solid #d6e3f1;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .player-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: linear-gradient(90deg, #edf5ff 0%, #f8fbff 100%);
+            border-bottom: 1px solid #d6e3f1;
+            cursor: pointer;
+        }
+
+        .player-head h3 {
+            margin: 0;
+            color: #18324c;
+            font-size: 15px;
+        }
+
+        .player-body {
+            padding: 12px;
+            display: none;
+            background: #fbfdff;
+        }
+
+        .player-card.open .player-body { display: block; }
+
+        .section-title {
+            margin: 10px 0 8px;
+            color: #214567;
+            font-size: 14px;
+            font-weight: 800;
+            border-bottom: 1px dashed #d4e2f1;
+            padding-bottom: 3px;
+        }
+
+        .section-block {
+            margin-top: 10px;
+            border: 1px solid #dbe7f3;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        .section-toggle {
+            width: 100%;
+            border: 0;
+            background: linear-gradient(90deg, #f3f8ff 0%, #fbfdff 100%);
+            color: #214567;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: left;
+            padding: 11px 12px;
+            cursor: pointer;
+        }
+
+        .section-content {
+            padding: 0 12px 12px;
+            display: none;
+        }
+
+        .section-block.open .section-content {
+            display: block;
+        }
+
+        .calc-field {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 6px;
+            align-items: end;
+        }
+
+        .calc-field .btn {
+            white-space: nowrap;
+        }
+
+        .sublist {
+            border: 1px dashed #cad9ea;
+            border-radius: 10px;
+            padding: 8px;
+            background: #f9fcff;
+        }
+
+        .subitem {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5eef8;
+        }
+
+        .subitem:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+
+        .helper {
+            font-size: 11px;
+            color: #60758b;
+        }
+
+        .alert {
+            margin-top: 10px;
+            border-radius: 10px;
+            padding: 9px 10px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .alert.ok { display: block; background: #effcf2; border: 1px solid #c3eecf; color: var(--ok); }
+        .alert.bad { display: block; background: #fff1f1; border: 1px solid #ffd0d0; color: var(--bad); }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <div class="toolbar">
+            <div>
+                <h1 class="title" id="pageTitle">Add Team</h1>
+                <p class="subtitle">Dynamic roster builder with full player profiles and auto calculations.</p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn dark" type="button" id="historyBackBtn">Back</button>
+                <button class="btn brand" type="button" id="autofillBtn">Autofill Empty Fields</button>
+            </div>
+        </div>
+    </div>
+
+    <form id="teamForm">
+        <div class="card">
+            <h2 class="section-title" style="margin-top:0;">Team Information</h2>
+            <div class="grid">
+                <div class="field"><label class="required">Team Name</label><input id="teamName" required /></div>
+                <div class="field"><label class="required">Sport Type</label><input id="sportType" required /></div>
+                <div class="field"><label class="required">Coach Name</label><input id="coachName" required /></div>
+                <div class="field"><label class="required">Start Date</label><input id="startDate" type="date" required /></div>
+                <div class="field">
+                    <label class="required">Package Size</label>
+                    <select id="packageSize" required>
+                        <option value="">Select</option>
+                        <option value="20">20 Players</option>
+                        <option value="25">25 Players</option>
+                        <option value="30">30 Players</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="field" id="customPackageField" style="display:none;">
+                    <label class="required">Custom Player Count</label>
+                    <input id="customPackageSize" type="number" min="1" max="200" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="toolbar" style="margin-bottom:8px;">
+                <h2 class="section-title" style="margin:0; border:0;">Players</h2>
+                <span class="muted-pill" id="playersCount">0 players generated</span>
+            </div>
+            <div id="playersContainer"></div>
+            <div id="formAlert" class="alert"></div>
+            <div class="toolbar" style="justify-content:flex-end; margin-top:10px;">
+                <button class="btn brand" type="submit" id="saveBtn">Save Team</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+const API_BASE_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://127.0.0.1:8001';
+const ACTIVITY_FACTORS = {
+    'sedentary': 1.2,
+    'light': 1.375,
+    'moderate': 1.55,
+    'very-active': 1.725,
+    'active': 1.725,
+    'extremely-active': 1.9,
+};
+
+const packageSizeEl = document.getElementById('packageSize');
+const customPackageFieldEl = document.getElementById('customPackageField');
+const customPackageSizeEl = document.getElementById('customPackageSize');
+const playersContainerEl = document.getElementById('playersContainer');
+const playersCountEl = document.getElementById('playersCount');
+const formAlertEl = document.getElementById('formAlert');
+const pageTitleEl = document.getElementById('pageTitle');
+const saveBtnEl = document.getElementById('saveBtn');
+const historyBackBtnEl = document.getElementById('historyBackBtn');
+const editingTeamId = new URLSearchParams(window.location.search).get('id');
+
+if (historyBackBtnEl) {
+    historyBackBtnEl.addEventListener('click', () => {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        window.location.href = 'clients.html';
+    });
+}
+
+function showAlert(type, msg) {
+    formAlertEl.className = `alert ${type === 'ok' ? 'ok' : 'bad'}`;
+    formAlertEl.textContent = msg;
+}
+
+function clearAlert() {
+    formAlertEl.className = 'alert';
+    formAlertEl.textContent = '';
+}
+
+function getAuthHeader() {
+    const token =
+        localStorage.getItem('authToken') ||
+        sessionStorage.getItem('authToken') ||
+        localStorage.getItem('access_token') ||
+        sessionStorage.getItem('access_token');
+    if (!token) return null;
+    const tokenType =
+        localStorage.getItem('authTokenType') ||
+        sessionStorage.getItem('authTokenType') ||
+        localStorage.getItem('token_type') ||
+        sessionStorage.getItem('token_type') ||
+        'bearer';
+    return `${tokenType.charAt(0).toUpperCase() + tokenType.slice(1)} ${token}`;
+}
+
+function getCurrentRole() {
+    if (typeof window.getCurrentAuthRole === 'function') {
+        return window.getCurrentAuthRole();
+    }
+    return (localStorage.getItem('authRole') || sessionStorage.getItem('authRole') || '').toLowerCase() || null;
+}
+
+function redirectToDoctorAuth() {
+    const next = `add_team.html${window.location.search || ''}`;
+    window.location.href = `doctor-auth.html?next=${encodeURIComponent(next)}`;
+}
+
+function getPackageSize() {
+    if (packageSizeEl.value === 'custom') {
+        const n = Number(customPackageSizeEl.value);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+    const direct = Number(packageSizeEl.value);
+    return Number.isFinite(direct) ? direct : 0;
+}
+
+function calculateAge(birthday) {
+    if (!birthday) return null;
+    const birth = new Date(birthday);
+    if (Number.isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const md = now.getMonth() - birth.getMonth();
+    if (md < 0 || (md === 0 && now.getDate() < birth.getDate())) age -= 1;
+    return age;
+}
+
+function buildPlayerCard(index) {
+    const autoClientId = `T-${Date.now().toString().slice(-5)}-${String(index).padStart(2, '0')}`;
+    return `
+    <div class="player-card open" data-player-index="${index}">
+      <div class="player-head" onclick="togglePlayer(${index})">
+        <h3>Player ${index}</h3>
+        <span class="helper">Click to collapse/expand</span>
+      </div>
+      <div class="player-body">
+        <h4 class="section-title">Basic Information</h4>
+        <div class="grid">
+          <div class="field"><label>Client ID</label><input data-key="client_id" value="${autoClientId}" readonly /></div>
+          <div class="field"><label class="required">Full Name (4 names min)</label><input data-key="full_name" required /></div>
+          <div class="field"><label>Phone Country Code</label><select data-key="phone_country_code"><option value="+20" selected>Egypt +20</option><option value="+966">Saudi +966</option><option value="+971">UAE +971</option><option value="+1">US +1</option></select></div>
+          <div class="field"><label>Phone Number</label><input data-key="phone_number" /></div>
+          <div class="field"><label>Email Address</label><input type="email" data-key="email" /></div>
+          <div class="field"><label>Password</label><input type="password" data-key="password" /></div>
+          <div class="field"><label>Gender</label><select data-key="gender"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+          <div class="field"><label>Birthday</label><input type="date" data-key="birthday" /></div>
+          <div class="field"><label>Country</label><input data-key="country" /></div>
+          <div class="field"><label>Sport Club</label><input data-key="club" /></div>
+          <div class="field"><label>Religion</label><input data-key="religion" /></div>
+        </div>
+
+                <div class="section-block open" data-section="physical-measurements">
+                    <button class="section-toggle" type="button" onclick="toggleSection(this)">Physical Measurements</button>
+                    <div class="section-content">
+                        <div class="grid">
+                            <div class="field"><label>Height (cm)</label><input type="number" step="0.1" data-key="height" oninput="recalcPlayer(${index})" /></div>
+                            <div class="field"><label>Weight (kg)</label><input type="number" step="0.1" data-key="weight" oninput="recalcPlayer(${index})" /></div>
+                            <div class="field"><label>BMI (Calc)</label><input type="number" step="0.1" data-key="bmi" readonly /></div>
+                            <div class="field"><label>Body Fat %</label><input type="number" step="0.1" data-key="body_fat_percentage" oninput="recalcPlayer(${index})" /></div>
+                            <div class="field"><label>Skeletal Muscle (kg)</label><input type="number" step="0.1" data-key="skeletal_muscle" oninput="recalcPlayer(${index})" /></div>
+                            <div class="field"><label>Body Fat Mass (Auto)</label><input type="number" step="0.1" data-key="body_fat_mass" readonly /></div>
+                            <div class="field"><label>Muscle % (Auto)</label><input type="number" step="0.1" data-key="muscle_percentage" readonly /></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-block open" data-section="metabolism-activity">
+                    <button class="section-toggle" type="button" onclick="toggleSection(this)">Metabolism & Activity</button>
+                    <div class="section-content">
+                        <div class="grid">
+                            <div class="field"><label>Age (years)</label><input type="number" min="1" max="120" data-key="age" oninput="recalcPlayer(${index})" /></div>
+                            <div class="field calc-field"><div><label>BMR (Calc)</label><input type="number" step="0.1" data-key="bmr" readonly /></div><button class="btn" type="button" onclick="calculateBmr(${index})">Calc</button></div>
+                            <div class="field"><label>Activity Level</label><select data-key="activity_level" oninput="recalcPlayer(${index})"><option value="">Select</option><option value="sedentary">Sedentary</option><option value="light">Light Activity</option><option value="moderate">Moderate Activity</option><option value="very-active">Very Active</option><option value="extremely-active">Extremely Active</option></select></div>
+                            <div class="field"><label>Sports</label><input data-key="sport" /></div>
+                            <div class="field"><label>Position</label><input data-key="position" /></div>
+                            <div class="field calc-field"><div><label>TDEE (Calc)</label><input type="number" step="0.1" data-key="tdee" readonly /></div><button class="btn" type="button" onclick="calculateTdee(${index})">Calc</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-block open" data-section="nutrition-plan">
+                    <button class="section-toggle" type="button" onclick="toggleSection(this)">Nutrition Plan</button>
+                    <div class="section-content">
+                        <div class="grid">
+                            <div class="field"><label>Progression Type</label><select data-key="progression_type" onchange="handleProgressionChange(${index})"><option value="">Select</option><option value="cut">Cut (Weight Loss)</option><option value="maintain">Maintain</option><option value="bulk">Bulk (Weight Gain)</option></select></div>
+                            <div class="field"><label data-calories-label>Calories</label><input type="number" step="0.1" data-key="calories" readonly /></div>
+                            <div class="field calc-field"><div><label>Protein (g) (Calc)</label><input type="number" step="0.1" data-key="protein_target" readonly /></div><button class="btn" type="button" onclick="calculateMacro(${index}, 'protein')">Calc</button></div>
+                            <div class="field calc-field"><div><label>Carbs (g) (Calc)</label><input type="number" step="0.1" data-key="carbs_target" readonly /></div><button class="btn" type="button" onclick="calculateMacro(${index}, 'carbs')">Calc</button></div>
+                            <div class="field calc-field"><div><label>Fats (g) (Calc)</label><input type="number" step="0.1" data-key="fats_target" readonly /></div><button class="btn" type="button" onclick="calculateMacro(${index}, 'fats')">Calc</button></div>
+                            <div class="field"><label>Water (from InBody)</label><input type="number" step="0.1" data-key="water_in_body" /></div>
+                            <div class="field"><label>Water Intake (daily liters) (Calc)</label><input type="number" step="0.1" data-key="water_intake" readonly /></div>
+                            <div class="field"><label>Minerals (from InBody)</label><input type="number" step="0.1" data-key="minerals" /></div>
+                        </div>
+                    </div>
+                </div>
+
+        <h4 class="section-title">Health & Observations</h4>
+        <div class="grid">
+          <div class="field"><label>Test and Record</label><textarea data-key="test_and_record"></textarea></div>
+          <div class="field"><label>Injuries</label><textarea data-key="injuries"></textarea></div>
+          <div class="field"><label>Mental Notes</label><textarea data-key="mental_notes"></textarea></div>
+          <div class="field"><label>Food Allergies</label><textarea data-key="food_allergies"></textarea></div>
+          <div class="field"><label>Medical Notes</label><textarea data-key="medical_notes"></textarea></div>
+        </div>
+
+        <h4 class="section-title">Food Preferences</h4>
+        <div class="grid">
+          <div class="field"><label>Food Likes</label><textarea data-key="food_likes"></textarea></div>
+          <div class="field"><label>Food Dislikes</label><textarea data-key="food_dislikes"></textarea></div>
+        </div>
+
+        <h4 class="section-title">Goals & Timeline</h4>
+        <div class="grid">
+          <div class="field"><label>Competition Date</label><input type="date" data-key="competition_date" oninput="recalcPlayer(${index})" /></div>
+          <div class="field"><label>Days Left (Calc)</label><input type="number" data-key="days_left" readonly /></div>
+          <div class="field"><label>Goal Weight (kg)</label><input type="number" step="0.1" data-key="goal_weight" /></div>
+          <div class="field" style="grid-column: span 2;"><label>Additional Notes</label><textarea data-key="additional_notes"></textarea></div>
+        </div>
+
+        <h4 class="section-title">Training Schedule</h4>
+        <div class="sublist" data-list="training_sessions">
+          <div data-subitems></div>
+          <button type="button" class="btn" onclick="addTrainingSession(${index})">+ Add Training Session</button>
+        </div>
+
+        <h4 class="section-title">Supplements</h4>
+        <div class="sublist" data-list="supplements_list">
+          <div data-subitems></div>
+          <button type="button" class="btn" onclick="addSupplement(${index})">+ Add Supplement</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function generatePlayers() {
+    clearAlert();
+    const count = getPackageSize();
+    playersContainerEl.innerHTML = '';
+    if (!count) {
+        playersCountEl.textContent = '0 players generated';
+        return;
+    }
+    if (count > 200) {
+        showAlert('bad', 'Player count cannot exceed 200.');
+        return;
+    }
+
+    const blocks = [];
+    for (let i = 1; i <= count; i++) blocks.push(buildPlayerCard(i));
+    playersContainerEl.innerHTML = blocks.join('');
+    playersCountEl.textContent = `${count} players generated`;
+}
+
+function getPlayerCard(index) {
+    return document.querySelector(`.player-card[data-player-index="${index}"]`);
+}
+
+function field(card, key) {
+    return card.querySelector(`[data-key="${key}"]`);
+}
+
+function num(val) {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+}
+
+function showCalcDependencyPopup(message) {
+    window.alert(message);
+}
+
+function getAgeFromCard(card) {
+    const ageInput = field(card, 'age');
+    const manualAge = ageInput ? num(ageInput.value) : null;
+    if (manualAge && manualAge > 0) return Math.floor(manualAge);
+
+    const birthday = field(card, 'birthday').value;
+    return calculateAge(birthday);
+}
+
+function recalcPlayer(index) {
+    const card = getPlayerCard(index);
+    if (!card) return;
+
+    const height = num(field(card, 'height').value);
+    const weight = num(field(card, 'weight').value);
+    const bodyFat = num(field(card, 'body_fat_percentage').value);
+    const skeletal = num(field(card, 'skeletal_muscle').value);
+    const gender = (field(card, 'gender').value || '').toLowerCase();
+    const competitionDate = field(card, 'competition_date').value;
+
+    if (height && weight && height > 0) {
+        const bmi = weight / Math.pow(height / 100, 2);
+        field(card, 'bmi').value = bmi.toFixed(1);
+    }
+
+    if (weight && bodyFat != null) {
+        field(card, 'body_fat_mass').value = ((weight * bodyFat) / 100).toFixed(1);
+    }
+
+    if (weight && skeletal != null && weight > 0) {
+        field(card, 'muscle_percentage').value = ((skeletal / weight) * 100).toFixed(1);
+    }
+
+    calculateBmr(index, { silent: true });
+    calculateTdee(index, { silent: true });
+    updateCaloriesByProgression(index);
+    calculateMacro(index, 'protein', { silent: true });
+    calculateMacro(index, 'fats', { silent: true });
+    calculateMacro(index, 'carbs', { silent: true });
+
+    if (weight) {
+        field(card, 'water_intake').value = (weight * 0.035).toFixed(1);
+    }
+
+    if (competitionDate) {
+        const now = new Date();
+        const target = new Date(competitionDate);
+        const days = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        field(card, 'days_left').value = Number.isFinite(days) ? Math.max(days, 0) : '';
+    }
+}
+
+function getMacroContext(card) {
+    return {
+        weight: num(field(card, 'weight').value),
+        tdee: num(field(card, 'tdee').value),
+        calories: num(field(card, 'calories').value),
+        progression: (field(card, 'progression_type').value || '').toLowerCase(),
+    };
+}
+
+function updateCaloriesLabel(card) {
+    const progression = (field(card, 'progression_type').value || '').toLowerCase();
+    const label = card.querySelector('[data-calories-label]');
+    if (!label) return;
+    if (progression === 'cut') {
+        label.textContent = 'Cut Calories';
+        return;
+    }
+    if (progression === 'bulk') {
+        label.textContent = 'Bulk Calories';
+        return;
+    }
+    if (progression === 'maintain') {
+        label.textContent = 'Maintain Calories';
+        return;
+    }
+    label.textContent = 'Calories';
+}
+
+function calculateTdee(index, options = {}) {
+    const silent = !!options.silent;
+    const card = getPlayerCard(index);
+    if (!card) return;
+
+    if (num(field(card, 'bmr').value) == null) {
+        calculateBmr(index, { silent: true });
+    }
+
+    const bmr = num(field(card, 'bmr').value);
+    const activity = field(card, 'activity_level').value;
+    const factor = ACTIVITY_FACTORS[activity] || ACTIVITY_FACTORS['sedentary'];
+
+    if (bmr == null || !factor) {
+        field(card, 'tdee').value = '';
+        updateCaloriesByProgression(index);
+        if (!silent) {
+            showCalcDependencyPopup('BMR should be calculated first.');
+        }
+        return;
+    }
+
+    const tdee = bmr * factor;
+    field(card, 'tdee').value = tdee.toFixed(1);
+    updateCaloriesByProgression(index);
+}
+
+function calculateBmr(index, options = {}) {
+    const silent = !!options.silent;
+    const card = getPlayerCard(index);
+    if (!card) return;
+
+    const height = num(field(card, 'height').value);
+    const weight = num(field(card, 'weight').value);
+    const gender = (field(card, 'gender').value || '').toLowerCase();
+    const age = getAgeFromCard(card);
+    const hasValidGender = gender === 'male' || gender === 'female' || gender === 'other';
+
+    if (!(weight && height && age && age > 0 && hasValidGender)) {
+        field(card, 'bmr').value = '';
+        if (!silent) {
+            showCalcDependencyPopup('Weight, Height, Age, and Gender should be entered first.');
+        }
+        return;
+    }
+
+    let bmr = 10 * weight + 6.25 * height - 5 * age;
+    bmr += gender === 'female' ? -161 : 5;
+    field(card, 'bmr').value = bmr.toFixed(1);
+}
+
+function updateCaloriesByProgression(index) {
+    const card = getPlayerCard(index);
+    if (!card) return;
+
+    updateCaloriesLabel(card);
+    const tdee = num(field(card, 'tdee').value);
+    const progression = (field(card, 'progression_type').value || '').toLowerCase();
+    if (tdee == null) {
+        field(card, 'calories').value = '';
+        return;
+    }
+
+    let calories = tdee;
+    if (progression === 'cut') calories = tdee * 0.80;
+    if (progression === 'maintain') calories = tdee;
+    if (progression === 'bulk') calories = tdee * 1.15;
+    field(card, 'calories').value = calories.toFixed(1);
+}
+
+function getProteinFormula(weight, progression) {
+    return weight * 2;
+}
+
+function getFatsFormula(weight, progression) {
+    return weight * 0.8;
+}
+
+function calculateMacro(index, macro, options = {}) {
+    const silent = !!options.silent;
+    const card = getPlayerCard(index);
+    if (!card) return;
+
+    const { weight, calories, progression } = getMacroContext(card);
+    if (!weight) {
+        if (macro === 'protein') field(card, 'protein_target').value = '';
+        if (macro === 'fats') field(card, 'fats_target').value = '';
+        if (macro === 'carbs') field(card, 'carbs_target').value = '';
+        if (!silent) {
+            showCalcDependencyPopup('Weight should be entered first.');
+        }
+        return;
+    }
+
+    if (macro === 'protein') {
+        field(card, 'protein_target').value = getProteinFormula(weight, progression).toFixed(1);
+        return;
+    }
+
+    if (macro === 'fats') {
+        field(card, 'fats_target').value = getFatsFormula(weight, progression).toFixed(1);
+        return;
+    }
+
+    if (macro === 'carbs') {
+        const proteinField = num(field(card, 'protein_target').value);
+        const fatsField = num(field(card, 'fats_target').value);
+        const protein = proteinField ?? getProteinFormula(weight, progression);
+        const fats = fatsField ?? getFatsFormula(weight, progression);
+
+        if (!silent && proteinField == null) {
+            showCalcDependencyPopup('Protein (g) should be calculated first.');
+            field(card, 'carbs_target').value = '';
+            return;
+        }
+
+        if (!silent && fatsField == null) {
+            showCalcDependencyPopup('Fats (g) should be calculated first.');
+            field(card, 'carbs_target').value = '';
+            return;
+        }
+
+        if (calories == null) {
+            field(card, 'carbs_target').value = '';
+            if (!silent) {
+                showCalcDependencyPopup('Calories should be calculated first.');
+            }
+            return;
+        }
+        const carbs = Math.max((calories - (protein * 4 + fats * 9)) / 4, 0);
+        field(card, 'carbs_target').value = carbs.toFixed(1);
+    }
+}
+
+function handleProgressionChange(index) {
+    updateCaloriesByProgression(index);
+    calculateMacro(index, 'protein', { silent: true });
+    calculateMacro(index, 'fats', { silent: true });
+    calculateMacro(index, 'carbs', { silent: true });
+}
+
+function toggleSection(button) {
+    const section = button.closest('.section-block');
+    if (section) section.classList.toggle('open');
+}
+
+function createTrainingRow(index, prefill = {}) {
+    return `
+    <div class="subitem" data-subitem="training">
+      <div class="field"><label>Day</label><input data-subkey="day" value="${prefill.day || ''}" /></div>
+      <div class="field"><label>Type</label><input data-subkey="type" value="${prefill.type || ''}" /></div>
+      <div class="field"><label>Start</label><input type="time" data-subkey="start" value="${prefill.start || ''}" /></div>
+      <div class="field"><label>End</label><input type="time" data-subkey="end" value="${prefill.end || ''}" /></div>
+      <div class="field"><label>Notes</label><input data-subkey="notes" value="${prefill.notes || ''}" /></div>
+      <div class="field"><label>&nbsp;</label><button type="button" class="btn" onclick="removeSubItem(this)">Remove</button></div>
+    </div>`;
+}
+
+function createSupplementRow(index, prefill = {}) {
+    return `
+    <div class="subitem" data-subitem="supplement">
+      <div class="field"><label>Name</label><input data-subkey="name" value="${prefill.name || ''}" /></div>
+      <div class="field"><label>Dose</label><input data-subkey="dose" value="${prefill.dose || ''}" /></div>
+      <div class="field"><label>Time</label><input data-subkey="time" value="${prefill.time || ''}" /></div>
+      <div class="field"><label>Notes</label><input data-subkey="notes" value="${prefill.notes || ''}" /></div>
+      <div class="field"><label>&nbsp;</label><button type="button" class="btn" onclick="removeSubItem(this)">Remove</button></div>
+    </div>`;
+}
+
+function addTrainingSession(index, prefill = null) {
+    const card = getPlayerCard(index);
+    if (!card) return;
+    const holder = card.querySelector('[data-list="training_sessions"] [data-subitems]');
+    holder.insertAdjacentHTML('beforeend', createTrainingRow(index, prefill || {}));
+}
+
+function addSupplement(index, prefill = null) {
+    const card = getPlayerCard(index);
+    if (!card) return;
+    const holder = card.querySelector('[data-list="supplements_list"] [data-subitems]');
+    holder.insertAdjacentHTML('beforeend', createSupplementRow(index, prefill || {}));
+}
+
+function removeSubItem(btn) {
+    const row = btn.closest('.subitem');
+    if (row) row.remove();
+}
+
+function togglePlayer(index) {
+    const card = getPlayerCard(index);
+    if (card) card.classList.toggle('open');
+}
+
+function parseIsoDateTimeLocal(value) {
+    if (!value) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function collectPlayer(card, index) {
+    const obj = { player_number: index };
+    card.querySelectorAll('[data-key]').forEach((el) => {
+        const key = el.getAttribute('data-key');
+        if (!key) return;
+        if (el.type === 'number') {
+            obj[key] = el.value === '' ? null : Number(el.value);
+        } else {
+            obj[key] = el.value === '' ? null : el.value;
+        }
+    });
+
+    if (obj.mental_obs_date) {
+        obj.mental_obs_date = parseIsoDateTimeLocal(obj.mental_obs_date);
+    }
+
+    const trainingRows = card.querySelectorAll('[data-subitem="training"]');
+    obj.training_sessions = Array.from(trainingRows).map((row) => {
+        const item = {};
+        row.querySelectorAll('[data-subkey]').forEach((el) => { item[el.getAttribute('data-subkey')] = el.value || ''; });
+        return { session_info: JSON.stringify(item) };
+    });
+
+    const supplementRows = card.querySelectorAll('[data-subitem="supplement"]');
+    obj.supplements_list = Array.from(supplementRows).map((row) => {
+        const item = {};
+        row.querySelectorAll('[data-subkey]').forEach((el) => { item[el.getAttribute('data-subkey')] = el.value || ''; });
+        return { supplement_info: JSON.stringify(item) };
+    });
+
+    return obj;
+}
+
+function validatePlayers(players) {
+    for (const p of players) {
+        const words = String(p.full_name || '').trim().split(/\s+/).filter(Boolean);
+        if (words.length < 4) {
+            return `Player ${p.player_number}: full name must include at least 4 names.`;
+        }
+        if (!p.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(p.email))) {
+            return `Player ${p.player_number}: valid email is required.`;
+        }
+        if (!p.gender) {
+            return `Player ${p.player_number}: gender is required.`;
+        }
+    }
+    return null;
+}
+
+function autofillPlayers() {
+    clearAlert();
+    const teamName = (document.getElementById('teamName').value || 'Team').trim();
+    const sportType = (document.getElementById('sportType').value || 'General').trim();
+    const cards = Array.from(document.querySelectorAll('.player-card'));
+    if (!cards.length) {
+        showAlert('bad', 'Generate players first.');
+        return;
+    }
+
+    cards.forEach((card, i) => {
+        const idx = i + 1;
+        const set = (key, value) => {
+            const el = field(card, key);
+            if (el) el.value = value;
+        };
+
+        const ageInput = field(card, 'age');
+        if (ageInput) ageInput.value = '24';
+
+        set('full_name', `Player ${idx} ${teamName} Group`);
+        set('email', `player${idx}@${teamName.toLowerCase().replace(/\s+/g, '')}.team`);
+        set('phone_country_code', '+20');
+        set('phone_number', `100000${String(idx).padStart(4, '0')}`);
+        set('password', 'Player@123');
+        set('gender', idx % 2 ? 'male' : 'female');
+        set('birthday', '2001-01-15');
+        set('country', 'Egypt');
+        set('club', teamName);
+        set('sport', sportType);
+        set('position', idx % 2 ? 'Forward' : 'Defender');
+        set('religion', 'N/A');
+        set('activity_level', 'moderate');
+        set('progression_type', 'maintain');
+        set('height', '178');
+        set('weight', '74');
+        set('body_fat_percentage', '15');
+        set('skeletal_muscle', '34');
+        set('water_in_body', '42');
+        set('minerals', '3.8');
+        set('test_and_record', 'Auto test record');
+        set('injuries', 'None');
+        set('mental_notes', 'Stable mood and focus');
+        set('mental_obs_date', new Date().toISOString().slice(0, 16));
+        set('food_allergies', 'None');
+        set('medical_notes', 'No active medical concerns');
+        set('food_likes', 'Rice, chicken, vegetables');
+        set('food_dislikes', 'Deep fried meals');
+        set('competition_date', new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+        set('goal_weight', '72');
+        set('additional_notes', 'Autofilled sample plan');
+
+        recalcPlayer(idx);
+
+        const trainContainer = card.querySelector('[data-list="training_sessions"] [data-subitems]');
+        if (trainContainer) {
+            trainContainer.innerHTML = '';
+            addTrainingSession(idx, { day: 'Monday', type: 'Strength', start: '17:00', end: '18:30', notes: 'Auto' });
+            addTrainingSession(idx, { day: 'Wednesday', type: 'Conditioning', start: '17:30', end: '19:00', notes: 'Auto' });
+        }
+
+        const suppContainer = card.querySelector('[data-list="supplements_list"] [data-subitems]');
+        if (suppContainer) {
+            suppContainer.innerHTML = '';
+            addSupplement(idx, { name: 'Whey Protein', dose: '1 scoop', time: 'Post-workout', notes: 'Auto' });
+            addSupplement(idx, { name: 'Omega-3', dose: '1000mg', time: 'With lunch', notes: 'Auto' });
+        }
+    });
+
+    showAlert('ok', 'Autofill completed for all player fields.');
+}
+
+async function loadTeamForEdit(id) {
+    try {
+        const authHeader = getAuthHeader();
+        const headers = authHeader ? { Authorization: authHeader } : {};
+        const res = await fetch(`${API_BASE_URL}/api/teams/${encodeURIComponent(id)}`, {
+            credentials: 'include',
+            headers,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                showAlert('bad', 'Doctor or admin login required for editing teams. Redirecting...');
+                setTimeout(redirectToDoctorAuth, 700);
+                return;
+            }
+            showAlert('bad', data.detail || 'Failed to load team.');
+            return;
+        }
+
+        pageTitleEl.textContent = `Edit Team: ${data.team_name}`;
+        saveBtnEl.textContent = 'Update Team';
+
+        document.getElementById('teamName').value = data.team_name || '';
+        document.getElementById('sportType').value = data.sport_type || '';
+        document.getElementById('coachName').value = data.coach_name || '';
+        document.getElementById('startDate').value = data.start_date || '';
+
+        const size = Number(data.package_size || 0);
+        if ([20, 25, 30].includes(size)) {
+            packageSizeEl.value = String(size);
+            customPackageFieldEl.style.display = 'none';
+        } else {
+            packageSizeEl.value = 'custom';
+            customPackageFieldEl.style.display = 'block';
+            customPackageSizeEl.value = size;
+        }
+        generatePlayers();
+
+        (data.players || []).forEach((player, idx) => {
+            const index = idx + 1;
+            const card = getPlayerCard(index);
+            if (!card) return;
+
+            card.querySelectorAll('[data-key]').forEach((el) => {
+                const key = el.getAttribute('data-key');
+                if (!(key in player)) return;
+                const value = player[key];
+                if (value == null) return;
+                if (key === 'mental_obs_date') {
+                    const d = new Date(value);
+                    if (!Number.isNaN(d.getTime())) {
+                        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        el.value = local;
+                    }
+                } else {
+                    el.value = String(value);
+                }
+            });
+
+            const tHolder = card.querySelector('[data-list="training_sessions"] [data-subitems]');
+            tHolder.innerHTML = '';
+            (player.training_sessions || []).forEach((item) => {
+                let parsed = {};
+                try { parsed = JSON.parse(item.session_info || '{}'); } catch (_) { parsed = { notes: item.session_info || '' }; }
+                addTrainingSession(index, parsed);
+            });
+
+            const sHolder = card.querySelector('[data-list="supplements_list"] [data-subitems]');
+            sHolder.innerHTML = '';
+            (player.supplements_list || []).forEach((item) => {
+                let parsed = {};
+                try { parsed = JSON.parse(item.supplement_info || '{}'); } catch (_) { parsed = { notes: item.supplement_info || '' }; }
+                addSupplement(index, parsed);
+            });
+
+            recalcPlayer(index);
+        });
+    } catch (error) {
+        showAlert('bad', `Edit load failed: ${error.message}`);
+    }
+}
+
+packageSizeEl.addEventListener('change', () => {
+    customPackageFieldEl.style.display = packageSizeEl.value === 'custom' ? 'block' : 'none';
+    generatePlayers();
+});
+customPackageSizeEl.addEventListener('input', generatePlayers);
+document.getElementById('autofillBtn').addEventListener('click', autofillPlayers);
+
+document.getElementById('teamForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlert();
+
+    const role = getCurrentRole();
+    if (role && role !== 'doctor' && role !== 'admin' && role !== 'client') {
+        showAlert('bad', 'Please login as doctor or admin before saving teams.');
+        return;
+    }
+
+    const packageSize = getPackageSize();
+    if (!packageSize) {
+        showAlert('bad', 'Select package size first.');
+        return;
+    }
+
+    const cards = Array.from(document.querySelectorAll('.player-card'));
+    if (cards.length !== packageSize) {
+        showAlert('bad', 'Generated players count does not match package size.');
+        return;
+    }
+
+    const players = cards.map((card, i) => collectPlayer(card, i + 1));
+    const validationError = validatePlayers(players);
+    if (validationError) {
+        showAlert('bad', validationError);
+        return;
+    }
+
+    const payload = {
+        team_name: document.getElementById('teamName').value.trim(),
+        sport_type: document.getElementById('sportType').value.trim(),
+        coach_name: document.getElementById('coachName').value.trim(),
+        start_date: document.getElementById('startDate').value,
+        package_size: packageSize,
+        players,
+    };
+
+    const authHeader = getAuthHeader();
+
+    const url = editingTeamId ? `${API_BASE_URL}/api/teams/${encodeURIComponent(editingTeamId)}` : `${API_BASE_URL}/api/player/create`;
+    const method = editingTeamId ? 'PUT' : 'POST';
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authHeader) {
+            headers.Authorization = authHeader;
+        }
+
+        const response = await fetch(url, {
+            method,
+            credentials: 'include',
+            headers,
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                showAlert('bad', 'Doctor or admin login required. Open Doctor Access from Home and login, then save again.');
+                return;
+            }
+            showAlert('bad', data.detail || data.error || 'Failed to save team.');
+            return;
+        }
+
+        showAlert('ok', `${editingTeamId ? 'Team updated' : 'Team created'} successfully.`);
+        setTimeout(() => { window.location.href = 'clients.html'; }, 1000);
+    } catch (error) {
+        showAlert('bad', `Connection error: ${error.message}`);
+    }
+});
+
+window.togglePlayer = togglePlayer;
+window.addTrainingSession = addTrainingSession;
+window.addSupplement = addSupplement;
+window.removeSubItem = removeSubItem;
+window.recalcPlayer = recalcPlayer;
+window.calculateBmr = calculateBmr;
+window.calculateTdee = calculateTdee;
+window.calculateMacro = calculateMacro;
+window.handleProgressionChange = handleProgressionChange;
+window.toggleSection = toggleSection;
+
+if (editingTeamId) {
+    loadTeamForEdit(editingTeamId);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">Simple Input Test</h1>
+        
+        <form onsubmit="handleTest(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Test Email Input</label>
+                <input 
+                    type="email" 
+                    id="testEmail" 
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                    placeholder="Type here..."
+                >
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Test Password Input</label>
+                <input 
+                    type="password" 
+                    id="testPassword" 
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                    placeholder="Type here..."
+                >
+            </div>
+
+            <button 
+                type="submit" 
+                class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700"
+            >
+                Submit Test
+            </button>
+        </form>
+
+        <div id="output" class="mt-6 p-4 bg-gray-50 rounded border border-gray-200 hidden">
+            <p class="font-semibold mb-2">You typed:</p>
+            <p id="outputText" class="text-sm"></p>
+        </div>
+
+        <div class="mt-6">
+            <p class="text-sm text-gray-600 mb-2">If you can type in these fields, then:</p>
+            <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+                <li>Your browser is working fine</li>
+                <li>The issue is with the login page specifically</li>
+            </ul>
+            <p class="text-sm text-gray-600 mt-4 mb-2">If you CANNOT type here:</p>
+            <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+                <li>Try refreshing with Ctrl+Shift+R</li>
+                <li>Check if an alert is blocking the page</li>
+                <li>Try a different browser</li>
+            </ul>
+        </div>
+
+        <div class="mt-6 space-y-2">
+            <a href="client-login.html" class="block text-center text-blue-600 hover:underline">Go to Login Page</a>
+            <a href="test-connection.html" class="block text-center text-blue-600 hover:underline">Test Backend Connection</a>
+        </div>
+    </div>
+
+    <script>
+        function handleTest(event) {
+            event.preventDefault();
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            const output = document.getElementById('output');
+            const outputText = document.getElementById('outputText');
+            
+            output.classList.remove('hidden');
+            outputText.textContent = `Email: ${email}\nPassword: ${password ? '***' + password.slice(-3) : 'empty'}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>PDF Generator - Nutrition Management</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<script src="config.js"></script>
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	<style>
+		body {
+			background-image: url("images/pexels-jplenio-1103970.jpg");
+			background-size: cover;
+			background-position: center;
+			background-attachment: fixed;
+			min-height: 100vh;
+			font-family: "Source Sans Pro", sans-serif;
+		}
+
+		#page-wrapper {
+			background: transparent;
+		}
+
+		.top-nav {
+			background: white;
+			border-radius: 15px;
+			padding: 12px 20px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			width: calc(100% - 40px);
+			max-width: 760px;
+			margin: 20px auto 0;
+		}
+
+		.top-nav-brand-group {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.top-nav-back {
+			color: #1b3b5f;
+			text-decoration: none;
+			padding: 6px 10px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			background: #f7f9fc;
+			border: 1px solid #e0e0e0;
+			transition: background 0.2s, color 0.2s, border-color 0.2s;
+		}
+
+		.top-nav-back:hover {
+			background: #eef3fb;
+		}
+
+		.top-nav-brand {
+			font-size: 16px;
+			font-weight: 700;
+			color: #1b3b5f;
+		}
+
+		.top-nav-links {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.top-nav-link {
+			color: #1b3b5f;
+			text-decoration: none;
+			padding: 8px 12px;
+			border-radius: 8px;
+			font-size: 14px;
+			font-weight: 600;
+			background: #f7f9fc;
+			border: 1px solid #e0e0e0;
+			transition: background 0.2s, color 0.2s, border-color 0.2s;
+		}
+
+		.top-nav-link:hover {
+			background: #eef3fb;
+		}
+
+		.top-nav-link.is-active {
+			background: #4a9ff5;
+			border-color: #4a9ff5;
+			color: white;
+		}
+
+		.pdf-container {
+			max-width: 800px;
+			margin: 40px auto;
+			padding: 0 20px;
+		}
+
+		.back-link {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			background: white;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			padding: 10px 16px;
+			color: #1b3b5f;
+			text-decoration: none;
+			font-size: 14px;
+			margin-bottom: 15px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+		}
+
+		.back-link:hover {
+			background: #f5f5f5;
+		}
+
+		.back-link-inline {
+			margin-bottom: 12px;
+			background: #f7f9fc;
+		}
+
+		.back-link-inline:hover {
+			background: #eef3fb;
+		}
+
+		.pdf-header {
+			background: white;
+			border-radius: 15px;
+			padding: 20px 25px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+		}
+
+		.pdf-title {
+			font-size: 20px;
+			font-weight: 600;
+			color: #333;
+			margin: 0 0 8px 0;
+		}
+
+		.pdf-subtitle {
+			font-size: 14px;
+			color: #666;
+			margin: 0;
+		}
+
+		.section-card {
+			background: white;
+			border-radius: 15px;
+			padding: 20px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+		}
+
+		.section-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #333;
+			margin-bottom: 15px;
+		}
+
+		.language-options {
+			display: flex;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+
+		.language-option {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			cursor: pointer;
+		}
+
+		.language-option input[type="radio"] {
+			width: 18px;
+			height: 18px;
+			cursor: pointer;
+		}
+
+		.language-option label {
+			font-size: 14px;
+			color: #333;
+			cursor: pointer;
+		}
+
+		.search-box {
+			position: relative;
+			margin-bottom: 20px;
+		}
+
+		.search-box input {
+			width: 100%;
+			padding: 12px 15px 12px 40px;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			font-size: 14px;
+			font-family: "Source Sans Pro", sans-serif;
+		}
+
+		.search-box::before {
+			content: "🔍";
+			position: absolute;
+			left: 15px;
+			top: 50%;
+			transform: translateY(-50%);
+			font-size: 16px;
+		}
+
+		.selection-info {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+			padding: 12px;
+			background: #f7f9fc;
+			border-radius: 10px;
+		}
+
+		.selection-count {
+			font-size: 14px;
+			color: #666;
+		}
+
+		.selection-actions {
+			display: flex;
+			gap: 10px;
+		}
+
+		.action-link {
+			font-size: 13px;
+			color: #4a9ff5;
+			cursor: pointer;
+			text-decoration: underline;
+		}
+
+		.action-link:hover {
+			color: #3a8fe5;
+		}
+
+		.clients-list {
+			max-height: 400px;
+			overflow-y: auto;
+		}
+
+		.client-checkbox-item {
+			display: flex;
+			align-items: center;
+			padding: 15px;
+			border-bottom: 1px solid #f0f0f0;
+			cursor: pointer;
+			transition: background 0.2s;
+		}
+
+		.client-checkbox-item:hover {
+			background: #f9f9f9;
+		}
+
+		.client-checkbox-item:last-child {
+			border-bottom: none;
+		}
+
+		.client-checkbox {
+			width: 20px;
+			height: 20px;
+			margin-right: 15px;
+			cursor: pointer;
+		}
+
+		@media (max-width: 768px) {
+			.top-nav {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 10px;
+			}
+		}
+
+		.client-avatar {
+			width: 50px;
+			height: 50px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 18px;
+			font-weight: 600;
+			color: white;
+			margin-right: 15px;
+		}
+
+		.client-info {
+			flex: 1;
+		}
+
+		.client-name {
+			font-size: 15px;
+			font-weight: 600;
+			color: #333;
+			margin-bottom: 3px;
+		}
+
+		.client-meta {
+			font-size: 13px;
+			color: #888;
+		}
+
+		.generate-btn {
+			width: 100%;
+			padding: 14px;
+			background: #4a9ff5;
+			color: white;
+			border: none;
+			border-radius: 10px;
+			font-size: 15px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: background 0.3s;
+		}
+
+		.generate-btn:hover {
+			background: #3a8fe5;
+		}
+
+		.generate-btn:disabled {
+			background: #ccc;
+			cursor: not-allowed;
+		}
+
+		@media (max-width: 768px) {
+			.pdf-container {
+				margin: 20px auto;
+			}
+
+			.selection-info {
+				flex-direction: column;
+				gap: 10px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div id="page-wrapper">
+		<nav class="top-nav">
+			<div class="top-nav-brand-group">
+				<a class="top-nav-back" href="#" onclick="window.history.back(); return false;">← Back</a>
+				<div class="top-nav-brand">PDF Generator</div>
+			</div>
+			<div class="top-nav-links">
+				<a class="top-nav-link" href="index.html">Home</a>
+				<a class="top-nav-link" href="clients.html">Clients</a>
+				<a class="top-nav-link" href="add-client.html">Add Client</a>
+				<a class="top-nav-link is-active" href="pdf-generator.html">PDF Generator</a>
+				<a class="top-nav-link" href="diet-management.html">Diet Management</a>
+			</div>
+		</nav>
+
+		<div class="pdf-container">
+			<div class="pdf-header">
+				<h1 class="pdf-title">Multi-Client PDF Generator</h1>
+				<p class="pdf-subtitle">Select one team or one client and generate a populated PDF</p>
+			</div>
+
+			<div class="section-card" id="adminOnlyNotice" style="display:none; border-color:#ffd8d8; background:#fff5f5; color:#8b2b2b;">
+				<div class="section-title" style="color:#8b2b2b;">Admin Access Required</div>
+				<div>Only admin users can access PDF generation on this page.</div>
+			</div>
+
+			<div class="section-card">
+				<div class="section-title">Select PDF Language</div>
+				<select id="language" name="language" style="padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Source Sans Pro', sans-serif; width: 200px;">
+					<option value="english" selected>English</option>
+					<option value="arabic">العربية (Arabic)</option>
+				</select>
+			</div>
+
+			<div class="section-card">
+				<div class="section-title">Team Selection</div>
+				<select id="teamSelect" style="padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%; margin-bottom: 12px;">
+					<option value="">Select a team...</option>
+				</select>
+
+				<div class="section-title">Client Selection</div>
+				<select id="clientSelect" style="padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; width: 100%;">
+					<option value="">Select a client...</option>
+				</select>
+
+				<div class="selection-count" id="selection-count" style="margin-top:12px;">No selection yet</div>
+			</div>
+
+			<div class="section-card">
+				<button class="generate-btn" id="generate-btn" disabled>Generate PDF</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="assets/js/jquery.min.js"></script>
+	<script>
+		const API_BASE_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://127.0.0.1:8001';
+		const state = {
+			teams: [],
+			clients: [],
+		};
+
+		function getAuthHeader() {
+			const token =
+				localStorage.getItem('authToken') ||
+				sessionStorage.getItem('authToken') ||
+				localStorage.getItem('access_token') ||
+				sessionStorage.getItem('access_token');
+			if (!token) return null;
+			const tokenType =
+				localStorage.getItem('authTokenType') ||
+				sessionStorage.getItem('authTokenType') ||
+				localStorage.getItem('token_type') ||
+				sessionStorage.getItem('token_type') ||
+				'bearer';
+			return `${tokenType.charAt(0).toUpperCase() + tokenType.slice(1)} ${token}`;
+		}
+
+		function getCurrentRole() {
+			if (typeof window.getCurrentAuthRole === 'function') {
+				const roleFromHelper = String(window.getCurrentAuthRole() || '').toLowerCase();
+				if (roleFromHelper) return roleFromHelper;
+			}
+			const fromStorage = String(
+				sessionStorage.getItem('role') || sessionStorage.getItem('authRole') || localStorage.getItem('authRole') || ''
+			).toLowerCase();
+			if (fromStorage) return fromStorage;
+
+			const token =
+				localStorage.getItem('authToken') ||
+				sessionStorage.getItem('authToken') ||
+				localStorage.getItem('access_token') ||
+				sessionStorage.getItem('access_token');
+			if (!token) return '';
+			try {
+				const payload = JSON.parse(atob(token.split('.')[1] || ''));
+				return String(payload?.role || '').toLowerCase();
+			} catch (_) {
+				return '';
+			}
+		}
+
+		function updateSelectionSummary() {
+			const teamId = document.getElementById('teamSelect').value;
+			const clientId = document.getElementById('clientSelect').value;
+			const generateBtn = document.getElementById('generate-btn');
+			if (teamId) {
+				const team = state.teams.find((t) => String(t.id) === String(teamId));
+				document.getElementById('selection-count').textContent = team
+					? `Selected Team: ${team.team_name} (${team.players_count || 0} players)`
+					: 'Selected Team';
+				generateBtn.disabled = false;
+				return;
+			}
+			if (clientId) {
+				const client = state.clients.find((c) => String(c.id) === String(clientId));
+				document.getElementById('selection-count').textContent = client
+					? `Selected Client: ${client.full_name || '-'} (ID: ${client.display_id || client.id})`
+					: 'Selected Client';
+				generateBtn.disabled = false;
+				return;
+			}
+			document.getElementById('selection-count').textContent = 'No selection yet';
+			generateBtn.disabled = true;
+		}
+
+		function populateSelects() {
+			const teamSelect = document.getElementById('teamSelect');
+			const clientSelect = document.getElementById('clientSelect');
+
+			teamSelect.innerHTML = '<option value="">Select a team...</option>' + state.teams.map((team) => {
+				return `<option value="${team.id}">${team.team_name || '-'} (${team.players_count || 0} players)</option>`;
+			}).join('');
+
+			clientSelect.innerHTML = '<option value="">Select a client...</option>' + state.clients.map((client) => {
+				const source = String(client.created_source || '').toLowerCase() === 'profile_setup' ? 'Profile Setup' : 'Add Client';
+				return `<option value="${client.id}">${client.full_name || '-'} (ID: ${client.display_id || client.id}) • ${source}</option>`;
+			}).join('');
+		}
+
+		async function loadPdfOptions() {
+			const authHeader = getAuthHeader();
+			if (!authHeader) throw new Error('Missing admin auth token');
+
+			const response = await fetch(`${API_BASE_URL}/api/pdf-options`, {
+				cache: 'no-cache',
+				credentials: 'include',
+				headers: { Authorization: authHeader },
+			});
+
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				throw new Error(data.detail || 'Failed to load PDF options');
+			}
+
+			state.teams = Array.isArray(data.teams) ? data.teams : [];
+			state.clients = Array.isArray(data.clients) ? data.clients : [];
+			populateSelects();
+			updateSelectionSummary();
+		}
+
+		function extractFilenameFromContentDisposition(contentDisposition) {
+			if (!contentDisposition) return null;
+			const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+			if (utf8Match && utf8Match[1]) {
+				return decodeURIComponent(utf8Match[1].trim());
+			}
+			const basicMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+			return basicMatch && basicMatch[1] ? basicMatch[1].trim() : null;
+		}
+
+		function fallbackFilename(language) {
+			const now = new Date();
+			const y = now.getFullYear();
+			const m = String(now.getMonth() + 1).padStart(2, '0');
+			const d = String(now.getDate()).padStart(2, '0');
+			const langCode = language === 'arabic' ? 'ar' : 'en';
+			return `clients-report-${langCode}-${y}${m}${d}.pdf`;
+		}
+
+		document.getElementById('generate-btn').addEventListener('click', async () => {
+			const role = getCurrentRole();
+			if (role !== 'admin') {
+				alert('Only admin can generate PDFs on this page.');
+				return;
+			}
+
+			const language = document.getElementById('language').value;
+			const teamId = document.getElementById('teamSelect').value;
+			const clientId = document.getElementById('clientSelect').value;
+
+			if (!teamId && !clientId) {
+				alert('Select a team or a client first.');
+				return;
+			}
+
+			let selectedEntries = [];
+			if (teamId) {
+				const selectedTeam = state.teams.find((team) => String(team.id) === String(teamId));
+				selectedEntries = Array.isArray(selectedTeam?.players)
+					? selectedTeam.players.map((player) => ({
+						id: player.id || null,
+						displayId: player.display_id || '-',
+						name: player.full_name || 'Unknown',
+						age: player.age,
+						gender: player.gender || 'N/A',
+						phone: player.phone || 'N/A',
+						source: 'Team',
+						teamName: selectedTeam?.team_name || 'Team',
+					}))
+					: [];
+			} else {
+				const client = state.clients.find((item) => String(item.id) === String(clientId));
+				if (client) {
+					selectedEntries = [{
+						id: client.id,
+						displayId: client.display_id || client.id,
+						name: client.full_name || 'Unknown',
+						age: client.age,
+						gender: client.gender || 'N/A',
+						phone: client.phone || 'N/A',
+						source: String(client.created_source || '').toLowerCase() === 'profile_setup' ? 'Profile Setup' : 'Add Client',
+						teamName: null,
+					}];
+				}
+			}
+
+			if (!selectedEntries.length) {
+				alert('No valid data found for selection.');
+				return;
+			}
+
+			const button = document.getElementById('generate-btn');
+			const originalText = button.textContent;
+			button.disabled = true;
+			button.textContent = 'Generating...';
+
+			try {
+				const authHeader = getAuthHeader();
+				if (!authHeader) {
+					alert('Admin login required to generate server PDF.');
+					return;
+				}
+
+				const response = await fetch(`${API_BASE_URL}/api/reports/clients-pdf`, {
+					method: 'POST',
+					credentials: 'include',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: authHeader,
+					},
+					body: JSON.stringify({
+						language,
+						clients: selectedEntries,
+					}),
+				});
+
+				if (!response.ok) {
+					const errData = await response.json().catch(() => ({}));
+					throw new Error(errData.detail || 'Failed to generate PDF on server');
+				}
+
+				const blob = await response.blob();
+				const contentDisposition = response.headers.get('Content-Disposition');
+				const filename = extractFilenameFromContentDisposition(contentDisposition) || fallbackFilename(language);
+
+				const url = window.URL.createObjectURL(blob);
+				const link = document.createElement('a');
+				link.href = url;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				window.URL.revokeObjectURL(url);
+			} catch (error) {
+				console.error('PDF generation failed:', error);
+				alert(`Failed to generate PDF: ${error.message}`);
+			} finally {
+				button.textContent = originalText;
+				updateSelectionSummary();
+			}
+		});
+
+		document.getElementById('teamSelect').addEventListener('change', () => {
+			if (document.getElementById('teamSelect').value) {
+				document.getElementById('clientSelect').value = '';
+			}
+			updateSelectionSummary();
+		});
+
+		document.getElementById('clientSelect').addEventListener('change', () => {
+			if (document.getElementById('clientSelect').value) {
+				document.getElementById('teamSelect').value = '';
+			}
+			updateSelectionSummary();
+		});
+
+		(async function initPdfPage() {
+			const role = getCurrentRole();
+			if (role !== 'admin') {
+				document.getElementById('adminOnlyNotice').style.display = 'block';
+				document.getElementById('teamSelect').disabled = true;
+				document.getElementById('clientSelect').disabled = true;
+				document.getElementById('generate-btn').style.display = 'none';
+				document.getElementById('selection-count').textContent = 'Access denied: admin only';
+				return;
+			}
+
+			try {
+				await loadPdfOptions();
+			} catch (error) {
+				console.error('Failed to initialize PDF options:', error);
+				document.getElementById('selection-count').textContent = `Failed to load options: ${error.message}`;
+			}
+		})();
+	</script>
+</body>
+</html>

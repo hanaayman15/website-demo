@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Clinic | Vitality Nutrition Management</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .clinic-header {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .clinic-header::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 1;
+        }
+        .clinic-header > div { position: relative; z-index: 2; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold" style="color: #6eabf2;">Client Nutrition Management</div>
+            </div>
+            <div class="space-x-6">
+                <a href="index.html" id="nav-home" class="text-black">Home</a>
+                <a href="about.html" class="text-black">About</a>
+                <a href="features.html" class="text-black">Features</a>
+                <a href="resources.html" class="font-semibold border-b-2" style="color: #6eabf2; border-color: #6eabf2;">Our Clinic</a>
+                <a href="success-stories.html" class="text-black">Success Stories</a>
+                <a href="contact.html" class="text-black">Contact Us</a>
+                <a href="add-client.html" id="nav-action" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style="background-color: #6eabf2;">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        if (typeof initGlobalNavbarAuthState === 'function') {
+            initGlobalNavbarAuthState();
+        }
+    </script>
+
+    <header class="clinic-header py-16">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">A Space Designed for <span style="color: #6eabf2;">Healing.</span></h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Visit our state-of-the-art facility where science meets comfort to provide you with the best nutritional care.</p>
+        </div>
+    </header>
+
+    <section class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center gap-12">
+                <div class="md:w-1/2">
+                    <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80" alt="Clinic Interior" class="rounded-2xl shadow-xl">
+                </div>
+                <div class="md:w-1/2">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Your First Visit</h2>
+                    <p class="text-gray-600 text-lg mb-6 leading-relaxed">Our clinic provides a serene and private environment. From private consultation rooms to our nutritional resource library, every detail is crafted for your success.</p>
+                    <ul class="space-y-4">
+                        <li class="flex items-center text-gray-700 font-medium">
+                            <span class="p-1 rounded-full mr-3" style="background-color: #f0f8ff; color: #6eabf2;">✔</span> Private Consultation Rooms
+                        </li>
+                        <li class="flex items-center text-gray-700 font-medium">
+                            <span class="p-1 rounded-full mr-3" style="background-color: #f0f8ff; color: #6eabf2;">✔</span> Dedicated Metabolic Testing Lab
+                        </li>
+                        <li class="flex items-center text-gray-700 font-medium">
+                            <span class="p-1 rounded-full mr-3" style="background-color: #f0f8ff; color: #6eabf2;">✔</span> Comfortable Patient Lounge
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-12">Clinical Technology</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-center">
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">💧</div>
+                    <h3 class="text-xl font-bold mb-2">Hydrotherapy</h3>
+                    <p class="text-gray-600">Therapeutic water treatments to enhance recovery, reduce inflammation, and improve circulation.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">⚖️</div>
+                    <h3 class="text-xl font-bold mb-2">InBody™ Analysis</h3>
+                    <p class="text-gray-600">Medical-grade tracking of muscle mass, body fat, and hydration.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">🫀</div>
+                    <h3 class="text-xl font-bold mb-2">Metabolic Testing</h3>
+                    <p class="text-gray-600">Identify your exact Resting Metabolic Rate (RMR) for precise fueling.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">🏥</div>
+                    <h3 class="text-xl font-bold mb-2">Physiotherapy</h3>
+                    <p class="text-gray-600">Evidence-based physical rehabilitation to optimize movement, prevent injury, and support athletic performance.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">🧠</div>
+                    <h3 class="text-xl font-bold mb-2">Mental Session</h3>
+                    <p class="text-gray-600">One-on-one psychological support focused on mental resilience, stress management, and performance mindset.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                    <div class="mb-4 text-3xl" style="color: #6eabf2;">📈</div>
+                    <h3 class="text-xl font-bold mb-2">Performance Tracking</h3>
+                    <p class="text-gray-600">Comprehensive monitoring of athletic performance metrics, progress analytics, and detailed reporting to visualize your improvements over time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-bold mb-4">Find Us</h3>
+                    <p class="text-gray-600 mb-4"><strong>Address:</strong> 123 Wellness Way, Suite 400<br>Medical District, City, ST 12345</p>
+                    <p class="text-gray-600 mb-4"><strong>Hours:</strong> Mon - Fri: 8:00 AM - 6:00 PM</p>
+                    <p class="text-gray-600 font-bold mb-6">Phone: +20 155 018 8581 </p>
+                    <a href="#" class="inline-block text-white font-bold py-3 px-8 rounded-full hover:opacity-90 transition" style="background-color: #6eabf2;">Get Directions</a>
+                </div>
+                <div class="md:w-1/2 h-64 bg-gray-200 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300">
+                    <span class="text-gray-400 font-medium italic">Interactive Map Placeholder</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200">
+        &copy; 2026 Client Nutrition Management. All rights reserved.
+    </footer>
+
+</body>
+</html>

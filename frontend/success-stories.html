@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success Stories | Vitality Nutrition Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom accent color to match your #6eabf2 request */
+        .text-accent-blue { color: #6eabf2; }
+        .bg-accent-blue { background-color: #6eabf2; }
+        .border-accent-blue { border-color: #6eabf2; }
+        .hover-bg-accent:hover { background-color: #5a99e0; }
+        .stories-header {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .stories-header::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 1;
+        }
+        .stories-header > div { position: relative; z-index: 2; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold text-accent-blue">Success Stories</div>
+            </div>
+            <div class="space-x-6">
+                <a href="index.html" id="nav-home" class="text-black hover:text-accent-blue transition">Home</a>
+                <a href="about.html" class="text-black hover:text-accent-blue transition">About</a>
+                <a href="features.html" class="text-black hover:text-accent-blue transition">Features</a>
+                <a href="resources.html" class="text-black hover:text-accent-blue transition">Our Clinic</a>
+                <a href="success-stories.html" class="text-accent-blue font-semibold border-b-2 border-accent-blue">Success Stories</a>
+                <a href="contact.html" class="text-black hover:text-accent-blue transition">Contact Us</a>
+                <a href="add-client.html" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90 bg-accent-blue">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        const isClientPortal = sessionStorage.getItem('portalType') === 'client';
+        if (isClientPortal) document.getElementById('nav-home').href = 'client-home.html';
+        const navGetStartedBtn = document.querySelector('a[href="add-client.html"][class*="bg-accent-blue"]');
+        if (navGetStartedBtn) {
+            navGetStartedBtn.style.display = document.getElementById('nav-home').href.includes('client-home.html') ? 'none' : 'inline-block';
+        }
+    </script>
+
+    <header class="stories-header py-16">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Real Commitment. <span class="text-accent-blue">Real Results.</span></h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Discover the inspiring journeys of our clients who redefined their health and reclaimed their vitality through personalized nutrition.</p>
+        </div>
+    </header>
+
+    <section class="py-20">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 043458.png" alt="Success story 1" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 044900.png" alt="Success story 2" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 044915.png" alt="Success story 3" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 044930.png" alt="Success story 4" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 044945.png" alt="Success story 5" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 045003.png" alt="Success story 6" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 045021.png" alt="Success story 7" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 045033.png" alt="Success story 8" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-300 p-4">
+                    <!-- TODO: add 845x837 image path -->
+                    <img src="images/Screenshot 2026-02-25 045044.png" alt="Success story 9" width="845" height="837" class="w-full h-auto rounded-2xl object-cover">
+                </div>
+                
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-accent-blue py-16">
+        <div class="container mx-auto px-6 text-center text-white">
+            <h2 class="text-3xl font-bold mb-4">Be our next success story.</h2>
+            <p class="mb-8 opacity-90 text-lg">Start your journey toward a healthier, more vibrant you today.</p>
+            <a href="client-signup.html" class="bg-white text-accent-blue font-bold py-4 px-10 rounded-full shadow-lg hover:bg-gray-100 transition inline-block">Book a Consultation</a>
+        </div>
+    </section>
+
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white">
+        &copy; 2026 VitalityPath Nutrition Management. All rights reserved.
+    </footer>
+
+</body>
+</html>

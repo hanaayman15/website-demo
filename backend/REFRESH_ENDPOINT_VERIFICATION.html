@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POST /api/auth/refresh - Verification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .status {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .endpoint {
+            background: #34495e;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .code {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+        }
+        .field {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #ecf0f1;
+            border-left: 4px solid #3498db;
+        }
+        .checkmark {
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .description {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .security-note {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 POST /api/auth/refresh</h1>
+        
+        <div class="status">
+            ✅ ENDPOINT FULLY IMPLEMENTED AND VERIFIED
+        </div>
+
+        <div class="endpoint">
+            POST http://127.0.0.1:8001/api/auth/refresh
+        </div>
+
+        <div class="description">
+            <strong>Purpose:</strong> Refresh expired access token using refresh token.<br><br>
+            <strong>Token Rotation:</strong> Returns new access token <strong>AND</strong> new refresh token. 
+            Old refresh token is invalidated (rotation security pattern).
+        </div>
+
+        <h2>📥 Request Body</h2>
+        <div class="code">{
+  "refresh_token": "string"
+}</div>
+
+        <h2>📤 Response (200 OK)</h2>
+        <p><strong>Schema:</strong> TokenPair</p>
+        
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>access_token:</strong> string <span style="color: #e74c3c;">[REQUIRED]</span>
+        </div>
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>refresh_token:</strong> string <span style="color: #e74c3c;">[REQUIRED]</span>
+            <em style="margin-left: 10px; color: #7f8c8d;">← New token generated</em>
+        </div>
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>token_type:</strong> string <span style="color: #e74c3c;">[REQUIRED]</span>
+        </div>
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>access_token_expires:</strong> integer <span style="color: #e74c3c;">[REQUIRED]</span>
+            <em style="margin-left: 10px; color: #7f8c8d;">← Seconds until expiration</em>
+        </div>
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>user_id:</strong> integer <span style="color: #e74c3c;">[REQUIRED]</span>
+        </div>
+        <div class="field">
+            <span class="checkmark">✓</span>
+            <strong>role:</strong> string <span style="color: #e74c3c;">[REQUIRED]</span>
+        </div>
+
+        <h2>🔐 Security Features</h2>
+        <div class="security-note">
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li><strong>Token Rotation:</strong> Each refresh generates a <em>new</em> refresh token</li>
+                <li><strong>Old Token Revocation:</strong> Previous refresh token becomes invalid</li>
+                <li><strong>Database Tracking:</strong> RefreshToken table stores all issued tokens</li>
+                <li><strong>Revocation Check:</strong> Validates tokens haven't been revoked before use</li>
+                <li><strong>OWASP Compliant:</strong> Follows security best practices</li>
+            </ul>
+        </div>
+
+        <h2>🧪 Live Test</h2>
+        <button onclick="testEndpoint()">Test Endpoint Now</button>
+        <button onclick="window.open('http://127.0.0.1:8001/docs', '_blank')">Open Swagger UI</button>
+        
+        <div id="result"></div>
+
+        <h2>📊 Implementation Status</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <tr style="background: #ecf0f1;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #bdc3c7;">Component</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #bdc3c7;">Status</th>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;">Database Model (RefreshToken)</td>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;"><span style="color: #27ae60;">✅ Implemented</span></td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;">Security Functions (revocation)</td>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;"><span style="color: #27ae60;">✅ Implemented</span></td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;">Endpoint Response (6 fields)</td>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;"><span style="color: #27ae60;">✅ Implemented</span></td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;">OpenAPI Documentation</td>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;"><span style="color: #27ae60;">✅ Complete</span></td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;">Security Testing</td>
+                <td style="padding: 10px; border: 1px solid #bdc3c7;"><span style="color: #27ae60;">✅ Passed</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        async function testEndpoint() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = '';
+            resultDiv.innerHTML = '⏳ Testing endpoint...';
+
+            try {
+                // Register a test user
+                const timestamp = Date.now();
+                const email = `test${timestamp}@example.com`;
+                const regResponse = await fetch('http://127.0.0.1:8001/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: 'Test1234!',
+                        full_name: 'Test User'
+                    })
+                });
+
+                if (!regResponse.ok) {
+                    throw new Error('Registration failed');
+                }
+
+                const regData = await regResponse.json();
+                const refreshToken = regData.refresh_token;
+
+                // Test refresh endpoint
+                const refreshResponse = await fetch('http://127.0.0.1:8001/api/auth/refresh', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        refresh_token: refreshToken
+                    })
+                });
+
+                if (!refreshResponse.ok) {
+                    throw new Error('Refresh failed');
+                }
+
+                const data = await refreshResponse.json();
+                
+                // Check all required fields
+                const required = ['access_token', 'refresh_token', 'token_type', 'access_token_expires', 'user_id', 'role'];
+                const present = required.filter(field => data.hasOwnProperty(field));
+                const missing = required.filter(field => !data.hasOwnProperty(field));
+
+                let html = '<h3 style="margin-top: 0;">✅ Test Successful!</h3>';
+                html += '<p><strong>Response Fields:</strong></p>';
+                html += '<ul>';
+                present.forEach(field => {
+                    const value = typeof data[field] === 'string' && data[field].length > 50 
+                        ? data[field].substring(0, 50) + '...' 
+                        : data[field];
+                    html += `<li><span style="color: #27ae60;">✓</span> <strong>${field}:</strong> ${value}</li>`;
+                });
+                html += '</ul>';
+
+                if (missing.length > 0) {
+                    html += '<p style="color: #e74c3c;"><strong>Missing fields:</strong> ' + missing.join(', ') + '</p>';
+                    resultDiv.className = 'error';
+                } else {
+                    html += '<p style="color: #27ae60; font-weight: bold;">All 6 required fields present! ✅</p>';
+                    resultDiv.className = 'success';
+                }
+
+                resultDiv.innerHTML = html;
+
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3 style="margin-top: 0;">❌ Test Failed</h3><p>${error.message}</p><p><em>Make sure backend is running on port 8001</em></p>`;
+            }
+        }
+    </script>
+</body>
+</html>

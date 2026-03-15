@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Setup - Basic Information</title>
+    <script src="config.js"></script>
+    <script src="country-phone-codes.js"></script>
+    <style>
+        :root {
+            --ink: #17324b;
+            --line: #dbe7f3;
+            --bg: #eef5fb;
+            --brand: #4a9ff5;
+            --brand-dark: #2f80d5;
+        }
+        body { margin:0; font-family:"Source Sans Pro", Arial, sans-serif; background:var(--bg); color:var(--ink); }
+        .page { max-width:900px; margin:24px auto; padding:0 14px 26px; }
+        .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:0 8px 20px rgba(15,42,64,.08); }
+        .title { margin:0 0 6px; font-size:30px; }
+        .subtitle { margin:0 0 12px; color:#60758b; }
+        .section-title { margin:0 0 12px; padding-bottom:6px; border-bottom:2px solid #d3e5f8; }
+        .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .field { display:flex; flex-direction:column; gap:6px; }
+        label { font-size:13px; font-weight:700; }
+        input, select { border:1px solid var(--line); border-radius:9px; padding:10px 11px; font-size:14px; }
+        .phone-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .actions { margin-top:14px; display:flex; justify-content:flex-end; gap:8px; }
+        .btn { border:1px solid var(--line); border-radius:9px; padding:10px 14px; font-size:14px; font-weight:700; cursor:pointer; background:#f4f8fd; color:var(--ink); }
+        .btn.primary { border-color:var(--brand); background:var(--brand); color:#fff; }
+        .btn.primary:hover { background:var(--brand-dark); }
+        .alert { margin-top:10px; border-radius:9px; padding:9px 11px; font-size:13px; display:none; }
+        .alert.show { display:block; }
+        .alert.error { background:#fff2f1; border:1px solid #ffd1ce; color:#b42318; }
+        .alert.success { background:#eefaf2; border:1px solid #cdeed8; color:#1d6e3b; }
+        .help { font-size:12px; color:#60758b; }
+        @media (max-width:760px){ .grid{grid-template-columns:1fr;} .phone-row{grid-template-columns:1fr;} }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="card">
+            <h1 class="title">Profile Setup</h1>
+            <p class="subtitle">Basic Information only</p>
+
+            <h2 class="section-title">Basic Information</h2>
+            <form id="basicForm" autocomplete="on">
+                <div class="grid">
+                    <div class="field">
+                        <label for="clientId">Client ID (auto-generated)</label>
+                        <input id="clientId" type="text" readonly value="Auto" />
+                    </div>
+
+                    <div class="field">
+                        <label for="fullName">Full Name</label>
+                        <input id="fullName" name="fullName" autocomplete="name" type="text" required placeholder="At least 4 names" />
+                        <div class="help">Must contain at least 4 names.</div>
+                    </div>
+
+                    <div class="field" style="grid-column: span 2;">
+                        <label>Phone</label>
+                        <div class="phone-row">
+                            <select id="phoneCountryCode" name="phoneCountryCode" autocomplete="tel-country-code"></select>
+                            <input id="phoneNumber" name="phoneNumber" autocomplete="tel-national" type="text" required inputmode="numeric" placeholder="Phone number" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">Email Address</label>
+                        <input id="email" name="email" autocomplete="email" type="email" required placeholder="client@example.com" />
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input id="password" name="password" autocomplete="new-password" type="password" minlength="6" required placeholder="Minimum 6 characters" />
+                    </div>
+
+                    <div class="field">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="birthday">Birthday (dd/mm/yyyy)</label>
+                        <input id="birthday" name="birthday" autocomplete="bday" type="date" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="country">Country</label>
+                        <select id="country" name="country" autocomplete="country-name" required>
+                            <option value="">Select country</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="club">Sport Club</label>
+                        <input id="club" name="club" autocomplete="organization" type="text" placeholder="Club name" />
+                    </div>
+
+                    <div class="field">
+                        <label for="religion">Religion</label>
+                        <select id="religion" name="religion">
+                            <option value="">Select religion</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Christianity">Christianity</option>
+                            <option value="Judaism">Judaism</option>
+                            <option value="Hinduism">Hinduism</option>
+                            <option value="Buddhism">Buddhism</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn" type="button" onclick="window.location.href='client-login.html'">Cancel</button>
+                    <button class="btn" type="button" id="autofillBtn">Autofill</button>
+                    <button class="btn primary" type="submit">Save</button>
+                </div>
+            </form>
+
+            <div id="formAlert" class="alert"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ? CONFIG.API_BASE_URL : 'http://127.0.0.1:8011';
+        const WORLD_COUNTRIES = ['Egypt','Saudi Arabia','United Arab Emirates','Jordan','Qatar','Kuwait','Bahrain','Oman','Morocco','Tunisia','Algeria','Libya','Sudan','United States','United Kingdom','Germany','France','Italy','Spain','Canada','Australia','Turkey','India','Pakistan'];
+        const AUTOFILL_KEY = 'profileSetupBasicAutofillV1';
+        const LAST_CLIENT_CONTEXT_KEY = 'lastClientContextV1';
+
+        function showAlert(type, message) {
+            const alertEl = document.getElementById('formAlert');
+            alertEl.className = `alert show ${type}`;
+            alertEl.textContent = message;
+        }
+
+        function fullNameIsValid(value) {
+            const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+            return parts.length >= 4;
+        }
+
+        function getAuthHeader() {
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || localStorage.getItem('token');
+            if (!token) return null;
+            const tokenType = localStorage.getItem('authTokenType') || sessionStorage.getItem('authTokenType') || 'bearer';
+            return `${tokenType.charAt(0).toUpperCase() + tokenType.slice(1)} ${token}`;
+        }
+
+        function populatePhoneCodes() {
+            const select = document.getElementById('phoneCountryCode');
+            const options = Array.isArray(window.COUNTRY_DIAL_OPTIONS) ? window.COUNTRY_DIAL_OPTIONS : [
+                { country: 'Egypt', dial: '+20', display: 'Egypt +20' },
+                { country: 'Saudi Arabia', dial: '+966', display: 'Saudi Arabia +966' },
+                { country: 'United Arab Emirates', dial: '+971', display: 'UAE +971' }
+            ];
+
+            select.innerHTML = '';
+            options.forEach((item) => {
+                const option = document.createElement('option');
+                option.value = item.dial || '+20';
+                option.textContent = item.display || `${item.country} ${item.dial}`;
+                select.appendChild(option);
+            });
+            select.value = '+20';
+        }
+
+        function populateCountries() {
+            const country = document.getElementById('country');
+            WORLD_COUNTRIES.forEach((name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                country.appendChild(option);
+            });
+            country.value = 'Egypt';
+        }
+
+        function persistAutofillDraft() {
+            const draft = {
+                full_name: document.getElementById('fullName').value.trim(),
+                phone_country_code: document.getElementById('phoneCountryCode').value || '+20',
+                phone_number: document.getElementById('phoneNumber').value.replace(/\D/g, ''),
+                email: document.getElementById('email').value.trim().toLowerCase(),
+                gender: document.getElementById('gender').value,
+                birthday: document.getElementById('birthday').value,
+                country: document.getElementById('country').value,
+                club: document.getElementById('club').value.trim(),
+                religion: document.getElementById('religion').value,
+            };
+            localStorage.setItem(AUTOFILL_KEY, JSON.stringify(draft));
+        }
+
+        function getFallbackAutofill() {
+            const now = Date.now();
+            return {
+                full_name: 'Auto Filled Client Profile Name',
+                phone_country_code: '+20',
+                phone_number: '1000000000',
+                email: `autofill_${now}@example.com`,
+                gender: 'male',
+                birthday: '2000-01-01',
+                country: 'Egypt',
+                club: 'Auto Club',
+                religion: 'Other',
+            };
+        }
+
+        function loadAutofillDraft(force = false) {
+            try {
+                const raw = localStorage.getItem(AUTOFILL_KEY);
+                const parsed = raw ? JSON.parse(raw) : null;
+                const draft = (parsed && typeof parsed === 'object') ? parsed : {};
+                const fallback = getFallbackAutofill();
+
+                const setIfMissing = (id, value, defaults = [], fallbackValue = '') => {
+                    const finalValue = (value !== null && value !== undefined && value !== '') ? value : fallbackValue;
+                    if (finalValue === null || finalValue === undefined || finalValue === '') return;
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const current = String(el.value || '').trim();
+                    const missing = current === '' || defaults.includes(current);
+                    if (missing || force) el.value = String(finalValue);
+                };
+
+                setIfMissing('fullName', draft.full_name, [], fallback.full_name);
+                setIfMissing('phoneCountryCode', draft.phone_country_code, ['+20'], fallback.phone_country_code);
+                setIfMissing('phoneNumber', draft.phone_number, [], fallback.phone_number);
+                setIfMissing('email', draft.email, [], fallback.email);
+                setIfMissing('gender', draft.gender, [''], fallback.gender);
+                setIfMissing('birthday', draft.birthday, [''], fallback.birthday);
+                setIfMissing('country', draft.country, ['Egypt'], fallback.country);
+                setIfMissing('club', draft.club, [], fallback.club);
+                setIfMissing('religion', draft.religion, [''], fallback.religion);
+
+                const passwordEl = document.getElementById('password');
+                if (passwordEl && (force || !String(passwordEl.value || '').trim())) {
+                    passwordEl.value = 'Client@123';
+                }
+            } catch (_) {}
+        }
+
+        function runAutofillNow() {
+            loadAutofillDraft(true);
+            persistAutofillDraft();
+            showAlert('success', 'Autofill completed for all missing basic fields.');
+        }
+
+        async function saveBasicInfo(event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            if (!fullNameIsValid(fullName)) {
+                showAlert('error', 'Full Name must contain at least 4 names.');
+                return;
+            }
+
+            const phoneNumber = document.getElementById('phoneNumber').value.replace(/\D/g, '');
+            if (!phoneNumber) {
+                showAlert('error', 'Phone Number is required.');
+                return;
+            }
+
+            const payload = {
+                full_name: fullName,
+                phone_country_code: document.getElementById('phoneCountryCode').value || '+20',
+                phone_number: phoneNumber,
+                email: document.getElementById('email').value.trim().toLowerCase(),
+                password: document.getElementById('password').value,
+                gender: document.getElementById('gender').value,
+                birthday: document.getElementById('birthday').value,
+                country: document.getElementById('country').value,
+                club: document.getElementById('club').value.trim() || null,
+                religion: document.getElementById('religion').value || null,
+                source: 'profile_setup'
+            };
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const authHeader = getAuthHeader();
+                if (authHeader) headers.Authorization = authHeader;
+
+                const response = await fetch(`${API_BASE_URL}/api/client`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    showAlert('error', data.detail || 'Failed to save profile.');
+                    return;
+                }
+
+                document.getElementById('clientId').value = String(data.display_id || 'Auto');
+                persistAutofillDraft();
+                localStorage.setItem(LAST_CLIENT_CONTEXT_KEY, JSON.stringify({
+                    user_id: data.user_id || null,
+                    display_id: data.display_id || null,
+                    full_name: payload.full_name || '',
+                    email: payload.email || '',
+                    source: 'profile_setup'
+                }));
+                showAlert('success', 'Basic profile saved successfully. Redirecting to services...');
+                setTimeout(() => {
+                    window.location.href = `client-services.html?client_id=${encodeURIComponent(data.user_id)}`;
+                }, 600);
+            } catch (error) {
+                showAlert('error', `Unable to save: ${error.message}`);
+            }
+        }
+
+        document.getElementById('basicForm').addEventListener('submit', saveBasicInfo);
+        populatePhoneCodes();
+        populateCountries();
+        loadAutofillDraft();
+
+        const autofillBtn = document.getElementById('autofillBtn');
+        if (autofillBtn) {
+            autofillBtn.addEventListener('click', runAutofillNow);
+        }
+
+        ['fullName', 'phoneCountryCode', 'phoneNumber', 'email', 'gender', 'birthday', 'country', 'club', 'religion']
+            .forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', persistAutofillDraft);
+                el.addEventListener('change', persistAutofillDraft);
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile | Client Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <script src="country-phone-codes.js"></script>
+    <style>
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+        .form-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .form-section h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #1f2937;
+            border-bottom: 2px solid #6eabf2;
+            padding-bottom: 0.5rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #6eabf2;
+            box-shadow: 0 0 0 3px rgba(110, 171, 242, 0.1);
+        }
+        .calc-button {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-top: 1.75rem;
+            transition: background 0.3s;
+        }
+        .calc-button:hover {
+            background: #e5e7eb;
+        }
+        .add-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+        .add-button:hover {
+            background: #059669;
+        }
+        .info-text {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        .required {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm py-4 sticky top-0 z-10">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition">← Back</button>
+            <h1 class="text-2xl font-bold accent-text">Complete Your Profile</h1>
+            <div class="w-20"></div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <form id="clientDetailsForm" onsubmit="handleSubmit(event)">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3>📋 Basic Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Client ID <span class="required">*</span></label>
+                        <input type="text" id="clientId" readonly placeholder="Auto-generated" class="bg-gray-100">
+                        <div class="info-text">Will be auto-assigned</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name <span class="required">*</span> <span style="color: #999; font-size: 0.85em;">(At least 4 names)</span></label>
+                        <input type="text" id="fullName" required placeholder="First Second Third Fourth">
+                        <p id="fullNameError" style="color: red; font-size: 0.85em; margin-top: 5px; display: none;">⚠️ Please enter at least 4 names (e.g., Mohamed Ahmed Ali Hassan)</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" placeholder="+20 xxx xxxx xxx">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Birthday</label>
+                        <input type="date" id="birthday">
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select id="gender">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" id="country" placeholder="Enter country">
+                    </div>
+                    <div class="form-group">
+                        <label>Sports Club</label>
+                        <input type="text" id="club" placeholder="Enter sports club">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Physical Measurements -->
+            <div class="form-section">
+                <h3>📏 Physical Measurements</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Height <span class="required">*</span> (cm)</label>
+                        <input type="number" id="height" required placeholder="e.g., 180" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight <span class="required">*</span> (kg)</label>
+                        <input type="number" id="weight" required placeholder="e.g., 75" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>BMI</label>
+                        <input type="number" id="bmi" readonly placeholder="Auto-calculated" class="bg-gray-100" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateBMI()">Calculate</button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Body Fat %</label>
+                        <input type="number" id="bodyFat" placeholder="e.g., 15" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Skeletal Muscle (kg)</label>
+                        <input type="number" id="skeletalMuscle" placeholder="e.g., 35" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Body Fat Mass (kg)</label>
+                        <input type="number" id="bodyFatMass" placeholder="e.g., 12" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateBodyFatMass()">Calculate</button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Muscle %</label>
+                        <input type="number" id="musclePercent" placeholder="e.g., 42" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateMusclePercent()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metabolism & Activity -->
+            <div class="form-section">
+                <h3>⚡ Metabolism & Activity</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>BMR (Basal Metabolic Rate)</label>
+                        <input type="number" id="bmr" readonly placeholder="Auto-calculated" class="bg-gray-100" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateBMR()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>BMR (InBody)</label>
+                        <input type="number" id="inbodyBmr" placeholder="e.g., 1650" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateInbodyBmr()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Activity Level <span class="required">*</span></label>
+                        <select id="activityLevel" required>
+                            <option value="">Select activity level</option>
+                            <option value="sedentary">Sedentary (little exercise)</option>
+                            <option value="light">Lightly Active (1-3 days/week)</option>
+                            <option value="moderate">Moderate (3-5 days/week)</option>
+                            <option value="very">Very Active (6-7 days/week)</option>
+                            <option value="extremely">Extremely Active (intense daily)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sport</label>
+                        <select id="sport">
+                            <option value="">Select sport</option>
+                            <optgroup label="Team & Ball Sports">
+                                <option value="Football (Soccer)">Football (Soccer)</option>
+                                <option value="American Football">American Football</option>
+                                <option value="Basketball">Basketball</option>
+                                <option value="Volleyball">Volleyball</option>
+                                <option value="Beach Volleyball">Beach Volleyball</option>
+                                <option value="Handball">Handball</option>
+                                <option value="Rugby Union">Rugby Union</option>
+                                <option value="Rugby League">Rugby League</option>
+                                <option value="Cricket">Cricket</option>
+                                <option value="Baseball">Baseball</option>
+                                <option value="Softball">Softball</option>
+                                <option value="Field Hockey">Field Hockey</option>
+                                <option value="Ice Hockey">Ice Hockey</option>
+                                <option value="Lacrosse">Lacrosse</option>
+                                <option value="Water Polo">Water Polo</option>
+                                <option value="Futsal">Futsal</option>
+                                <option value="Netball">Netball</option>
+                                <option value="Gaelic Football">Gaelic Football</option>
+                                <option value="Hurling">Hurling</option>
+                            </optgroup>
+                            <optgroup label="Racquet & Paddle Sports">
+                                <option value="Tennis">Tennis</option>
+                                <option value="Table Tennis">Table Tennis</option>
+                                <option value="Badminton">Badminton</option>
+                                <option value="Squash">Squash</option>
+                                <option value="Racquetball">Racquetball</option>
+                                <option value="Padel">Padel</option>
+                                <option value="Pickleball">Pickleball</option>
+                            </optgroup>
+                            <optgroup label="Endurance & Athletics">
+                                <option value="Track Sprinting">Track Sprinting</option>
+                                <option value="Middle Distance Running">Middle Distance Running</option>
+                                <option value="Long Distance Running">Long Distance Running</option>
+                                <option value="Marathon">Marathon</option>
+                                <option value="Trail Running">Trail Running</option>
+                                <option value="Triathlon">Triathlon</option>
+                                <option value="Duathlon">Duathlon</option>
+                                <option value="Cycling - Road">Cycling - Road</option>
+                                <option value="Cycling - Track">Cycling - Track</option>
+                                <option value="Cycling - Mountain Bike">Cycling - Mountain Bike</option>
+                                <option value="BMX">BMX</option>
+                                <option value="Rowing">Rowing</option>
+                                <option value="Canoe Sprint">Canoe Sprint</option>
+                                <option value="Kayaking">Kayaking</option>
+                                <option value="Race Walking">Race Walking</option>
+                            </optgroup>
+                            <optgroup label="Aquatic Sports">
+                                <option value="Swimming">Swimming</option>
+                                <option value="Open Water Swimming">Open Water Swimming</option>
+                                <option value="Diving">Diving</option>
+                                <option value="Synchronized Swimming">Synchronized Swimming</option>
+                                <option value="Surfing">Surfing</option>
+                                <option value="Windsurfing">Windsurfing</option>
+                                <option value="Kitesurfing">Kitesurfing</option>
+                                <option value="Sailing">Sailing</option>
+                            </optgroup>
+                            <optgroup label="Combat Sports">
+                                <option value="Boxing">Boxing</option>
+                                <option value="Wrestling">Wrestling</option>
+                                <option value="Judo">Judo</option>
+                                <option value="Karate">Karate</option>
+                                <option value="Taekwondo">Taekwondo</option>
+                                <option value="Muay Thai">Muay Thai</option>
+                                <option value="Brazilian Jiu-Jitsu">Brazilian Jiu-Jitsu</option>
+                                <option value="MMA">MMA</option>
+                                <option value="Fencing">Fencing</option>
+                            </optgroup>
+                            <optgroup label="Strength & Fitness">
+                                <option value="Weightlifting">Weightlifting</option>
+                                <option value="Powerlifting">Powerlifting</option>
+                                <option value="Bodybuilding">Bodybuilding</option>
+                                <option value="CrossFit">CrossFit</option>
+                                <option value="Calisthenics">Calisthenics</option>
+                                <option value="Functional Fitness">Functional Fitness</option>
+                            </optgroup>
+                            <optgroup label="Gymnastics & Aesthetic Sports">
+                                <option value="Artistic Gymnastics">Artistic Gymnastics</option>
+                                <option value="Rhythmic Gymnastics">Rhythmic Gymnastics</option>
+                                <option value="Trampoline">Trampoline</option>
+                                <option value="Figure Skating">Figure Skating</option>
+                                <option value="Cheerleading">Cheerleading</option>
+                                <option value="Dance Sport">Dance Sport</option>
+                            </optgroup>
+                            <optgroup label="Winter Sports">
+                                <option value="Alpine Skiing">Alpine Skiing</option>
+                                <option value="Cross-Country Skiing">Cross-Country Skiing</option>
+                                <option value="Snowboarding">Snowboarding</option>
+                                <option value="Biathlon">Biathlon</option>
+                                <option value="Speed Skating">Speed Skating</option>
+                                <option value="Short Track">Short Track</option>
+                                <option value="Curling">Curling</option>
+                                <option value="Bobsleigh">Bobsleigh</option>
+                                <option value="Luge">Luge</option>
+                                <option value="Skeleton">Skeleton</option>
+                            </optgroup>
+                            <optgroup label="Target, Mind & Other Sports">
+                                <option value="Archery">Archery</option>
+                                <option value="Shooting">Shooting</option>
+                                <option value="Golf">Golf</option>
+                                <option value="Equestrian">Equestrian</option>
+                                <option value="Polo">Polo</option>
+                                <option value="Skateboarding">Skateboarding</option>
+                                <option value="Climbing">Climbing</option>
+                                <option value="Parkour">Parkour</option>
+                                <option value="Chess">Chess</option>
+                                <option value="Esports">Esports</option>
+                                <option value="Other">Other</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" id="position" placeholder="Enter position/role">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>TDEE (Total Daily Energy Expenditure)</label>
+                        <input type="number" id="tdee" readonly placeholder="Auto-calculated" class="bg-gray-100" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateTDEE()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Plan -->
+            <div class="form-section">
+                <h3>🥗 Nutrition Plan</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Progression Type <span class="required">*</span></label>
+                        <select id="progressionType" required>
+                            <option value="">Select type</option>
+                            <option value="cut">Cut (Lose Weight)</option>
+                            <option value="maintain">Maintain</option>
+                            <option value="bulk">Bulk (Gain Weight)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Protein Target (g)</label>
+                        <input type="number" id="proteinTarget" placeholder="e.g., 150" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateProtein()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Fats Target (g)</label>
+                        <input type="number" id="fatsTarget" placeholder="e.g., 60" step="0.1">
+                        <div class="info-text">Fats are typically 20-35% of your daily calorie target.</div>
+                        <button type="button" class="calc-button" onclick="calculateFats()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Carbs Target (g)</label>
+                        <input type="number" id="carbsTarget" placeholder="e.g., 220" step="0.1">
+                        <div class="info-text">Carbs are calculated from remaining calories after protein and fat targets.</div>
+                        <button type="button" class="calc-button" onclick="calculateCarbs()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hydration -->
+            <div class="form-section">
+                <h3>💧 Hydration</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Water Intake Target (liters/day)</label>
+                        <input type="number" id="waterIntake" placeholder="e.g., 3.5" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateWaterIntake()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Water In Body (liters)</label>
+                        <input type="number" id="waterInBody" placeholder="e.g., 38" step="0.1">
+                        <button type="button" class="calc-button" onclick="calculateWaterInBody()">Calculate</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Minerals</label>
+                        <input type="text" id="minerals" placeholder="e.g., Normal / 4.2 kg">
+                        <button type="button" class="calc-button" onclick="calculateMinerals()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health & Observations -->
+            <div class="form-section">
+                <h3>🏥 Health & Observations</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Injuries</label>
+                        <textarea id="injuries" placeholder="Describe any injuries" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Allergies (Food)</label>
+                        <textarea id="foodAllergies" placeholder="List food allergies" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Medical Notes</label>
+                        <textarea id="medicalNotes" placeholder="Additional medical information" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food Preferences -->
+            <div class="form-section">
+                <h3>🍽️ Food Preferences</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Food Likes</label>
+                        <textarea id="foodLikes" placeholder="Foods they enjoy" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Food Dislikes</label>
+                        <textarea id="foodDislikes" placeholder="Foods they dislike" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Supplements</label>
+                        <textarea id="supplements" placeholder="Write any supplements you currently take" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>🏋️ Training Details (Every Day)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Monday Type</label>
+                        <select id="trainingMondayType">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Monday Start</label>
+                        <input type="time" id="trainingMondayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Monday End</label>
+                        <input type="time" id="trainingMondayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tuesday Type</label>
+                        <select id="trainingTuesdayType">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tuesday Start</label>
+                        <input type="time" id="trainingTuesdayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Tuesday End</label>
+                        <input type="time" id="trainingTuesdayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Wednesday Type</label>
+                        <select id="trainingWednesdayType">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Wednesday Start</label>
+                        <input type="time" id="trainingWednesdayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Wednesday End</label>
+                        <input type="time" id="trainingWednesdayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Thursday Type</label>
+                        <select id="trainingThursdayType">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Thursday Start</label>
+                        <input type="time" id="trainingThursdayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Thursday End</label>
+                        <input type="time" id="trainingThursdayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Friday Type</label>
+                        <select id="trainingFridayType">
+                            <option value="low" selected>Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Friday Start</label>
+                        <input type="time" id="trainingFridayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Friday End</label>
+                        <input type="time" id="trainingFridayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Saturday Type</label>
+                        <select id="trainingSaturdayType">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Saturday Start</label>
+                        <input type="time" id="trainingSaturdayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Saturday End</label>
+                        <input type="time" id="trainingSaturdayEnd" value="17:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sunday Type</label>
+                        <select id="trainingSundayType">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="rest">Rest</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sunday Start</label>
+                        <input type="time" id="trainingSundayStart" value="15:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Sunday End</label>
+                        <input type="time" id="trainingSundayEnd" value="17:00">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals & Timeline -->
+            <div class="form-section">
+                <h3>🎯 Goals & Timeline</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Goal Weight (kg)</label>
+                        <input type="number" id="goalWeight" placeholder="e.g., 70" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select id="priority">
+                            <option value="">Select priority</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Competition Date</label>
+                        <input type="date" id="competitionDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mental Observations</label>
+                        <textarea id="mentalObservations" placeholder="Add any mental observations" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="additionalNotes" placeholder="Any other information" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="form-section flex justify-between">
+                <button type="button" onclick="window.history.back()" class="px-8 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button type="submit" class="accent-bg text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                    Save Profile & Continue
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Pre-fill from authenticated user
+        document.addEventListener('DOMContentLoaded', () => {
+            const fullName = localStorage.getItem('clientFullName');
+            const clientId = localStorage.getItem('currentClientId');
+            const signupSport = localStorage.getItem('clientSport');
+            
+            if (fullName) {
+                document.getElementById('fullName').value = fullName;
+            }
+
+            if (clientId) {
+                document.getElementById('clientId').value = clientId;
+            }
+
+            if (signupSport) {
+                document.getElementById('sport').value = signupSport;
+            }
+
+            document.getElementById('country')?.addEventListener('change', syncPhoneCodeFromCountryText);
+            document.getElementById('country')?.addEventListener('blur', syncPhoneCodeFromCountryText);
+            syncPhoneCodeFromCountryText();
+        });
+
+        function syncPhoneCodeFromCountryText() {
+            const countryInput = document.getElementById('country');
+            const phoneInput = document.getElementById('phone');
+            if (!countryInput || !phoneInput || !window.COUNTRY_PHONE_CODES) return;
+
+            const rawCountry = countryInput.value.trim();
+            if (!rawCountry) return;
+
+            const matchedCountry = Object.keys(window.COUNTRY_PHONE_CODES).find((country) => 
+                country.toLowerCase() === rawCountry.toLowerCase()
+            );
+            const dialCode = window.getCountryDialCode(matchedCountry || rawCountry);
+            const currentValue = phoneInput.value.trim();
+            const nationalNumber = currentValue.replace(/^\+\d+\s*/, '');
+
+            phoneInput.value = nationalNumber ? `${dialCode} ${nationalNumber}` : `${dialCode} `;
+            phoneInput.placeholder = `${dialCode} 50 123 4567`;
+        }
+
+        // Calculations
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            
+            if (height && weight) {
+                const bmi = weight / ((height / 100) ** 2);
+                document.getElementById('bmi').value = bmi.toFixed(2);
+            }
+        }
+
+        function calculateBMR() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const birthday = document.getElementById('birthday').value;
+            const gender = document.getElementById('gender').value;
+            
+            if (!weight || !height || !birthday || !gender) {
+                alert('Please fill in weight, height, birthday, and gender first');
+                return;
+            }
+            
+            const birthDate = new Date(birthday);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            let bmr;
+            if (gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+            
+            document.getElementById('bmr').value = bmr.toFixed(2);
+        }
+
+        function calculateTDEE() {
+            const bmr = parseFloat(document.getElementById('bmr').value);
+            const activityLevel = document.getElementById('activityLevel').value;
+            
+            if (!bmr || !activityLevel) {
+                alert('Please calculate BMR and select activity level first');
+                return;
+            }
+            
+            const multipliers = {
+                'sedentary': 1.2,
+                'light': 1.375,
+                'moderate': 1.55,
+                'very': 1.725,
+                'extremely': 1.9
+            };
+            
+            const tdee = bmr * (multipliers[activityLevel] || 1.5);
+            document.getElementById('tdee').value = tdee.toFixed(2);
+        }
+
+        function calculateProtein() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            if (weight) {
+                // 1.6-2.2g per kg for athletes
+                document.getElementById('proteinTarget').value = (weight * 1.8).toFixed(1);
+            }
+        }
+
+        function calculateCarbs() {
+            const tdee = parseFloat(document.getElementById('tdee').value);
+            const protein = parseFloat(document.getElementById('proteinTarget').value);
+            const fats = parseFloat(document.getElementById('fatsTarget').value);
+
+            if (!tdee || !protein || !fats) {
+                alert('Please fill TDEE, protein target, and fats target first');
+                return;
+            }
+
+            const remainingCalories = tdee - (protein * 4) - (fats * 9);
+            const carbs = Math.max(0, remainingCalories / 4);
+            document.getElementById('carbsTarget').value = carbs.toFixed(1);
+        }
+
+        function calculateFats() {
+            const tdee = parseFloat(document.getElementById('tdee').value);
+            if (!tdee) {
+                alert('Please calculate TDEE first');
+                return;
+            }
+            const fatCalories = tdee * 0.25;
+            const fats = fatCalories / 9;
+            document.getElementById('fatsTarget').value = fats.toFixed(1);
+        }
+
+        function calculateWaterIntake() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            if (weight) {
+                document.getElementById('waterIntake').value = (weight * 0.035).toFixed(1);
+            }
+        }
+
+        function calculateBodyFatMass() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const bodyFatPercent = parseFloat(document.getElementById('bodyFat').value);
+            if (!weight || bodyFatPercent === null || Number.isNaN(bodyFatPercent)) {
+                alert('Please fill Weight and Body Fat % first');
+                return;
+            }
+            const fatMass = weight * (bodyFatPercent / 100);
+            document.getElementById('bodyFatMass').value = fatMass.toFixed(1);
+        }
+
+        function calculateMusclePercent() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const skeletalMuscle = parseFloat(document.getElementById('skeletalMuscle').value);
+            if (!weight || skeletalMuscle === null || Number.isNaN(skeletalMuscle)) {
+                alert('Please fill Weight and Skeletal Muscle first');
+                return;
+            }
+            const musclePercent = (skeletalMuscle / weight) * 100;
+            document.getElementById('musclePercent').value = musclePercent.toFixed(1);
+        }
+
+        function calculateInbodyBmr() {
+            const bmr = parseFloat(document.getElementById('bmr').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const inbodyBmrEl = document.getElementById('inbodyBmr');
+
+            if (bmr) {
+                inbodyBmrEl.value = bmr.toFixed(1);
+                return;
+            }
+
+            if (weight) {
+                inbodyBmrEl.value = (weight * 22).toFixed(1);
+                return;
+            }
+
+            alert('Please calculate BMR first (or enter Weight)');
+        }
+
+        function calculateWaterInBody() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            if (!weight) {
+                alert('Please fill Weight first');
+                return;
+            }
+            const waterInBody = weight * 0.55;
+            document.getElementById('waterInBody').value = waterInBody.toFixed(1);
+        }
+
+        function calculateMinerals() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            if (!weight) {
+                alert('Please fill Weight first');
+                return;
+            }
+            const mineralsKg = weight * 0.055;
+            document.getElementById('minerals').value = `${mineralsKg.toFixed(1)} kg`;
+        }
+
+        function getTrainingDetails() {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            return days.map((day) => {
+                return {
+                    day,
+                    type: document.getElementById(`training${day}Type`).value || 'medium',
+                    start: document.getElementById(`training${day}Start`).value || '',
+                    end: document.getElementById(`training${day}End`).value || ''
+                };
+            });
+        }
+
+        function getAllFormValues() {
+            const form = document.getElementById('clientDetailsForm');
+            const values = {};
+            form.querySelectorAll('input, select, textarea').forEach((field) => {
+                if (!field.id) {
+                    return;
+                }
+                if (field.type === 'checkbox') {
+                    values[field.id] = field.checked;
+                    return;
+                }
+                values[field.id] = field.value;
+            });
+            return values;
+        }
+
+        function ensureAuthenticated() {
+            if (typeof getAuthToken === 'function') {
+                return !!getAuthToken();
+            }
+            return !!localStorage.getItem('authToken');
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            // Validate Full Name (must have at least 4 names)
+            const fullNameInput = document.getElementById('fullName').value.trim();
+            const nameError = document.getElementById('fullNameError');
+            const nameParts = fullNameInput.split(/\s+/).filter(part => part.length > 0);
+            
+            if (nameParts.length < 4) {
+                if (nameError) {
+                    nameError.style.display = 'block';
+                }
+                document.getElementById('fullName').style.borderColor = 'red';
+                document.getElementById('fullName').focus();
+                return;
+            } else {
+                if (nameError) {
+                    nameError.style.display = 'none';
+                }
+                document.getElementById('fullName').style.borderColor = '';
+            }
+            
+            try {
+                const trainingDetails = getTrainingDetails();
+                const allFormValues = getAllFormValues();
+                const fridayTraining = trainingDetails.find(t => t.day === 'Friday') || trainingDetails[0];
+                const primaryTraining = trainingDetails.find(t => t.day === 'Friday' && t.start) || trainingDetails.find(t => t.start) || null;
+                const primaryTrainingStart = primaryTraining?.start || null;
+                const primaryTrainingEnd = primaryTraining?.end || null;
+                const selectedClientId = parseInt(localStorage.getItem('currentClientId'), 10) || Math.floor(Math.random() * 900) + 100;
+                const fullName = fullNameInput || localStorage.getItem('clientFullName') || 'New Client';
+                const gender = document.getElementById('gender').value;
+                const normalizedGender = gender ? (gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()) : 'Other';
+                const birthdayValue = document.getElementById('birthday').value;
+                const authToken = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+                let backendSaved = false;
+
+                const profileData = {
+                    phone: document.getElementById('phone').value,
+                    birthday: birthdayValue || null,
+                    gender,
+                    country: document.getElementById('country').value,
+                    club: document.getElementById('club').value,
+                    sport: document.getElementById('sport').value,
+                    position: document.getElementById('position').value,
+                    activity_level: document.getElementById('activityLevel').value,
+                    priority: document.getElementById('priority').value || 'medium',
+                    competition_date: document.getElementById('competitionDate').value || null,
+                    goal_weight: document.getElementById('goalWeight').value ? parseFloat(document.getElementById('goalWeight').value) : null,
+                    training_details: trainingDetails,
+                    training_start_time: primaryTrainingStart,
+                    training_time: primaryTrainingStart,
+                    training_end_time: primaryTrainingEnd
+                };
+
+                if (authToken) {
+                    try {
+                        const response = await apiFetch(`${CONFIG.API_BASE_URL}/api/client/profile`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(profileData)
+                        });
+                        backendSaved = response.ok;
+                    } catch (error) {
+                        backendSaved = false;
+                    }
+                }
+                
+                // Cache measurements
+                const cacheData = {
+                    id: selectedClientId,
+                    name: fullName,
+                    fullProfileForm: allFormValues,
+                    weight: document.getElementById('weight').value,
+                    startWeight: document.getElementById('weight').value,
+                    height: document.getElementById('height').value,
+                    bmi: document.getElementById('bmi').value,
+                    bmr: document.getElementById('bmr').value,
+                    tdee: document.getElementById('tdee').value,
+                    proteinTarget: document.getElementById('proteinTarget').value,
+                    carbsTarget: document.getElementById('carbsTarget').value,
+                    fatsTarget: document.getElementById('fatsTarget').value,
+                    waterIntake: document.getElementById('waterIntake').value,
+                    goalWeight: document.getElementById('goalWeight').value,
+                    supplements: document.getElementById('supplements').value,
+                    mentalObservations: document.getElementById('mentalObservations').value,
+                    additionalNotes: document.getElementById('additionalNotes').value,
+                    bodyFatMass: document.getElementById('bodyFatMass').value,
+                    musclePercent: document.getElementById('musclePercent').value,
+                    inbodyBmr: document.getElementById('inbodyBmr').value,
+                    waterInBody: document.getElementById('waterInBody').value,
+                    minerals: document.getElementById('minerals').value,
+                    injuries: document.getElementById('injuries').value,
+                    trainingDetails,
+                    training_start_time: primaryTrainingStart,
+                    training_time: primaryTrainingStart,
+                    training_end_time: primaryTrainingEnd,
+                    trainingTime: primaryTrainingStart,
+                    trainingEndTime: primaryTrainingEnd,
+                    trainingDay: fridayTraining.day,
+                    trainingType: fridayTraining.type,
+                    trainingStart: fridayTraining.start,
+                    trainingEnd: fridayTraining.end
+                };
+                localStorage.setItem('clientDashboardCache', JSON.stringify(cacheData));
+                localStorage.setItem(`clientDashboardCache_${selectedClientId}`, JSON.stringify(cacheData));
+                localStorage.setItem(`clientFullProfile_${selectedClientId}`, JSON.stringify(allFormValues));
+
+                const birthDate = new Date(birthdayValue || new Date());
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+
+                const newClientData = {
+                    id: selectedClientId,
+                    displayId: selectedClientId,
+                    name: fullName,
+                    age: age,
+                    fullProfileForm: allFormValues,
+                    gender: normalizedGender,
+                    phone: document.getElementById('phone').value,
+                    activityLevel: document.getElementById('activityLevel').value,
+                    sport: document.getElementById('sport').value,
+                    priority: document.getElementById('priority').value || 'medium',
+                    competitionStatus: 'none',
+                    readStatus: 'unread',
+                    notes: document.getElementById('additionalNotes').value || 'N/A',
+                    mentalObservations: document.getElementById('mentalObservations').value || 'N/A',
+                    club: document.getElementById('club').value,
+                    country: document.getElementById('country').value,
+                    height: parseFloat(document.getElementById('height').value) || 0,
+                    weight: parseFloat(document.getElementById('weight').value) || 0,
+                    birthday: birthdayValue || new Date().toISOString().split('T')[0],
+                    position: document.getElementById('position').value || 'N/A',
+                    daysLeft: 'N/A',
+                    bodyFat: parseFloat(document.getElementById('bodyFat').value) || 0,
+                    bodyFatMass: parseFloat(document.getElementById('bodyFatMass').value) || 0,
+                    musclePercent: parseFloat(document.getElementById('musclePercent').value) || 0,
+                    muscleMass: parseFloat(document.getElementById('skeletalMuscle').value) || 0,
+                    tdee: parseFloat(document.getElementById('tdee').value) || 0,
+                    bmr: parseFloat(document.getElementById('bmr').value) || 0,
+                    inbodyBmr: parseFloat(document.getElementById('inbodyBmr').value) || 0,
+                    waterInBody: parseFloat(document.getElementById('waterInBody').value) || 0,
+                    minerals: document.getElementById('minerals').value || 'N/A',
+                    goalWeight: parseFloat(document.getElementById('goalWeight').value) || 0,
+                    currentWeight: parseFloat(document.getElementById('weight').value) || 0,
+                    progressType: document.getElementById('progressionType').value || 'N/A',
+                    supplements: document.getElementById('supplements').value || 'No supplements added',
+                    trainingDetails,
+                    training_start_time: primaryTrainingStart,
+                    training_time: primaryTrainingStart,
+                    training_end_time: primaryTrainingEnd,
+                    trainingTime: primaryTrainingStart,
+                    trainingEndTime: primaryTrainingEnd,
+                    trainingDay: fridayTraining.day,
+                    trainingType: fridayTraining.type,
+                    trainingStart: fridayTraining.start || 'N/A',
+                    trainingEnd: fridayTraining.end || 'N/A',
+                    foodLikes: document.getElementById('foodLikes').value || 'N/A',
+                    foodDislikes: document.getElementById('foodDislikes').value || 'N/A',
+                    injuries: document.getElementById('injuries').value || 'N/A',
+                    healthInjuries: document.getElementById('injuries').value || 'N/A',
+                    medical: document.getElementById('medicalNotes').value || 'N/A',
+                    foodAllergies: document.getElementById('foodAllergies').value || 'N/A',
+                    additionalNotes: document.getElementById('additionalNotes').value || 'N/A',
+                    email: localStorage.getItem('clientEmail') || 'N/A',
+                    createdAt: new Date().toISOString()
+                };
+
+                localStorage.setItem('clientData_' + selectedClientId, JSON.stringify(newClientData));
+
+                const existingClients = JSON.parse(localStorage.getItem('clients') || '[]');
+                const existingIndex = existingClients.findIndex(client => Number(client.id) === Number(selectedClientId));
+                if (existingIndex >= 0) {
+                    existingClients[existingIndex] = { ...existingClients[existingIndex], ...newClientData };
+                } else {
+                    existingClients.push(newClientData);
+                }
+                localStorage.setItem('clients', JSON.stringify(existingClients));
+                localStorage.setItem('currentClientId', String(selectedClientId));
+                localStorage.setItem('clientFullName', fullName);
+                localStorage.setItem('clientSport', document.getElementById('sport').value);
+                
+                if (backendSaved) {
+                    alert('Profile saved successfully!');
+                } else {
+                    alert('Profile saved locally and added to Clients. Redirecting to Dashboard.');
+                }
+                window.location.href = 'client-dashboard.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while saving your profile.');
+            }
+        }
+    </script>
+</body>
+</html>
