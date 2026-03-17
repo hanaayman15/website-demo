@@ -1,34 +1,40 @@
-import { useEffect } from 'react';
-import { useLegacyPage } from '../hooks/useLegacyPage';
-import LegacyHtmlRenderer from '../components/layout/LegacyHtmlRenderer';
-import '../assets/styles/responsive.css';
-import '../assets/styles/dashboard-template.css';
+import { Link } from 'react-router-dom';
+import '../assets/styles/react-pages.css';
 
 function NextCheckin() {
-  const { bodyHtml, inlineScripts, loading, error } = useLegacyPage('/legacy/next-checkin.html');
+  const checkinDate = localStorage.getItem('nextCheckinDate') || '';
+  const isScheduled = Boolean(checkinDate);
+  const statusLabel = isScheduled ? 'Scheduled' : 'Not Scheduled';
 
-  useEffect(() => {
-    // Migration metadata for this page.
-    const migrationInfo = {
-      file: 'next-checkin.html',
-      inlineScriptCount: 1,
-      formCount: 0,
-    };
-
-    if (migrationInfo.inlineScriptCount > 0) {
-      // TODO: Replace legacy inline JS with dedicated React hooks and event handlers.
-      // This scaffold intentionally avoids executing legacy inline scripts.
-      console.debug('Legacy migration info', migrationInfo, inlineScripts.length);
-    }
-  }, [inlineScripts]);
+  const viewDetails = () => {
+    window.alert('Contact your nutritionist from settings to schedule your next check-in.');
+  };
 
   return (
-    <LegacyHtmlRenderer
-      pageName="NextCheckin"
-      loading={loading}
-      error={error}
-      bodyHtml={bodyHtml}
-    />
+    <main className="react-page-wrap react-grid" style={{ maxWidth: 720, gap: '1rem' }}>
+      <section className="react-panel react-grid" style={{ textAlign: 'center' }}>
+        <h1 style={{ marginTop: 0, marginBottom: 0 }}>Next Check-in</h1>
+        <div className="stat-item" style={{ background: isScheduled ? '#ecfdf5' : '#fffbeb', borderColor: isScheduled ? '#86efac' : '#fcd34d' }}>
+          <div className="stat-label">Status</div>
+          <div className="stat-value" style={{ fontSize: '1.1rem' }}>{statusLabel}</div>
+          <p className="react-muted" style={{ margin: '0.35rem 0 0 0' }}>
+            {isScheduled ? `Your next check-in is on ${checkinDate}.` : 'Your next nutrition check-in has not been scheduled yet.'}
+          </p>
+        </div>
+
+        <div className="react-panel" style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
+          <p style={{ margin: 0, fontWeight: 600 }}>Contact your nutritionist</p>
+          <p className="react-muted" style={{ margin: '0.35rem 0 0 0' }}>
+            Regular check-ins help monitor progress and update your nutrition strategy.
+          </p>
+        </div>
+
+        <div className="react-inline-actions" style={{ justifyContent: 'center' }}>
+          <button className="react-btn" type="button" onClick={viewDetails}>View Details</button>
+          <Link className="react-btn react-btn-ghost" to="/client-dashboard">Back to Dashboard</Link>
+        </div>
+      </section>
+    </main>
   );
 }
 
