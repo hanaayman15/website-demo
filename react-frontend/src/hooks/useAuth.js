@@ -1,6 +1,7 @@
 import { useMemo, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient, setAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { persistSessionAuth } from '../utils/authSession';
 
 export function buildAuthPayload(mode, formState) {
   if (mode === 'signup') {
@@ -122,14 +123,13 @@ function persistAuth(data, email, roleHint) {
   const tokenType = String(data?.token_type || 'bearer');
   const role = String(data?.role || roleHint || 'doctor').toLowerCase();
 
-  setAuthToken(token);
-  localStorage.setItem('authTokenType', tokenType);
-  localStorage.setItem('authRole', role);
-  sessionStorage.setItem('authRole', role);
-  sessionStorage.setItem('role', role);
-  sessionStorage.setItem('token', token);
-  localStorage.setItem('clientEmail', email);
-  sessionStorage.setItem('doctorAdminSessionActive', '1');
+  persistSessionAuth({
+    token,
+    tokenType,
+    role,
+    email,
+    doctorSession: true,
+  });
 }
 
 export function useAuth(nextPath = '/doctor-dashboard') {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient, getAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { clearSessionAuth, hasDoctorAdminSession, resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 
 export function getFallbackConfig() {
   return {
@@ -109,16 +110,7 @@ export function doctorDashboardReducer(state, action) {
 }
 
 function currentAuthRole() {
-  return String(
-    sessionStorage.getItem('role') ||
-      sessionStorage.getItem('authRole') ||
-      localStorage.getItem('authRole') ||
-      ''
-  ).toLowerCase();
-}
-
-function hasDoctorSession() {
-  return sessionStorage.getItem('doctorAdminSessionActive') === '1';
+  return resolveAuthRole();
 }
 
 function parseApiError(error, fallback) {
@@ -138,8 +130,8 @@ export function useDoctorDashboard() {
 
   const refresh = useCallback(async () => {
     const role = currentAuthRole();
-    const token = getAuthToken() || sessionStorage.getItem('token');
-    const canAccess = (role === 'doctor' || role === 'admin') && !!token && hasDoctorSession();
+    const token = resolveAuthToken();
+    const canAccess = (role === 'doctor' || role === 'admin') && !!token && hasDoctorAdminSession();
 
     if (!canAccess) {
       navigate('/doctor-auth?next=%2Fdoctor-dashboard', { replace: true });
@@ -173,12 +165,7 @@ export function useDoctorDashboard() {
   const role = currentAuthRole() || 'doctor';
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authRole');
-    sessionStorage.removeItem('authRole');
-    sessionStorage.removeItem('role');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('doctorAdminSessionActive');
+    clearSessionAuth();
     navigate('/doctor-auth', { replace: true });
   };
 

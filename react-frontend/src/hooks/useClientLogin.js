@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient, setAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { persistSessionAuth } from '../utils/authSession';
+import { getStorage, safeGet, safeRemove, safeSet } from '../utils/storageSafe';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail';
+const LOCAL = getStorage('local');
 
 function normalizeError(error) {
   if (error?.response?.data?.detail) {
@@ -26,7 +29,7 @@ export function useClientLogin() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    const remembered = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    const remembered = safeGet(LOCAL, REMEMBERED_EMAIL_KEY);
     if (remembered) {
       setForm((prev) => ({ ...prev, email: remembered, rememberMe: true }));
     }
@@ -58,21 +61,20 @@ export function useClientLogin() {
         throw new Error('Login response did not include an access token.');
       }
 
-      setAuthToken(token);
-      localStorage.setItem('clientEmail', email);
+      persistSessionAuth({ token, email, role: 'client' });
       if (form.rememberMe) {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        safeSet(LOCAL, REMEMBERED_EMAIL_KEY, email);
       } else {
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        safeRemove(LOCAL, REMEMBERED_EMAIL_KEY);
       }
 
       try {
         const profileResponse = await apiClient.get('/api/client/profile');
         const profile = profileResponse?.data || {};
         const fullName = profile.full_name || email.split('@')[0] || 'Client';
-        localStorage.setItem('clientFullName', fullName);
+        safeSet(LOCAL, 'clientFullName', fullName);
       } catch {
-        localStorage.setItem('clientFullName', email.split('@')[0] || 'Client');
+        safeSet(LOCAL, 'clientFullName', email.split('@')[0] || 'Client');
       }
 
       setSuccess('Login successful. Redirecting...');

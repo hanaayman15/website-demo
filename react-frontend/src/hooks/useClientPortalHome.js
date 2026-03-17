@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
-import { apiClient, getAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { resolveAuthToken } from '../utils/authSession';
 
 export const HOME_RECIPES = {
   steak: {
@@ -87,7 +88,7 @@ function buildInitialState() {
   return {
     loading: true,
     error: '',
-    isAuthenticated: Boolean(getAuthToken()),
+    isAuthenticated: Boolean(resolveAuthToken()),
     summary: buildHomeSummaryDefaults(),
     activeRecipeKey: '',
   };
@@ -117,7 +118,7 @@ export function useClientPortalHome({ requireAuth = false } = {}) {
     let mounted = true;
 
     const load = async () => {
-      const authenticated = Boolean(getAuthToken());
+      const authenticated = Boolean(resolveAuthToken());
       dispatch({ type: 'LOAD_START', payload: { isAuthenticated: authenticated } });
 
       if (!authenticated && !requireAuth) {

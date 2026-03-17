@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useReducer } from 'react';
-import { apiClient, getAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { resolveAuthToken } from '../utils/authSession';
+import { getStorage, safeSet } from '../utils/storageSafe';
 import {
   buildDashboardInitialState,
   buildMacroState,
@@ -13,6 +15,7 @@ import {
 } from './useDashboardDataReducer';
 
 export function useDashboardData() {
+  const local = getStorage('local');
   const [state, dispatch] = useReducer(dashboardDataReducer, undefined, buildDashboardInitialState);
 
   useEffect(() => {
@@ -21,7 +24,7 @@ export function useDashboardData() {
     async function load() {
       dispatch({ type: 'LOAD_START' });
       try {
-        const token = getAuthToken();
+        const token = resolveAuthToken();
         if (!token) {
           throw new Error('Please login first.');
         }
@@ -56,8 +59,8 @@ export function useDashboardData() {
         });
 
         const displayName = data.full_name || data.email?.split('@')[0] || 'Client';
-        localStorage.setItem('clientFullName', displayName);
-        if (data.email) localStorage.setItem('clientEmail', data.email);
+        safeSet(local, 'clientFullName', displayName);
+        if (data.email) safeSet(local, 'clientEmail', data.email);
       } catch (err) {
         if (!mounted) return;
         const message = err?.response?.data?.detail || err?.message || 'Failed to load dashboard data.';

@@ -32,6 +32,8 @@ import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
 import { buildFullProfilePayload, buildPersonalInfoPayload } from '../hooks/useSettings';
+import { buildSessionSnapshot } from '../utils/authSession';
+import { safeGet } from '../utils/storageSafe';
 import '../assets/styles/react-pages.css';
 
 function MigrationHarness() {
@@ -380,6 +382,13 @@ function MigrationHarness() {
     };
   }, []);
 
+  const phaseFivePayloads = useMemo(() => {
+    return {
+      sessionSnapshot: buildSessionSnapshot(),
+      safeStorageRead: safeGet(null, 'missing-key', 'fallback-value'),
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -510,6 +519,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Final Wrapper Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(finalWrapperPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 5 Session/Persistence Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(phaseFivePayloads, null, 2)}</pre>
       </section>
     </main>
   );

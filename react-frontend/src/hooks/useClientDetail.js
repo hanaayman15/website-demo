@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { apiClient, getAuthToken } from '../services/api';
+import { apiClient } from '../services/api';
+import { resolveAuthToken } from '../utils/authSession';
+import { getStorage, safeGet, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
 import {
   WEEK_DAYS,
   buildInitialProgramsState,
@@ -21,6 +23,7 @@ function normalizeNotes(value) {
 }
 
 export function useClientDetail() {
+  const local = getStorage('local');
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,7 +34,7 @@ export function useClientDetail() {
   const [programsState, dispatch] = useReducer(programsReducer, undefined, buildInitialProgramsState);
 
   const selectedClientId = useMemo(() => {
-    return parseClientId(searchParams.get('id')) || parseClientId(localStorage.getItem('currentClientId'));
+    return parseClientId(searchParams.get('id')) || parseClientId(safeGet(local, 'currentClientId'));
   }, [searchParams]);
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export function useClientDetail() {
         }
 
         let resolvedClient = null;
-        const token = getAuthToken();
+        const token = resolveAuthToken();
 
         if (token) {
           try {
@@ -60,7 +63,7 @@ export function useClientDetail() {
         }
 
         if (!resolvedClient) {
-          const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+          const clients = safeJsonGet(local, 'clients', []);
           resolvedClient = clients.find((item) => Number(item?.id) === Number(selectedClientId)) || null;
         }
 
@@ -73,7 +76,7 @@ export function useClientDetail() {
         setClient(resolvedClient);
 
         const programsKey = `clientPrograms_${selectedClientId}`;
-        const savedPrograms = JSON.parse(localStorage.getItem(programsKey) || 'null');
+        const savedPrograms = safeJsonGet(local, programsKey, null);
         const mealSwaps = resolvedClient.meal_swaps || null;
         const source = savedPrograms && savedPrograms.dayMeals ? savedPrograms : mealSwaps;
 
@@ -145,7 +148,7 @@ export function useClientDetail() {
       };
       setClient(updated);
 
-      const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+      const clients = safeJsonGet(local, 'clients', []);
       const idx = clients.findIndex((item) => Number(item?.id) === Number(selectedClientId));
       if (idx >= 0) {
         clients[idx] = {
@@ -156,13 +159,13 @@ export function useClientDetail() {
           supplements: updated.supplements,
           meal_swaps: mealSwapsPayload,
         };
-        localStorage.setItem('clients', JSON.stringify(clients));
+        safeJsonSet(local, 'clients', clients);
       }
 
       const programsKey = `clientPrograms_${selectedClientId}`;
-      localStorage.setItem(programsKey, JSON.stringify(mealSwapsPayload));
+      safeJsonSet(local, programsKey, mealSwapsPayload);
 
-      if (getAuthToken()) {
+      if (resolveAuthToken()) {
         try {
           await apiClient.put(`/api/admin/clients/${selectedClientId}`, {
             additional_notes: updated.additionalNotes,

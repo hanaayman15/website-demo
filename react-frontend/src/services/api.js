@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const AUTH_TOKEN_STORAGE_KEY = 'authToken';
+import { clearSessionAuth, persistSessionAuth, resolveAuthToken } from '../utils/authSession';
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
@@ -10,19 +9,19 @@ export const apiClient = axios.create({
 });
 
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  return resolveAuthToken();
 }
 
 export function setAuthToken(token) {
   if (!token) {
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    clearSessionAuth();
     return;
   }
-  localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  persistSessionAuth({ token });
 }
 
 export function clearAuthToken() {
-  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  clearSessionAuth();
 }
 
 apiClient.interceptors.request.use((config) => {
