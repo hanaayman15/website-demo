@@ -1,34 +1,51 @@
-import { useEffect } from 'react';
-import { useLegacyPage } from '../hooks/useLegacyPage';
-import LegacyHtmlRenderer from '../components/layout/LegacyHtmlRenderer';
-import '../assets/styles/responsive.css';
-import '../assets/styles/dashboard-template.css';
+import { useState } from 'react';
+import '../assets/styles/react-pages.css';
 
 function TestApi() {
-  const { bodyHtml, inlineScripts, loading, error } = useLegacyPage('/legacy/test-api.html');
+  const [result, setResult] = useState('');
+  const [running, setRunning] = useState(false);
 
-  useEffect(() => {
-    // Migration metadata for this page.
-    const migrationInfo = {
-      file: 'test-api.html',
-      inlineScriptCount: 1,
-      formCount: 0,
-    };
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001';
+  const endpoint = `${apiBase}/api/auth/clients-public?skip=0&limit=5`;
 
-    if (migrationInfo.inlineScriptCount > 0) {
-      // TODO: Replace legacy inline JS with dedicated React hooks and event handlers.
-      // This scaffold intentionally avoids executing legacy inline scripts.
-      console.debug('Legacy migration info', migrationInfo, inlineScripts.length);
+  const runTest = async () => {
+    setRunning(true);
+    const lines = ['Testing API connection...', '', `1) Fetching from: ${endpoint}`];
+    try {
+      const response = await fetch(endpoint);
+      lines.push(`2) Response status: ${response.status}`);
+      lines.push(`3) Response OK: ${response.ok}`);
+      const data = await response.json();
+      lines.push(`4) Data type: ${typeof data}`);
+      lines.push(`5) Is array: ${Array.isArray(data)}`);
+      lines.push(`6) Length: ${Array.isArray(data) ? data.length : 0}`);
+      lines.push('');
+      lines.push(`7) Data:\n${JSON.stringify(data, null, 2)}`);
+      setResult(lines.join('\n'));
+    } catch (error) {
+      lines.push('');
+      lines.push(`ERROR: ${error.message}`);
+      setResult(lines.join('\n'));
+    } finally {
+      setRunning(false);
     }
-  }, [inlineScripts]);
+  };
 
   return (
-    <LegacyHtmlRenderer
-      pageName="TestApi"
-      loading={loading}
-      error={error}
-      bodyHtml={bodyHtml}
-    />
+    <main className="react-page-wrap react-grid" style={{ maxWidth: 1000 }}>
+      <section className="react-panel react-grid">
+        <h1 style={{ marginTop: 0, marginBottom: 0 }}>API Connection Test</h1>
+        <p className="react-muted" style={{ marginTop: 0 }}>
+          Run a quick request against the clients-public endpoint and inspect the response shape.
+        </p>
+        <div className="react-inline-actions">
+          <button className="react-btn" type="button" onClick={runTest} disabled={running}>
+            {running ? 'Testing...' : 'Test API'}
+          </button>
+        </div>
+        <pre className="react-json-block" style={{ maxHeight: 520 }}>{result || 'No test executed yet.'}</pre>
+      </section>
+    </main>
   );
 }
 

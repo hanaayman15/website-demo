@@ -9,6 +9,8 @@ import {
   buildTodayMacrosPayload,
   dashboardDataReducer,
 } from '../hooks/useDashboardDataReducer';
+import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
+import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
 import { buildFullProfilePayload, buildPersonalInfoPayload } from '../hooks/useSettings';
 import '../assets/styles/react-pages.css';
@@ -91,6 +93,51 @@ function MigrationHarness() {
         foodDislikes: 'Sugar',
         additionalNotes: 'Harness preview',
       }),
+    };
+  }, []);
+
+  const doctorPayloads = useMemo(() => {
+    const signupPayload = buildAuthPayload('signup', {
+      fullName: 'Doctor Harness User',
+      email: 'doctor.harness@example.com',
+      password: 'doctor123',
+    });
+
+    const loginPayload = buildAuthPayload('login', {
+      email: 'doctor.harness@example.com',
+      password: 'doctor123',
+    });
+
+    const adminPayload = buildAuthPayload('admin', {
+      email: 'admin@demo.com',
+      password: 'admin123',
+    });
+
+    const normalizedDashboard = normalizeDoctorDashboardConfig({
+      quick_actions_title: 'Harness Dashboard',
+      quick_actions_description: 'Harness summary',
+      navigation: [{ label: 'Clients', href: 'clients.html' }],
+      modules: [{ label: 'Clients', href: 'clients.html', description: 'Legacy wording' }],
+    });
+
+    const teamSummary = summarizeTeams([
+      { id: 1, team_name: 'A', players_count: 22 },
+      { id: 2, team_name: 'B', players_count: 18 },
+    ]);
+
+    return {
+      endpointCandidates: {
+        doctorLogin: candidatePaths('/doctor/login'),
+        doctorSignup: candidatePaths('/doctor/signup'),
+        adminLogin: candidatePaths('/admin/login'),
+      },
+      payloads: {
+        signupPayload,
+        loginPayload,
+        adminPayload,
+      },
+      normalizedDashboard,
+      teamSummary,
     };
   }, []);
 
@@ -189,6 +236,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Settings Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(settingsPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Doctor/Auth Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(doctorPayloads, null, 2)}</pre>
       </section>
     </main>
   );

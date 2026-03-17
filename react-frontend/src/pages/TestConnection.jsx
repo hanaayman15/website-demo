@@ -1,34 +1,54 @@
-import { useEffect } from 'react';
-import { useLegacyPage } from '../hooks/useLegacyPage';
-import LegacyHtmlRenderer from '../components/layout/LegacyHtmlRenderer';
-import '../assets/styles/responsive.css';
-import '../assets/styles/dashboard-template.css';
+import { useState } from 'react';
+import '../assets/styles/react-pages.css';
 
 function TestConnection() {
-  const { bodyHtml, inlineScripts, loading, error } = useLegacyPage('/legacy/test-connection.html');
+  const [result, setResult] = useState('No connection test has been executed yet.');
+  const [running, setRunning] = useState(false);
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001';
 
-  useEffect(() => {
-    // Migration metadata for this page.
-    const migrationInfo = {
-      file: 'test-connection.html',
-      inlineScriptCount: 1,
-      formCount: 0,
-    };
-
-    if (migrationInfo.inlineScriptCount > 0) {
-      // TODO: Replace legacy inline JS with dedicated React hooks and event handlers.
-      // This scaffold intentionally avoids executing legacy inline scripts.
-      console.debug('Legacy migration info', migrationInfo, inlineScripts.length);
+  const runCheck = async (path, options = {}) => {
+    setRunning(true);
+    try {
+      const response = await fetch(`${apiBase}${path}`, options);
+      const data = await response.json().catch(() => null);
+      const lines = [
+        `Endpoint: ${path}`,
+        `Status: ${response.status}`,
+        `OK: ${response.ok}`,
+        '',
+        `Body:\n${JSON.stringify(data, null, 2)}`,
+      ];
+      setResult(lines.join('\n'));
+    } catch (error) {
+      setResult(`Endpoint: ${path}\n\nConnection failed: ${error.message}`);
+    } finally {
+      setRunning(false);
     }
-  }, [inlineScripts]);
+  };
+
+  const testLoginEndpoint = async () => {
+    await runCheck('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'demo@client.com', password: 'demo123' }),
+    });
+  };
 
   return (
-    <LegacyHtmlRenderer
-      pageName="TestConnection"
-      loading={loading}
-      error={error}
-      bodyHtml={bodyHtml}
-    />
+    <main className="react-page-wrap react-grid" style={{ maxWidth: 1000, gap: '1rem' }}>
+      <section className="react-panel react-grid">
+        <h1 style={{ marginTop: 0, marginBottom: 0 }}>Backend Connection Test</h1>
+        <p className="react-muted" style={{ marginTop: 0 }}>API URL: {apiBase}</p>
+
+        <div className="react-inline-actions">
+          <button className="react-btn" type="button" onClick={() => runCheck('/health')} disabled={running}>Test /health</button>
+          <button className="react-btn react-btn-ghost" type="button" onClick={() => runCheck('/')} disabled={running}>Test / (root)</button>
+          <button className="react-btn react-btn-ghost" type="button" onClick={testLoginEndpoint} disabled={running}>Test Login Endpoint</button>
+        </div>
+
+        <pre className="react-json-block" style={{ maxHeight: 520 }}>{running ? 'Running test...' : result}</pre>
+      </section>
+    </main>
   );
 }
 
