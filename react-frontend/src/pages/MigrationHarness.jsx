@@ -22,6 +22,9 @@ import { buildClientSummary, resolveClientServicesLinks } from '../hooks/useClie
 import { buildNutritionFields, buildNutritionPayload, calculateNutritionDerived } from '../hooks/useClientNutritionProfile';
 import { CLIENT_RECIPES, filterRecipes } from '../hooks/useClientRecipes';
 import { buildSignupProfilePayload, buildSignupRegistrationPayload } from '../hooks/useClientSignup';
+import { buildAdClientTestPayload, calculateAdClientMetrics } from '../hooks/useAdClientTest';
+import { buildAddClientDetailsPayload, recalcAddClientDetails } from '../hooks/useAddClientDetails';
+import { buildTeamPayload, createTeamPlayer, recalcTeamPlayer } from '../hooks/useAddTeam';
 import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
@@ -249,6 +252,88 @@ function MigrationHarness() {
     };
   }, []);
 
+  const rosterPayloads = useMemo(() => {
+    const adClientState = calculateAdClientMetrics({
+      fullName: 'Harness Client User',
+      birthday: '2000-01-01',
+      gender: 'Male',
+      height: '178',
+      weight: '75',
+      activityLevel: 'moderate',
+      competitionDate: '2026-06-01',
+    });
+
+    const detailsState = recalcAddClientDetails({
+      fullName: 'Harness Client User',
+      clientId: '101',
+      phone: '+201000000000',
+      birthday: '2000-01-01',
+      gender: 'male',
+      country: 'Egypt',
+      club: 'Harness Club',
+      height: '178',
+      weight: '75',
+      inbodyBmr: '',
+      activityLevel: 'moderate',
+      sport: 'Football',
+      position: 'Midfielder',
+      progressionType: 'maintain',
+      proteinTarget: '',
+      carbsTarget: '',
+      fatsTarget: '',
+      waterIntake: '',
+      waterInBody: '',
+      minerals: '',
+      injuries: '',
+      foodAllergies: '',
+      medicalNotes: '',
+      foodLikes: '',
+      foodDislikes: '',
+      supplements: '',
+      goalWeight: '72',
+      priority: 'medium',
+      competitionDate: '2026-06-01',
+      mentalObservations: '',
+      additionalNotes: '',
+      training: {
+        Monday: { type: 'medium', start: '15:30', end: '17:00' },
+        Tuesday: { type: 'medium', start: '15:30', end: '17:00' },
+        Wednesday: { type: 'medium', start: '15:30', end: '17:00' },
+        Thursday: { type: 'medium', start: '15:30', end: '17:00' },
+        Friday: { type: 'low', start: '15:30', end: '17:00' },
+        Saturday: { type: 'medium', start: '15:30', end: '17:00' },
+        Sunday: { type: 'medium', start: '15:30', end: '17:00' },
+      },
+    });
+
+    const teamPlayer = recalcTeamPlayer({
+      ...createTeamPlayer(1),
+      full_name: 'Harness Player Sample User',
+      email: 'player@harness.local',
+      gender: 'male',
+      birthday: '2001-02-01',
+      height: '179',
+      weight: '76',
+      body_fat_percentage: '14',
+      skeletal_muscle: '35',
+      activity_level: 'moderate',
+      progression_type: 'maintain',
+    });
+
+    return {
+      adClientTestPayload: buildAdClientTestPayload(adClientState),
+      addClientDetailsPayload: buildAddClientDetailsPayload(detailsState),
+      addTeamPayload: buildTeamPayload({
+        teamName: 'Harness Team',
+        sportType: 'Football',
+        coachName: 'Harness Coach',
+        startDate: '2026-03-17',
+        packageSize: 1,
+        players: [teamPlayer],
+      }),
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -369,6 +454,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Client Wrapper Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(clientWrapperPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Team/Details Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(rosterPayloads, null, 2)}</pre>
       </section>
     </main>
   );
