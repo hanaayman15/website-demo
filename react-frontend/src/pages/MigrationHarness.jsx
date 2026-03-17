@@ -17,6 +17,8 @@ import {
 } from '../hooks/usePasswordRecovery';
 import { buildProgressSummary } from '../hooks/useMentalCoaching';
 import { buildSupplementLogPayload } from '../hooks/useSupplements';
+import { buildHomeSummaryDefaults, buildRecipeModalData } from '../hooks/useClientPortalHome';
+import { buildClientSummary, resolveClientServicesLinks } from '../hooks/useClientServicesContext';
 import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
@@ -178,6 +180,22 @@ function MigrationHarness() {
     };
   }, []);
 
+  const portalPayloads = useMemo(() => {
+    return {
+      homeDefaults: buildHomeSummaryDefaults(),
+      recipePreview: buildRecipeModalData('salmon'),
+      serviceLinks: resolveClientServicesLinks(101),
+      clientSummary: buildClientSummary(
+        {
+          full_name: 'Harness Client',
+          display_id: 501,
+          email: 'harness.client@example.com',
+        },
+        101
+      ),
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -288,6 +306,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Static/Helper Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(staticHelperPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Portal Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(portalPayloads, null, 2)}</pre>
       </section>
     </main>
   );
