@@ -19,6 +19,9 @@ import { buildProgressSummary } from '../hooks/useMentalCoaching';
 import { buildSupplementLogPayload } from '../hooks/useSupplements';
 import { buildHomeSummaryDefaults, buildRecipeModalData } from '../hooks/useClientPortalHome';
 import { buildClientSummary, resolveClientServicesLinks } from '../hooks/useClientServicesContext';
+import { buildNutritionFields, buildNutritionPayload, calculateNutritionDerived } from '../hooks/useClientNutritionProfile';
+import { CLIENT_RECIPES, filterRecipes } from '../hooks/useClientRecipes';
+import { buildSignupProfilePayload, buildSignupRegistrationPayload } from '../hooks/useClientSignup';
 import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
@@ -196,6 +199,56 @@ function MigrationHarness() {
     };
   }, []);
 
+  const clientWrapperPayloads = useMemo(() => {
+    const nutritionFields = buildNutritionFields({
+      height: 178,
+      weight: 82,
+      bodyFat: 15,
+      skeletalMuscle: 39,
+      activityLevel: 'very_active',
+      progressionType: 'maintain',
+    });
+
+    return {
+      nutrition: {
+        derived: calculateNutritionDerived(nutritionFields),
+        payload: buildNutritionPayload({
+          fields: nutritionFields,
+          trainingSessions: [
+            {
+              name: 'Session A',
+              type: 'moderate',
+              days: ['Mo', 'Wed'],
+              startHour: '06',
+              startMin: '00',
+              startAmPm: 'PM',
+              endHour: '08',
+              endMin: '00',
+              endAmPm: 'PM',
+            },
+          ],
+          supplements: [{ name: 'Creatine', amount: '5', notes: 'Daily' }],
+        }),
+      },
+      recipes: {
+        breakfastSearch: filterRecipes(CLIENT_RECIPES, { filter: 'breakfast', search: 'berries' }),
+      },
+      signup: {
+        registerPayload: buildSignupRegistrationPayload({
+          firstName: 'Harness',
+          lastName: 'Athlete',
+          email: 'Harness@Example.com',
+          password: 'strongPass123',
+        }),
+        profilePayload: buildSignupProfilePayload({
+          country: 'Egypt',
+          phone: '01000000000',
+          sport: 'Football',
+        }),
+      },
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -311,6 +364,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Portal Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(portalPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Client Wrapper Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(clientWrapperPayloads, null, 2)}</pre>
       </section>
     </main>
   );
