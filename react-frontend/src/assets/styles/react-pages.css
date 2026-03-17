@@ -1,0 +1,200 @@
+.react-page-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.react-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.react-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.react-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.react-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.react-input,
+.react-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+}
+
+.react-input:focus,
+.react-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.react-btn {
+  border: none;
+  border-radius: 0.5rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+}
+
+.react-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.react-btn-ghost {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.react-btn-danger {
+  background: #dc2626;
+}
+
+.react-alert {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.react-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.react-alert-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.stat-list {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.stat-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.react-row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.react-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.react-inline-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.react-day-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.react-day-tab {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.react-day-tab.active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.react-meals-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.react-meal-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.65rem;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.react-meal-card.is-complete {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.react-muted {
+  color: #6b7280;
+}
+
+.react-macro-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.react-progress-track {
+  height: 0.5rem;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.react-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #22c55e);
+}
+
+.react-json-block {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+  overflow: auto;
+  max-height: 320px;
+  font-size: 0.85rem;
+}

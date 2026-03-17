@@ -1,0 +1,3014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Nutrition | Client Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <script src="dashboard-nav.js"></script>
+    <script src="dashboard-embedded-sections.js"></script>
+    <script src="notification-banner.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: center;
+        }
+        .arabic-text {
+            font-family: 'Cairo', 'Tahoma', sans-serif;
+            direction: rtl;
+        }
+        .status-not-completed {
+            background-color: #fbbf24;
+            color: white;
+            border-color: #fbbf24;
+        }
+        .status-completed {
+            background-color: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .status-not-completed:hover { background-color: #f59e0b; border-color: #f59e0b; }
+        .status-completed:hover { background-color: #059669; border-color: #059669; }
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            min-width: 200px;
+            display: none;
+        }
+        .status-dropdown.active { display: block; }
+        .status-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .status-option:hover { background-color: #f3f4f6; }
+        .status-option:first-child { border-radius: 0.5rem 0.5rem 0 0; }
+        .status-option:last-child { border-radius: 0 0 0.5rem 0.5rem; }
+    </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <script>
+        sessionStorage.setItem('portalType', 'client');
+    </script>
+
+    <!-- Navigation -->
+    <nav class="top-nav bg-white shadow-sm py-4 sticky top-0 z-50">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="top-nav-left flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold accent-text">My Nutrition Portal</div>
+            </div>
+            <div class="top-nav-links flex items-center gap-6">
+                <a href="client-main.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="client-dashboard.html" class="font-semibold accent-text">Nutrition</a>
+                <a href="mental-coaching.html" class="text-gray-600 hover:text-gray-900">Mental Coaching</a>
+                <a href="anti-doping.html" class="text-gray-600 hover:text-gray-900">Anti-Doping</a>
+                <a href="progress-tracking.html" class="text-gray-600 hover:text-gray-900">Progress</a>
+                <a href="settings.html" class="text-gray-600 hover:text-gray-900">Settings</a>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full accent-bg text-white flex items-center justify-center font-bold" id="client-avatar">--</div>
+                    <button onclick="logout()" class="text-sm text-gray-600 hover:text-gray-900">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Welcome Section -->
+    <section class="py-8 bg-gradient-to-r from-blue-50 to-white">
+        <div class="container mx-auto px-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Welcome back, <span class="accent-text" id="client-name">Client</span>! 👋</h1>
+                    <p class="text-gray-600 mt-2">Here's your nutrition overview for today</p>
+                    <a id="edit-full-profile-link" href="profile-setup.html?edit=1" class="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">✏️ Edit Full Profile</a>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Today's Date</p>
+                    <p class="text-lg font-semibold" id="current-date"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Stats -->
+    <section class="py-8">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-6">
+                <!-- Current Weight -->
+                <div class="stat-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="text-3xl">⚖️</div>
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">On Track</span>
+                    </div>
+                    <h3 class="text-sm text-gray-500 mb-1">Current Weight</h3>
+                    <p class="text-3xl font-bold" id="current-weight">--</p>
+                    <p class="text-xs text-green-600 mt-2" id="weight-change">↓ 2.3 kg this month</p>
+                </div>
+
+                <!-- Daily Calories -->
+                <div class="stat-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="text-3xl">🔥</div>
+                        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Today</span>
+                    </div>
+                    <h3 class="text-sm text-gray-500 mb-1">Calories Target</h3>
+                    <p class="text-3xl font-bold" id="daily-calories">--</p>
+                    <p class="text-xs text-gray-500 mt-2" id="calories-breakdown">0 consumed / 0 left</p>
+                </div>
+
+                <!-- Goal Progress -->
+                <div class="stat-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="text-3xl">🎯</div>
+                        <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Goal</span>
+                    </div>
+                    <h3 class="text-sm text-gray-500 mb-1">Target Weight</h3>
+                    <p class="text-3xl font-bold" id="goal-weight">Not set</p>
+                    <p class="text-xs text-gray-500 mt-2" id="weight-remaining">Set your goal</p>
+                </div>
+
+                <!-- Days Left -->
+                <div id="competition-card" class="stat-card bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="text-3xl">📅</div>
+                        <button onclick="editCompetitionDate()" class="text-xs px-2 py-1 bg-red-600 text-white rounded-full hover:bg-red-700">Edit</button>
+                    </div>
+                    <h3 class="text-sm text-red-700 font-semibold mb-1">Days Until Competition</h3>
+                    <p class="text-3xl font-bold text-red-600" id="days-remaining">N/A</p>
+                    <p class="text-xs text-red-600 mt-2" id="competition-date">No competition set</p>
+                </div>
+            </div>
+
+            <!-- Wake/Sleep Time and Injury Mode Section -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                <!-- Wake/Sleep Time Card -->
+                <div id="daily-schedule-card" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🕐</span>
+                        <h3 class="font-bold text-gray-900">Daily Schedule</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Wake-up Time</label>
+                            <input type="time" id="wake-up-time" class="w-full px-3 py-2 border rounded-lg text-sm" onchange="updateMealTimes()">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Sleep Time</label>
+                            <input type="time" id="sleep-time" class="w-full px-3 py-2 border rounded-lg text-sm" onchange="updateMealTimes()">
+                        </div>
+                        <button onclick="saveDailySchedule()" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 text-sm">
+                            Save Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Training Time Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">💪</span>
+                        <h3 class="font-bold text-gray-900">Training Time</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Exact Training Time</label>
+                            <input type="time" id="training-time" class="w-full px-3 py-2 border rounded-lg text-sm" onchange="saveTrainingTime()">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Training End Time</label>
+                            <input type="time" id="training-end-time" class="w-full px-3 py-2 border rounded-lg text-sm" onchange="saveTrainingTime()">
+                        </div>
+                        <p id="training-time-category" class="text-xs text-blue-600 font-semibold">Category: N/A</p>
+                        <p class="text-xs text-gray-500 italic">Meal order will adjust based on training time. Post-workout snack is set 30 minutes after training end time.</p>
+                    </div>
+                </div>
+
+                <!-- Injury Mode Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-2xl">🩹</span>
+                        <h3 class="font-bold text-gray-900">Injury Mode</h3>
+                    </div>
+                    <div id="injury-status-view">
+                        <p class="text-sm text-gray-600 mb-3" id="injury-status-text">No injury reported</p>
+                        <button onclick="enableInjuryMode()" class="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 text-sm">
+                            Report Injury
+                        </button>
+                    </div>
+                    <div id="injury-input-form" style="display: none;">
+                        <textarea id="injury-description" placeholder="Describe your injury..." class="w-full px-3 py-2 border rounded-lg text-sm mb-2" rows="3"></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="saveInjuryMode()" class="flex-1 bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 text-sm">
+                                Confirm
+                            </button>
+                            <button onclick="cancelInjuryMode()" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400 text-sm">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <div id="injury-active-view" style="display: none;">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                            <p class="text-sm font-semibold text-red-700 mb-1">⚠️ Injury Mode Active</p>
+                            <p class="text-xs text-red-600" id="injury-description-display"></p>
+                            <p class="text-xs text-gray-600 mt-2">📉 Calories reduced by 500 kcal<br>💪 Protein intake increased</p>
+                        </div>
+                        <button onclick="removeInjuryMode()" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 text-sm">
+                            Remove Injury
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <section class="py-4">
+        <div class="container mx-auto px-6">
+            <div class="grid lg:grid-cols-3 gap-6">
+                
+                <!-- Today's Meals -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold" id="meal-plan-title">Today's Meal Plan</h2>
+                            <div class="flex gap-3">
+                                <button onclick="loadMealPlan(); alert('✓ Meal plan refreshed!')" class="text-sm accent-text font-semibold hover:underline" title="Refresh to load latest plan">🔄 Refresh</button>
+                                <button onclick="showAllDays()" class="text-sm accent-text font-semibold hover:underline">View All Days →</button>
+                            </div>
+                        </div>
+
+                        <div id="meals-container" class="space-y-4">
+                            <!-- Meals will be loaded dynamically -->
+                            <p class="text-gray-500 text-center py-8">No meal plan assigned yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    
+                    <!-- Macros Today -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">Today's Macros</h3>
+                            <div id="macro-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold" style="background-color: #e5e7eb; color: #6b7280;">
+                                <span id="macro-status-icon">⚠️</span>
+                                <span id="macro-status-text">Not Completed</span>
+                            </div>
+                        </div>
+                        <p id="macro-status-message" class="text-xs text-gray-500 mb-4 text-center">Meals are still not completed for today.</p>
+                        
+                        <div class="space-y-4">
+                            <!-- Protein -->
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-600">Protein</span>
+                                    <span class="font-semibold macro-protein-text">0g / 150g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full macro-protein-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Carbs -->
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-600">Carbs</span>
+                                    <span class="font-semibold macro-carbs-text">0g / 220g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full macro-carbs-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Fats -->
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-600">Fats</span>
+                                    <span class="font-semibold macro-fats-text">0g / 60g</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full macro-fats-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Appointment -->
+                    <!-- Notes / Check-in Card -->
+                    <div class="bg-gradient-to-br accent-bg to-blue-600 rounded-2xl shadow-sm p-6 text-white" id="checkin-notes-card">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-2xl" id="checkin-icon">📝</span>
+                            <h3 class="font-bold" id="checkin-title">Doctor's Notes</h3>
+                        </div>
+                        <p class="text-lg mb-2 leading-relaxed" id="client-notes-text" style="display: none;"></p>
+                        <div id="checkin-fallback">
+                            <p class="text-2xl font-bold mb-2" id="checkin-date">TBD</p>
+                            <p class="text-sm opacity-90 mb-4" id="checkin-details">Schedule your appointment</p>
+                            <button onclick="window.location.href='next-checkin.html'" class="w-full bg-white text-blue-600 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">View Details</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold mb-4">💡 Today's Tip</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            Drink at least 8 glasses of water today. Proper hydration improves performance and recovery!
+                        </p>
+                    </div>
+
+                    <!-- Contact Coach -->
+                    <div class="bg-gray-50 rounded-2xl border border-gray-200 p-6 text-center">
+                        <p class="text-sm text-gray-600 mb-4">Need help or have questions?</p>
+                        <a href="contact.html" class="block w-full accent-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition">
+                            💬 Message Your Doctor
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="py-10">
+        <div class="container mx-auto px-6 space-y-6">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Supplements</h2>
+                <p class="text-gray-600 mt-1">Integrated supplement guidance tied to your profile.</p>
+            </div>
+            <div id="nutritionEmbeddedSupplements"></div>
+
+            <div class="pt-2">
+                <h2 class="text-3xl font-bold text-gray-900">Consultation</h2>
+                <p class="text-gray-600 mt-1">Choose your consultation cadence and save it to your account.</p>
+            </div>
+            <div id="nutritionEmbeddedConsultation"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white mt-12">
+        &copy; 2026 Client Nutrition Management. All rights reserved.
+    </footer>
+
+    <script>
+        const API_BASE_URL = CONFIG.API_BASE_URL;
+
+        function buildEditProfileUrl() {
+            const currentUrl = window.location.href;
+            sessionStorage.setItem('profileEditReturnTo', currentUrl);
+            return `profile-setup.html?edit=1&returnTo=${encodeURIComponent(currentUrl)}`;
+        }
+
+        // Auth helpers are now defined in config.js
+
+        function ensureAuthenticated() {
+            if (typeof enforceProtectedPageSession === 'function') {
+                return enforceProtectedPageSession();
+            }
+
+            const token = (typeof getAuthToken === 'function') ? getAuthToken() : null;
+            if (!token) {
+                window.location.href = 'client-login.html';
+                return false;
+            }
+
+            return true;
+        }
+
+        async function fetchClientProfile() {
+            const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('dashboard-profile-fetch');
+                    }
+                    return null;
+                }
+                throw new Error('Failed to load profile');
+            }
+
+            return response.json();
+        }
+
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        const editProfileLink = document.getElementById('edit-full-profile-link');
+        if (editProfileLink) {
+            editProfileLink.href = buildEditProfileUrl();
+            editProfileLink.addEventListener('click', () => {
+                sessionStorage.setItem('profileEditReturnTo', window.location.href);
+            });
+        }
+
+        // Load client data from backend profile
+        let currentClient = null;
+        let viewingAllDays = false;
+
+        function toFiniteNumber(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function normalizeProgressionType(value) {
+            const raw = String(value || '').toLowerCase().trim();
+            if (raw.includes('cut')) return 'cut';
+            if (raw.includes('bulk') || raw.includes('gain')) return 'bulk';
+            if (raw.includes('maintain')) return 'maintain';
+            return null;
+        }
+
+        function calculateCaloriesFromMacros(protein, carbs, fats) {
+            const p = toFiniteNumber(protein);
+            const c = toFiniteNumber(carbs);
+            const f = toFiniteNumber(fats);
+            if (p === null && c === null && f === null) return null;
+            return Math.round((p || 0) * 4 + (c || 0) * 4 + (f || 0) * 9);
+        }
+
+        function calculateClientCaloriesTarget(client) {
+            if (!client) return null;
+
+            const caloriesFromMacros = calculateCaloriesFromMacros(
+                client.protein_target,
+                client.carbs_target,
+                client.fats_target
+            );
+            if (caloriesFromMacros !== null && caloriesFromMacros > 0) {
+                return caloriesFromMacros;
+            }
+
+            const tdee = toFiniteNumber(client.tdee);
+            if (tdee === null) return null;
+
+            const progression = normalizeProgressionType(client.progression_type);
+            if (progression === 'cut') return Math.max(1200, Math.round(tdee - 500));
+            if (progression === 'bulk') return Math.round(tdee + 300);
+            return Math.round(tdee);
+        }
+
+        function updateDashboardSummaryCards(client) {
+            const weight = toFiniteNumber(client?.weight);
+            const startWeight = toFiniteNumber(client?.startWeight);
+            const goalWeight = toFiniteNumber(client?.goalWeight);
+            const targetCalories = calculateClientCaloriesTarget(client);
+
+            document.getElementById('current-weight').textContent = weight !== null ? `${weight.toFixed(1)} kg` : 'Not set';
+            document.getElementById('daily-calories').textContent = targetCalories !== null ? `${targetCalories} kcal` : 'Not set';
+
+            const weightChangeEl = document.getElementById('weight-change');
+            if (weight !== null && startWeight !== null) {
+                const weightChange = startWeight - weight;
+                const changeText = weightChange > 0
+                    ? `↓ ${weightChange.toFixed(1)} kg this month`
+                    : weightChange < 0
+                        ? `↑ ${Math.abs(weightChange).toFixed(1)} kg this month`
+                        : 'No change this month';
+                const changeClass = weightChange > 0 ? 'text-green-600' : weightChange < 0 ? 'text-red-600' : 'text-gray-500';
+                weightChangeEl.textContent = changeText;
+                weightChangeEl.className = `text-xs mt-2 ${changeClass}`;
+            } else {
+                weightChangeEl.textContent = 'Awaiting check-in data';
+                weightChangeEl.className = 'text-xs mt-2 text-gray-500';
+            }
+
+            if (goalWeight !== null) {
+                document.getElementById('goal-weight').textContent = `${goalWeight.toFixed(1)} kg`;
+                if (weight !== null) {
+                    const remaining = Math.abs(weight - goalWeight).toFixed(1);
+                    document.getElementById('weight-remaining').textContent = `${remaining} kg remaining`;
+                } else {
+                    document.getElementById('weight-remaining').textContent = 'Add weight to track progress';
+                }
+            } else {
+                document.getElementById('goal-weight').textContent = 'Not set';
+                document.getElementById('weight-remaining').textContent = 'Set your goal';
+            }
+        }
+
+        async function loadClientData() {
+            if (!ensureAuthenticated()) {
+                return;
+            }
+
+            try {
+                const profile = await fetchClientProfile();
+                if (!profile) {
+                    console.error('Failed to fetch profile');
+                    return;
+                }
+
+                console.log('Profile fetched:', profile);
+                console.log('Profile ID:', profile.id, '| Display ID:', profile.display_id);
+
+                // Get name from profile - this is the source of truth
+                const displayName = profile.full_name || profile.email?.split('@')[0] || 'Client';
+                
+                // Update localStorage with correct name
+                localStorage.setItem('clientFullName', displayName);
+                localStorage.setItem('clientEmail', profile.email);
+                
+                // Load only client-specific cache to avoid cross-client value leakage.
+                const cacheKey = `clientDashboardCache_${profile.display_id}`;
+                const clientSpecificCache = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+                const cached = clientSpecificCache;
+
+                // Load full client data (includes trainingDetails)
+                const fullClientDataKey = `clientData_${profile.display_id}`;
+                const fullClientData = JSON.parse(localStorage.getItem(fullClientDataKey) || '{}');
+                console.log('[Dashboard] Loading training details for client:', fullClientDataKey, fullClientData.trainingDetails);
+
+                const client = {
+                    id: profile.display_id,  // Use display_id, not database id
+                    dbId: profile.id,
+                    name: displayName,
+                    weight: toFiniteNumber(profile.weight) ?? toFiniteNumber(cached.weight),
+                    startWeight: toFiniteNumber(cached.startWeight) ?? toFiniteNumber(profile.weight),
+                    goalWeight: toFiniteNumber(profile.goal_weight) ?? toFiniteNumber(cached.goalWeight),
+                    tdee: toFiniteNumber(profile.tdee) ?? toFiniteNumber(cached.tdee),
+                    competitionDate: profile.competition_date || cached.competitionDate || null,
+                    nextCheckIn: cached.nextCheckIn || null,
+                    checkInTime: cached.checkInTime || '10:00 AM',
+                    nutritionist: cached.nutritionist || 'Your Nutritionist',
+                    assignedDietPlan: cached.assignedDietPlan || 0,
+                    trainingTime: profile.training_time || profile.training_start_time || '',
+                    trainingEndTime: profile.training_end_time || '',
+                    mealSwaps: profile.meal_swaps || null,
+                    phone: profile.phone,
+                    gender: profile.gender,
+                    country: profile.country,
+                    club: profile.club,
+                    sport: profile.sport,
+                    position: profile.position,
+                    activityLevel: profile.activity_level,
+                    progression_type: profile.progression_type || cached.progression_type || null,
+                    priority: profile.priority,
+                    birthday: profile.birthday,
+                    trainingDetails: fullClientData.trainingDetails || [],
+                    protein_target: toFiniteNumber(profile.protein_target) ?? toFiniteNumber(cached.protein),
+                    carbs_target: toFiniteNumber(profile.carbs_target) ?? toFiniteNumber(cached.carbs),
+                    fats_target: toFiniteNumber(profile.fats_target) ?? toFiniteNumber(cached.fats),
+                    injury_status: profile.injury_status || false,
+                    injury_description: profile.injury_description || null,
+                    original_protein: profile.original_protein || null,
+                    original_carbs: profile.original_carbs || null,
+                    original_fats: profile.original_fats || null
+                };
+
+                localStorage.setItem('currentClientId', String(profile.display_id));
+                // Keep cache isolated per client.
+                const saveCacheKey = `clientDashboardCache_${profile.display_id}`;
+                localStorage.setItem(saveCacheKey, JSON.stringify(client));
+
+                currentClient = client;
+                
+                console.log('Current client set to:', currentClient);
+                console.log('Current client ID field:', currentClient.id);
+                console.log('Injury Status:', currentClient.injury_status, '|', currentClient.injury_description);
+                
+                // Set current date
+                const today = new Date();
+                const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', dateOptions);
+                
+                // Initialize injury mode display
+                if (currentClient.injury_status) {
+                    document.getElementById('injury-description-display').textContent = currentClient.injury_description || 'No description';
+                    document.getElementById('injury-status-view').style.display = 'none';
+                    document.getElementById('injury-input-form').style.display = 'none';
+                    document.getElementById('injury-active-view').style.display = 'block';
+                } else {
+                    document.getElementById('injury-status-view').style.display = 'block';
+                    document.getElementById('injury-input-form').style.display = 'none';
+                    document.getElementById('injury-active-view').style.display = 'none';
+                }
+                
+                // Set basic info - IMPORTANT: Update DOM with real name
+                const clientNameEl = document.getElementById('client-name');
+                const avatarEl = document.getElementById('client-avatar');
+                
+                console.log('Updating DOM - name:', displayName);
+                clientNameEl.textContent = displayName;
+                avatarEl.textContent = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                
+                updateDashboardSummaryCards(client);
+                
+                // Days until goal / competition
+                if (client.competitionDate) {
+                    const competition = new Date(client.competitionDate);
+                    const daysUntil = Math.ceil((competition - today) / (1000 * 60 * 60 * 24));
+                    document.getElementById('days-remaining').textContent = daysUntil > 0 ? `${daysUntil} days` : 'Today!';
+                    document.getElementById('competition-date').textContent = `Competition: ${competition.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                } else {
+                    document.getElementById('days-remaining').textContent = 'N/A';
+                    document.getElementById('competition-date').textContent = 'No competition set';
+                }
+                
+                // Next check-in
+                                // Load notes from client data
+                                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                                const clientWithNotes = clients.find(c => c.id == profile.display_id);
+                
+                                // Display notes if available, otherwise show check-in info
+                                if (clientWithNotes && clientWithNotes.notes && clientWithNotes.notes !== "No notes added") {
+                                    document.getElementById('checkin-icon').textContent = '📝';
+                                    document.getElementById('checkin-title').textContent = "Nutritionist Notes";
+                                    document.getElementById('client-notes-text').textContent = clientWithNotes.notes;
+                                    document.getElementById('client-notes-text').style.display = 'block';
+                                    document.getElementById('checkin-fallback').style.display = 'none';
+                                } else {
+                                    // Show regular check-in info
+                                    document.getElementById('checkin-icon').textContent = '📅';
+                                    document.getElementById('checkin-title').textContent = 'Next Check-in';
+                                    document.getElementById('client-notes-text').style.display = 'none';
+                                    document.getElementById('checkin-fallback').style.display = 'block';
+                                }
+                
+                                // Next check-in date/time (only used if no notes)
+                if (client.nextCheckIn) {
+                    const checkIn = new Date(client.nextCheckIn);
+                    document.getElementById('checkin-date').textContent = checkIn.toLocaleDateString('en-US', dateOptions);
+                    const timeText = client.checkInTime || '10:00 AM';
+                    const nutritionistText = client.nutritionist || 'Your Nutritionist';
+                    document.getElementById('checkin-details').textContent = `${timeText} with ${nutritionistText}`;
+                } else {
+                    document.getElementById('checkin-date').textContent = 'Not Scheduled';
+                    document.getElementById('checkin-details').textContent = 'Contact your nutritionist';
+                }
+
+                // Load assigned meal plan
+                loadMealPlan();
+            } catch (error) {
+                alert('Failed to load dashboard data from server.');
+            }
+        }
+
+        async function refreshSummaryCardsFromServer() {
+            if (!currentClient) return;
+
+            try {
+                const profile = await fetchClientProfile();
+                if (!profile) return;
+
+                currentClient.weight = toFiniteNumber(profile.weight);
+                currentClient.goalWeight = toFiniteNumber(profile.goal_weight);
+                currentClient.tdee = toFiniteNumber(profile.tdee);
+                currentClient.protein_target = toFiniteNumber(profile.protein_target) ?? currentClient.protein_target;
+                currentClient.carbs_target = toFiniteNumber(profile.carbs_target) ?? currentClient.carbs_target;
+                currentClient.fats_target = toFiniteNumber(profile.fats_target) ?? currentClient.fats_target;
+                currentClient.progression_type = profile.progression_type || currentClient.progression_type;
+                currentClient.injury_status = !!profile.injury_status;
+
+                updateDashboardSummaryCards(currentClient);
+            } catch (error) {
+                console.warn('Summary refresh skipped:', error);
+            }
+        }
+
+        function timeStringToMinutes(timeStr) {
+            if (!timeStr) return null;
+            const str = String(timeStr).trim();
+            let hours, minutes;
+            
+            if (/am|pm/i.test(str)) {
+                const match = str.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+                if (!match) return null;
+                hours = parseInt(match[1]);
+                minutes = parseInt(match[2]);
+                const period = match[3].toUpperCase();
+                if (period === 'PM' && hours !== 12) hours += 12;
+                if (period === 'AM' && hours === 12) hours = 0;
+            } else if (/^\d{2}:\d{2}$/.test(str)) {
+                const parts = str.split(':').map(Number);
+                hours = parts[0];
+                minutes = parts[1];
+            } else {
+                return null;
+            }
+            
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTimeString(totalMinutes) {
+            if (totalMinutes === null || totalMinutes === undefined) return 'N/A';
+            const hours = Math.floor(totalMinutes / 60) % 24;
+            const mins = totalMinutes % 60;
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const h12 = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+            return `${String(h12).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${period}`;
+        }
+
+        function calculateMealTime(mealType, trainingStart, trainingEnd) {
+            const mealKey = getMealKeyFromLabel(mealType);
+            if (!mealKey) return 'N/A';
+            const smartSchedule = getSmartMealSchedule({
+                trainingStartTime: trainingStart,
+                trainingEndTime: trainingEnd
+            });
+            return smartSchedule.times[mealKey] || 'N/A';
+        }
+
+        function getExactTrainingTime() {
+            const trainingInput = document.getElementById('training-time');
+            return trainingInput ? trainingInput.value : '';
+        }
+
+        function getExactTrainingEndTime() {
+            const trainingEndInput = document.getElementById('training-end-time');
+            return trainingEndInput ? trainingEndInput.value : '';
+        }
+
+        function syncCurrentClientScheduleState(schedulePatch) {
+            if (!currentClient || !schedulePatch) return;
+            currentClient = { ...currentClient, ...schedulePatch };
+
+            const cacheCandidates = [
+                currentClient.id ? `clientDashboardCache_${currentClient.id}` : null,
+                currentClient.dbId ? `clientDashboardCache_${currentClient.dbId}` : null,
+                localStorage.getItem('currentClientId') ? `clientDashboardCache_${localStorage.getItem('currentClientId')}` : null,
+                'clientDashboardCache'
+            ].filter(Boolean);
+
+            cacheCandidates.forEach((key) => {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(key) || '{}');
+                    localStorage.setItem(key, JSON.stringify({ ...cached, ...schedulePatch }));
+                } catch (_) {
+                    localStorage.setItem(key, JSON.stringify({ ...currentClient, ...schedulePatch }));
+                }
+            });
+
+            const clientDataCandidates = [
+                currentClient.id ? `clientData_${currentClient.id}` : null,
+                currentClient.dbId ? `clientData_${currentClient.dbId}` : null,
+                localStorage.getItem('currentClientId') ? `clientData_${localStorage.getItem('currentClientId')}` : null
+            ].filter(Boolean);
+
+            clientDataCandidates.forEach((key) => {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(key) || '{}');
+                    localStorage.setItem(key, JSON.stringify({ ...cached, ...schedulePatch }));
+                } catch (_) {
+                    localStorage.setItem(key, JSON.stringify({ ...schedulePatch }));
+                }
+            });
+        }
+
+        function getTrainingForDay(dayName) {
+            if (!currentClient || !Array.isArray(currentClient.trainingDetails)) {
+                console.log(`[Dashboard - getTrainingForDay] No training details for dayName: ${dayName}, currentClient:`, currentClient);
+                return null;
+            }
+            const result = currentClient.trainingDetails.find((item) => String(item.day || '').toLowerCase() === String(dayName || '').toLowerCase()) || null;
+            console.log(`[Dashboard - getTrainingForDay] dayName: ${dayName}, found:`, result);
+            return result;
+        }
+
+        function loadMealPlan() {
+            console.log('=== Loading Meal Plan ===');
+            console.log('Current client ID:', currentClient?.id);
+            
+            if (!currentClient) {
+                console.log('No current client data');
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">No client data available.</p>';
+                updateMacroStatus('not completed', 'Meals are still not completed for today.', 0, 0, 0, 0);
+                return;
+            }
+            
+            // ALWAYS reload the latest cache to get the most recent diet plan selection
+            const cacheKey = `clientDashboardCache_${currentClient.id}`;
+            const freshCache = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+            const assignedDietPlanIndex = freshCache.assignedDietPlan;
+
+            // First priority: exact edited meals saved from client detail Programs tab
+            const candidateProgramsKeys = [
+                `clientPrograms_${currentClient.id}`,
+                currentClient.dbId ? `clientPrograms_${currentClient.dbId}` : null,
+                localStorage.getItem('currentClientId') ? `clientPrograms_${localStorage.getItem('currentClientId')}` : null
+            ].filter(Boolean);
+
+            let savedProgramsState = (currentClient && currentClient.mealSwaps && currentClient.mealSwaps.dayMeals)
+                ? currentClient.mealSwaps
+                : null;
+            let usedProgramsKey = null;
+            if (!savedProgramsState) {
+                candidateProgramsKeys.some((key) => {
+                    try {
+                        const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+                        if (parsed && parsed.dayMeals) {
+                            savedProgramsState = parsed;
+                            usedProgramsKey = key;
+                            return true;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to parse saved programs state from ${key}:`, error);
+                    }
+                    return false;
+                });
+            }
+
+            const hasSavedDayMeals = Boolean(
+                savedProgramsState &&
+                savedProgramsState.dayMeals &&
+                Object.values(savedProgramsState.dayMeals).some(meals => Array.isArray(meals) && meals.length > 0)
+            );
+
+            if (hasSavedDayMeals) {
+                console.log('Using saved dayMeals from', usedProgramsKey || 'backend profile meal_swaps');
+                if (viewingAllDays) {
+                    displayAllDaysFromSaved(savedProgramsState.dayMeals);
+                } else {
+                    displayTodayMealsFromSaved(savedProgramsState.dayMeals);
+                }
+
+                // Keep macros/calories based on selected diet plan when available
+                const dietPlans = JSON.parse(localStorage.getItem('dietPlans')) || [];
+                const selectedPlan = Number.isInteger(savedProgramsState.selectedPlanIndex)
+                    ? dietPlans[savedProgramsState.selectedPlanIndex]
+                    : null;
+                const macrosPlan = selectedPlan || {};
+                updateMacrosDisplay(macrosPlan, savedProgramsState.dayMeals).catch((error) => {
+                    console.error('Failed to refresh macros from saved day meals:', error);
+                });
+                if (selectedPlan) {
+                    updateCaloriesBreakdown(selectedPlan);
+                }
+                return;
+            }
+            
+            console.log('Fresh cache:', freshCache);
+            console.log('Assigned diet plan index from cache:', assignedDietPlanIndex);
+            
+            // Check if a diet plan has been assigned
+            const hasAssignedPlan = assignedDietPlanIndex !== undefined && assignedDietPlanIndex !== null && assignedDietPlanIndex >= 0;
+            
+            if (!hasAssignedPlan) {
+                console.log('No assigned diet plan found in cache with index:', assignedDietPlanIndex);
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">No meal plan assigned yet. Go to your client details to select a plan.</p>';
+                updateMacroStatus('not completed', 'Meals are still not completed for today.', 0, 0, 0, 0);
+                return;
+            }
+
+            const dietPlans = JSON.parse(localStorage.getItem('dietPlans')) || [];
+            console.log('Total diet plans available:', dietPlans.length);
+            
+            if (dietPlans.length === 0) {
+                console.error('No diet plans in localStorage!');
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">Diet plans not loaded. Please contact your administrator.</p>';
+                updateMacroStatus('not completed', 'Meals are still not completed for today.', 0, 0, 0, 0);
+                return;
+            }
+            
+            const plan = dietPlans[assignedDietPlanIndex];
+            console.log('Selected plan at index', assignedDietPlanIndex, ':', plan);
+            
+            if (!plan) {
+                console.error('Selected plan not found at index:', assignedDietPlanIndex);
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">Meal plan not found.</p>';
+                updateMacroStatus('not completed', 'Meals are still not completed for today.', 0, 0, 0, 0);
+                return;
+            }
+
+            if (viewingAllDays) {
+                displayAllDays(plan);
+            } else {
+                displayTodayMeals(plan);
+            }
+            
+            // Update macros display
+            updateMacrosDisplay(plan).catch((error) => {
+                console.error('Failed to refresh macros display:', error);
+            });
+            
+            // Update calories breakdown
+            updateCaloriesBreakdown(plan);
+        }
+
+        function displayTodayMealsFromSaved(dayMealsByDay) {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+            const todayKey = days[today];
+            const todayName = dayNames[today];
+            let meals = (dayMealsByDay?.[todayName] || []).map((meal, originalIndex) => ({ ...meal, __originalIndex: originalIndex }));
+
+            document.getElementById('meal-plan-title').textContent = `${todayName}'s Meal Plan`;
+
+            if (!meals.length) {
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">No meals for today.</p>';
+                return;
+            }
+
+            // Apply training-based meal ordering
+            const trainingTime = document.getElementById('training-time')?.value;
+            const trainingEndTime = document.getElementById('training-end-time')?.value;
+            meals = reorderMealsBasedOnTraining(meals, trainingTime, trainingEndTime);
+
+            const gradientClasses = [
+                'from-orange-400 to-orange-600',
+                'from-yellow-400 to-yellow-600',
+                'from-green-400 to-green-600',
+                'from-purple-400 to-purple-600',
+                'from-blue-400 to-blue-600',
+                'from-pink-400 to-pink-600'
+            ];
+
+            let mealsHTML = '';
+            const todayTraining = getTrainingForDay(todayName);
+            const exactTrainingTime = getExactTrainingTime();
+            const exactTrainingEndTime = getExactTrainingEndTime();
+            const wakeUpTime = document.getElementById('wake-up-time')?.value;
+            const smartSchedule = getSmartMealSchedule({
+                trainingStartTime: exactTrainingTime || todayTraining?.start || '',
+                trainingEndTime: exactTrainingEndTime || todayTraining?.end || exactTrainingTime || todayTraining?.start || ''
+            });
+            
+            meals.forEach((meal, index) => {
+                const mealCategoryKey = getMealCategoryKey(meal.type);
+                const presentation = getMealPresentation(meal.type, smartSchedule);
+                if (!presentation.visible) return;
+                const mealId = `${todayKey}-${mealCategoryKey || `saved-${meal.__originalIndex}`}`;
+                const savedStatus = getMealStatus(mealId);
+                const gradient = gradientClasses[index % gradientClasses.length];
+                
+                // Calculate time based on wake-up time or training time
+                let displayTime = meal.time || 'N/A';
+                
+                // Check for workout-related meals first
+                if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
+                    const trainingStart = exactTrainingTime || todayTraining?.start;
+                    const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                    const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
+                    if (calculatedTime !== 'N/A') {
+                        displayTime = calculatedTime;
+                    }
+                } else if (wakeUpTime) {
+                    // Calculate time based on wake-up time for regular meals
+                    const calcTime = calculateMealTimeFromWakeup(meal.type);
+                    if (calcTime !== 'N/A') {
+                        displayTime = calcTime;
+                    }
+                }
+                
+                mealsHTML += `
+                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl mb-3">
+                        <div class="w-16 h-16 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-2xl">🍽️</div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h4 class="font-bold text-gray-900">${presentation.label}</h4>
+                                <button onclick="openMealSubstitution('${todayName}', ${meal.__originalIndex}, '${presentation.label}', '${getMealCategoryKey(meal.type)}')" 
+                                        class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                        title="Substitute this meal">
+                                    🔄 Swap
+                                </button>
+                            </div>
+                            ${meal.en ? `<p class="text-sm text-gray-600">${meal.en}</p>` : ''}
+                            ${meal.ar ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                            ${displayTime !== 'N/A' ? `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>` : ''}
+                        </div>
+                        <div class="relative">
+                            <button onclick="toggleStatusDropdown('${mealId}')" id="status-btn-${mealId}" class="px-4 py-2 rounded-lg border-2 ${savedStatus.class} font-semibold text-sm">${savedStatus.label}</button>
+                            <div id="dropdown-${mealId}" class="status-dropdown">
+                                <div class="status-option" onclick="changeStatus('${mealId}', 'not-completed')">
+                                    <div class="font-semibold" style="color: #fbbf24;">⚠️ Not Completed</div>
+                                    <div class="text-xs text-gray-500 mt-1">This task is not done yet</div>
+                                </div>
+                                <div class="status-option" onclick="changeStatus('${mealId}', 'completed')">
+                                    <div class="font-semibold" style="color: #10b981;">✅ Completed</div>
+                                    <div class="text-xs text-gray-500 mt-1">This task is done</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('meals-container').innerHTML = mealsHTML;
+        }
+
+        function displayAllDaysFromSaved(dayMealsByDay) {
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+
+            document.getElementById('meal-plan-title').textContent = 'Weekly Meal Plan';
+
+            let allDaysHTML = '';
+
+            dayNames.forEach((dayName, index) => {
+                const meals = dayMealsByDay?.[dayName] || [];
+                const isToday = index === today;
+
+                allDaysHTML += `
+                    <div class="border ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'} rounded-xl p-4 mb-4">
+                        <h3 class="text-lg font-bold mb-3 ${isToday ? 'text-blue-600' : 'text-gray-900'}">${dayName} ${isToday ? '(Today)' : ''}</h3>
+                        <div class="space-y-2">
+                `;
+
+                if (!meals.length) {
+                    allDaysHTML += `<p class="text-xs text-gray-500">No meals scheduled.</p>`;
+                } else {
+                    const dayTraining = getTrainingForDay(dayName);
+                    const exactTrainingTime = getExactTrainingTime();
+                    const exactTrainingEndTime = getExactTrainingEndTime();
+                    const smartSchedule = getSmartMealSchedule({
+                        trainingStartTime: exactTrainingTime || dayTraining?.start || '',
+                        trainingEndTime: exactTrainingEndTime || dayTraining?.end || exactTrainingTime || dayTraining?.start || ''
+                    });
+                    
+                    meals.forEach(meal => {
+                        const presentation = getMealPresentation(meal.type, smartSchedule);
+                        if (!presentation.visible) return;
+                        let displayTime = meal.time || '';
+                        if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
+                            const trainingStart = exactTrainingTime || dayTraining?.start;
+                            const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
+                            const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
+                            if (calculatedTime !== 'N/A') {
+                                displayTime = calculatedTime;
+                            }
+                        } else {
+                            const calcTime = calculateMealTimeFromWakeup(meal.type);
+                            if (calcTime !== 'N/A') {
+                                displayTime = calcTime;
+                            }
+                        }
+                        
+                        allDaysHTML += `
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
+                                <span class="text-xl">🍽️</span>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${displayTime ? `- <strong>⏰ ${displayTime}</strong>` : ''}</p>
+                                    ${meal.en ? `<p class="text-xs text-gray-600 mt-1">${meal.en}</p>` : ''}
+                                    ${meal.ar ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                allDaysHTML += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('meals-container').innerHTML = allDaysHTML;
+        }
+
+        function updateCaloriesBreakdown(plan) {
+            if (!currentClient) return;
+            
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+            const todayKey = days[today];
+            const todayTraining = getTrainingForDay(dayNames[today]);
+            const exactTrainingTime = getExactTrainingTime();
+            const exactTrainingEndTime = getExactTrainingEndTime();
+            const smartSchedule = getSmartMealSchedule({
+                trainingStartTime: exactTrainingTime || todayTraining?.start || '',
+                trainingEndTime: exactTrainingEndTime || todayTraining?.end || exactTrainingTime || todayTraining?.start || ''
+            });
+            
+            // Calculate consumed calories based on completed meals
+            const mealStatuses = getMealStatuses();
+            const mealTypes = ['breakfast', 'snack1', 'lunch', 'dinner', 'preworkout', 'postworkout'];
+            
+            let completedMeals = 0;
+            let totalMeals = 0;
+            
+            mealTypes.forEach(mealType => {
+                const mealId = `${todayKey}-${mealType}`;
+                const presentation = getMealPresentation(mealType, smartSchedule);
+                if (!presentation.visible) return;
+
+                if (plan[todayKey] && plan[todayKey][mealType] && (plan[todayKey][mealType].en || plan[todayKey][mealType].ar)) {
+                    totalMeals++;
+                    if (mealStatuses[mealId] === 'completed') {
+                        completedMeals++;
+                    }
+                }
+            });
+            
+            // Calculate consumed calories based on completed meals percentage
+            const consumedRatio = totalMeals > 0 ? completedMeals / totalMeals : 0;
+            const targetCalories = calculateClientCaloriesTarget(currentClient) || 0;
+            const consumedCalories = Math.round(targetCalories * consumedRatio);
+            const remainingCalories = targetCalories - consumedCalories;
+            
+            document.getElementById('calories-breakdown').textContent = `${consumedCalories} consumed / ${remainingCalories} left`;
+        }
+
+        function getMealStatusesStorageKey() {
+            return currentClient?.id ? `mealStatuses_${currentClient.id}` : 'mealStatuses';
+        }
+
+        function normalizeMealStatusValue(rawStatus) {
+            const value = String(rawStatus || 'not-completed').trim().toLowerCase();
+            if (value === 'completed' || value === 'complete') return 'completed';
+            if (
+                value === 'not-completed' ||
+                value === 'not completed' ||
+                value === 'pending' ||
+                value === 'in-progress' ||
+                value === 'in progress'
+            ) {
+                return 'not-completed';
+            }
+            return 'not-completed';
+        }
+
+        function getMealStatuses() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(getMealStatusesStorageKey()) || '{}');
+                const normalized = {};
+                Object.entries(raw || {}).forEach(([mealId, status]) => {
+                    normalized[mealId] = normalizeMealStatusValue(status);
+                });
+                return normalized;
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function setMealStatuses(statuses) {
+            const normalized = {};
+            Object.entries(statuses || {}).forEach(([mealId, status]) => {
+                normalized[mealId] = normalizeMealStatusValue(status);
+            });
+
+            localStorage.setItem(getMealStatusesStorageKey(), JSON.stringify(normalized));
+            localStorage.setItem('mealStatuses', JSON.stringify(normalized));
+        }
+
+        async function persistMealStatusesToBackend(statuses) {
+            if (!currentClient) return;
+            const savedData = getSavedProgramsState();
+            const currentMealSwaps = savedData.state || currentClient.mealSwaps || {};
+            const mergedMealSwaps = { ...currentMealSwaps, meal_statuses: statuses || {} };
+            await persistMealSwapsToBackend(mergedMealSwaps);
+        }
+
+        function getCurrentTimeMinutes() {
+            const now = new Date();
+            return (now.getHours() * 60) + now.getMinutes();
+        }
+
+        function getMealStatusWeight(statusValue) {
+            if (statusValue === 'completed') return 1;
+            return 0;
+        }
+
+        function deriveTimedMealStatus(displayTime) {
+            const mealMinutes = parseClockMinutes(displayTime);
+            if (mealMinutes === null) return 'not-completed';
+            return 'not-completed';
+        }
+
+        function toMacroNumber(value, fallback = 0) {
+            if (value === null || value === undefined || value === '') {
+                return fallback;
+            }
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        }
+
+        function getTodayMacroEntries(plan, savedDayMealsByDay = null) {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+            const todayKey = days[today];
+            const todayName = dayNames[today];
+            const todayTraining = getTrainingForDay(todayName);
+            const exactTrainingTime = getExactTrainingTime();
+            const exactTrainingEndTime = getExactTrainingEndTime();
+            const smartSchedule = getSmartMealSchedule({
+                trainingStartTime: exactTrainingTime || todayTraining?.start || '',
+                trainingEndTime: exactTrainingEndTime || todayTraining?.end || exactTrainingTime || todayTraining?.start || ''
+            });
+
+            const entries = [];
+
+            if (savedDayMealsByDay && Array.isArray(savedDayMealsByDay[todayName])) {
+                savedDayMealsByDay[todayName].forEach((meal, index) => {
+                    let displayTime = meal?.time || 'N/A';
+                    const mealType = meal?.type || 'Meal';
+                    const mealCategoryKey = getMealCategoryKey(mealType);
+                    const presentation = getMealPresentation(mealType, smartSchedule);
+                    if (!presentation.visible) return;
+                    if (String(mealType).toLowerCase().includes('pre') || String(mealType).toLowerCase().includes('post')) {
+                        const trainingStart = exactTrainingTime || todayTraining?.start;
+                        const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                        const calculatedTime = calculateMealTime(mealType, trainingStart, trainingEnd);
+                        if (calculatedTime !== 'N/A') displayTime = calculatedTime;
+                    } else {
+                        const calcTime = calculateMealTimeFromWakeup(mealType);
+                        if (calcTime !== 'N/A') displayTime = calcTime;
+                    }
+
+                    entries.push({
+                        mealId: `${todayKey}-${mealCategoryKey || `saved-${index}`}`,
+                        mealKey: getMealCategoryKey(mealType),
+                        mealLabel: presentation.label,
+                        scheduledTime: displayTime,
+                        calories: toMacroNumber(meal?.calories, null),
+                        protein: toMacroNumber(meal?.protein, null),
+                        carbs: toMacroNumber(meal?.carbs, null),
+                        fats: toMacroNumber(meal?.fats, null)
+                    });
+                });
+                return entries;
+            }
+
+            const mealTypes = [
+                { key: 'breakfast', label: 'Breakfast' },
+                { key: 'snack1', label: 'Snack 1' },
+                { key: 'lunch', label: 'Lunch' },
+                { key: 'dinner', label: 'Dinner' },
+                { key: 'preworkout', label: 'Pre-Workout' },
+                { key: 'postworkout', label: 'Post-Workout' }
+            ];
+
+            const dayData = plan?.[todayKey] || {};
+            mealTypes.forEach((mealType) => {
+                const meal = dayData[mealType.key];
+                if (!meal || (!meal.en && !meal.ar)) return;
+                const presentation = getMealPresentation(mealType.label, smartSchedule);
+                if (!presentation.visible) return;
+
+                let displayTime = meal.time || 'N/A';
+                if (mealType.key === 'preworkout' || mealType.key === 'postworkout') {
+                    const trainingStart = exactTrainingTime || todayTraining?.start;
+                    const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                    const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
+                    if (calculatedTime !== 'N/A') displayTime = calculatedTime;
+                } else {
+                    const calcTime = calculateMealTimeFromWakeup(mealType.label);
+                    if (calcTime !== 'N/A') displayTime = calcTime;
+                }
+
+                entries.push({
+                    mealId: `${todayKey}-${mealType.key}`,
+                    mealKey: mealType.key,
+                    mealLabel: presentation.label,
+                    scheduledTime: displayTime,
+                    calories: toMacroNumber(meal.calories, null),
+                    protein: toMacroNumber(meal.protein, null),
+                    carbs: toMacroNumber(meal.carbs, null),
+                    fats: toMacroNumber(meal.fats, null)
+                });
+            });
+
+            return entries;
+        }
+
+        async function syncTodayMacrosToBackend(payload) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/macros/today`, {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    return null;
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to sync macros status:', error);
+                return null;
+            }
+        }
+
+        async function updateMacrosDisplay(plan, savedDayMealsByDay = null) {
+            const targetProtein = toFiniteNumber(plan?.targetProtein) ?? toFiniteNumber(currentClient?.protein_target) ?? 0;
+            const targetCarbs = toFiniteNumber(plan?.targetCarbs) ?? toFiniteNumber(currentClient?.carbs_target) ?? 0;
+            const targetFats = toFiniteNumber(plan?.targetFats) ?? toFiniteNumber(currentClient?.fats_target) ?? 0;
+            const targetCalories = calculateClientCaloriesTarget(currentClient) || ((targetProtein * 4) + (targetCarbs * 4) + (targetFats * 9));
+
+            const entries = getTodayMacroEntries(plan, savedDayMealsByDay);
+            const mealStatuses = getMealStatuses();
+
+            const totalMeals = entries.length;
+            const fallbackMealProtein = totalMeals > 0 ? (targetProtein / totalMeals) : 0;
+            const fallbackMealCarbs = totalMeals > 0 ? (targetCarbs / totalMeals) : 0;
+            const fallbackMealFats = totalMeals > 0 ? (targetFats / totalMeals) : 0;
+            const fallbackMealCalories = totalMeals > 0 ? (targetCalories / totalMeals) : 0;
+
+            let consumedProtein = 0;
+            let consumedCarbs = 0;
+            let consumedFats = 0;
+            let consumedCalories = 0;
+            let pendingMeals = 0;
+            let inProgressMeals = 0;
+            let completeMeals = 0;
+
+            const mealPayload = entries.map((entry) => {
+                const explicitStatus = mealStatuses[entry.mealId];
+                const derivedStatus = explicitStatus || 'not-completed';
+
+                if (derivedStatus === 'completed') {
+                    completeMeals += 1;
+                } else {
+                    pendingMeals += 1;
+                }
+
+                const factor = derivedStatus === 'completed' ? 1 : 0;
+                const mealProtein = toMacroNumber(entry.protein, fallbackMealProtein);
+                const mealCarbs = toMacroNumber(entry.carbs, fallbackMealCarbs);
+                const mealFats = toMacroNumber(entry.fats, fallbackMealFats);
+                const mealCalories = toMacroNumber(entry.calories, fallbackMealCalories);
+
+                consumedProtein += mealProtein * factor;
+                consumedCarbs += mealCarbs * factor;
+                consumedFats += mealFats * factor;
+                consumedCalories += mealCalories * factor;
+
+                return {
+                    meal_id: entry.mealId,
+                    meal_key: entry.mealKey,
+                    meal_label: entry.mealLabel,
+                    scheduled_time: entry.scheduledTime,
+                    status: derivedStatus,
+                    calories: mealCalories,
+                    protein: mealProtein,
+                    carbs: mealCarbs,
+                    fats: mealFats
+                };
+            });
+
+            const payload = {
+                date: new Date().toISOString().slice(0, 10),
+                target_calories: Math.round(targetCalories),
+                target_protein: Math.round(targetProtein),
+                target_carbs: Math.round(targetCarbs),
+                target_fats: Math.round(targetFats),
+                consumed_calories: Math.round(consumedCalories),
+                consumed_protein: Math.round(consumedProtein),
+                consumed_carbs: Math.round(consumedCarbs),
+                consumed_fats: Math.round(consumedFats),
+                meals: mealPayload
+            };
+
+            const backendSummary = await syncTodayMacrosToBackend(payload);
+
+            let finalProtein = Math.round(backendSummary?.consumed_protein ?? payload.consumed_protein);
+            let finalCarbs = Math.round(backendSummary?.consumed_carbs ?? payload.consumed_carbs);
+            let finalFats = Math.round(backendSummary?.consumed_fats ?? payload.consumed_fats);
+
+            if (totalMeals > 0 && completeMeals === totalMeals) {
+                finalProtein = Math.round(targetProtein);
+                finalCarbs = Math.round(targetCarbs);
+                finalFats = Math.round(targetFats);
+            }
+
+            document.querySelector('.macro-protein-text').textContent = `${finalProtein}g / ${Math.round(targetProtein)}g`;
+            document.querySelector('.macro-protein-bar').style.width = `${targetProtein > 0 ? Math.min((finalProtein / targetProtein) * 100, 100) : 0}%`;
+
+            document.querySelector('.macro-carbs-text').textContent = `${finalCarbs}g / ${Math.round(targetCarbs)}g`;
+            document.querySelector('.macro-carbs-bar').style.width = `${targetCarbs > 0 ? Math.min((finalCarbs / targetCarbs) * 100, 100) : 0}%`;
+
+            document.querySelector('.macro-fats-text').textContent = `${finalFats}g / ${Math.round(targetFats)}g`;
+            document.querySelector('.macro-fats-bar').style.width = `${targetFats > 0 ? Math.min((finalFats / targetFats) * 100, 100) : 0}%`;
+
+            const maxMacroValue = Math.max(finalProtein, finalCarbs, finalFats, 0);
+            const macroFontSize = maxMacroValue >= 300 ? '1.05rem' : (maxMacroValue >= 150 ? '0.95rem' : '0.85rem');
+            const proteinTextEl = document.querySelector('.macro-protein-text');
+            const carbsTextEl = document.querySelector('.macro-carbs-text');
+            const fatsTextEl = document.querySelector('.macro-fats-text');
+            if (proteinTextEl) proteinTextEl.style.fontSize = macroFontSize;
+            if (carbsTextEl) carbsTextEl.style.fontSize = macroFontSize;
+            if (fatsTextEl) fatsTextEl.style.fontSize = macroFontSize;
+
+            updateMacroStatus(
+                backendSummary?.status || null,
+                backendSummary?.status_message || null,
+                totalMeals,
+                pendingMeals,
+                inProgressMeals,
+                completeMeals
+            );
+        }
+
+        function displayTodayMeals(plan) {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+            const todayKey = days[today];
+            const dayData = plan[todayKey];
+
+            document.getElementById('meal-plan-title').textContent = `${dayNames[today]}'s Meal Plan`;
+
+            if (!dayData) {
+                document.getElementById('meals-container').innerHTML = '<p class="text-gray-500 text-center py-8">No meals for today.</p>';
+                return;
+            }
+
+            const mealTypes = [
+                { key: 'breakfast', label: 'Breakfast', emoji: '🍳', gradient: 'from-orange-400 to-orange-600' },
+                { key: 'snack1', label: 'Snack', emoji: '🍎', gradient: 'from-yellow-400 to-yellow-600' },
+                { key: 'lunch', label: 'Lunch', emoji: '🥗', gradient: 'from-green-400 to-green-600' },
+                { key: 'dinner', label: 'Dinner', emoji: '🍽️', gradient: 'from-purple-400 to-purple-600' },
+                { key: 'preworkout', label: 'Pre-Workout', emoji: '💪', gradient: 'from-blue-400 to-blue-600' },
+                { key: 'postworkout', label: 'Post-Workout', emoji: '🏃', gradient: 'from-pink-400 to-pink-600' }
+            ];
+
+            let mealsHTML = '';
+            const todayTraining = getTrainingForDay(dayNames[today]);
+            const exactTrainingTime = getExactTrainingTime();
+            const exactTrainingEndTime = getExactTrainingEndTime();
+            const smartSchedule = getSmartMealSchedule({
+                trainingStartTime: exactTrainingTime || todayTraining?.start || '',
+                trainingEndTime: exactTrainingEndTime || todayTraining?.end || exactTrainingTime || todayTraining?.start || ''
+            });
+
+            const trainingTime = document.getElementById('training-time')?.value;
+            const trainingEndTime = document.getElementById('training-end-time')?.value;
+            const orderedMealTypes = reorderMealsBasedOnTraining(
+                mealTypes.map(item => ({ type: item.label, ...item })),
+                trainingTime,
+                trainingEndTime
+            );
+
+            orderedMealTypes.forEach(mealType => {
+                const meal = dayData[mealType.key];
+                if (meal && (meal.en || meal.ar)) {
+                    const presentation = getMealPresentation(mealType.label, smartSchedule);
+                    if (!presentation.visible) return;
+                    const mealId = `${todayKey}-${mealType.key}`;
+                    const savedStatus = getMealStatus(mealId);
+                    
+                    let displayTime = meal.time || '';
+                    if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
+                        const trainingStart = exactTrainingTime || todayTraining?.start;
+                        const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                        const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
+                        if (calculatedTime !== 'N/A') {
+                            displayTime = calculatedTime;
+                        }
+                    } else {
+                        const calcTime = calculateMealTimeFromWakeup(mealType.label);
+                        if (calcTime !== 'N/A') {
+                            displayTime = calcTime;
+                        }
+                    }
+                    
+                    mealsHTML += `
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                            <div class="w-16 h-16 bg-gradient-to-br ${mealType.gradient} rounded-xl flex items-center justify-center text-2xl">
+                                ${mealType.emoji}
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-gray-900">${presentation.label}</h4>
+                                <button onclick="openMealSubstitution('${dayNames[today]}', -1, '${presentation.label}', '${mealType.key}')" 
+                                        class="text-xs px-2 py-1 mt-1 bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                        title="Substitute this meal">
+                                    🔄 Swap
+                                </button>
+                                ${meal.en ? `<p class="text-sm text-gray-600">${meal.en}</p>` : ''}
+                                ${meal.ar ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                                ${displayTime ? `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>` : ''}
+                            </div>
+                            <div class="relative">
+                                <button onclick="toggleStatusDropdown('${mealId}')" id="status-btn-${mealId}" class="px-4 py-2 rounded-lg border-2 ${savedStatus.class} font-semibold text-sm">${savedStatus.label}</button>
+                                <div id="dropdown-${mealId}" class="status-dropdown">
+                                    <div class="status-option" onclick="changeStatus('${mealId}', 'not-completed')">
+                                        <div class="font-semibold" style="color: #fbbf24;">⚠️ Not Completed</div>
+                                        <div class="text-xs text-gray-500 mt-1">This task is not done yet</div>
+                                    </div>
+                                    <div class="status-option" onclick="changeStatus('${mealId}', 'completed')">
+                                        <div class="font-semibold" style="color: #10b981;">✅ Completed</div>
+                                        <div class="text-xs text-gray-500 mt-1">This task is done</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('meals-container').innerHTML = mealsHTML || '<p class="text-gray-500 text-center py-8">No meals scheduled.</p>';
+        }
+
+        function displayAllDays(plan) {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date().getDay();
+
+            document.getElementById('meal-plan-title').textContent = 'Weekly Meal Plan';
+
+            let allDaysHTML = '';
+
+            days.forEach((day, index) => {
+                const dayData = plan[day];
+                const isToday = index === today;
+                
+                if (!dayData) return;
+
+                allDaysHTML += `
+                    <div class="border ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'} rounded-xl p-4 mb-4">
+                        <h3 class="text-lg font-bold mb-3 ${isToday ? 'text-blue-600' : 'text-gray-900'}">${dayNames[index]} ${isToday ? '(Today)' : ''}</h3>
+                        <div class="space-y-2">
+                `;
+
+                const mealTypes = [
+                    { key: 'breakfast', label: 'Breakfast', emoji: '🍳' },
+                    { key: 'snack1', label: 'Snack', emoji: '🍎' },
+                    { key: 'lunch', label: 'Lunch', emoji: '🥗' },
+                    { key: 'dinner', label: 'Dinner', emoji: '🍽️' },
+                    { key: 'preworkout', label: 'Pre-Workout', emoji: '💪' },
+                    { key: 'postworkout', label: 'Post-Workout', emoji: '🏃' }
+                ];
+
+                const dayTraining = getTrainingForDay(dayNames[index]);
+                const exactTrainingTime = getExactTrainingTime();
+                const exactTrainingEndTime = getExactTrainingEndTime();
+                const smartSchedule = getSmartMealSchedule({
+                    trainingStartTime: exactTrainingTime || dayTraining?.start || '',
+                    trainingEndTime: exactTrainingEndTime || dayTraining?.end || exactTrainingTime || dayTraining?.start || ''
+                });
+
+                mealTypes.forEach(mealType => {
+                    const meal = dayData[mealType.key];
+                    if (meal && (meal.en || meal.ar)) {
+                        const presentation = getMealPresentation(mealType.label, smartSchedule);
+                        if (!presentation.visible) return;
+                        let displayTime = meal.time || '';
+                        if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
+                            const trainingStart = exactTrainingTime || dayTraining?.start;
+                            const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
+                            const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
+                            if (calculatedTime !== 'N/A') {
+                                displayTime = calculatedTime;
+                            }
+                        } else {
+                            const calcTime = calculateMealTimeFromWakeup(mealType.label);
+                            if (calcTime !== 'N/A') {
+                                displayTime = calcTime;
+                            }
+                        }
+                        
+                        allDaysHTML += `
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
+                                <span class="text-xl">${mealType.emoji}</span>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${displayTime ? `- <strong>⏰ ${displayTime}</strong>` : ''}</p>
+                                    ${meal.en ? `<p class="text-xs text-gray-600 mt-1">${meal.en}</p>` : ''}
+                                    ${meal.ar ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                allDaysHTML += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('meals-container').innerHTML = allDaysHTML || '<p class="text-gray-500 text-center py-8">No meals scheduled.</p>';
+        }
+
+        function showAllDays() {
+            viewingAllDays = !viewingAllDays;
+            const button = event.target;
+            button.textContent = viewingAllDays ? '← Back to Today' : 'View All Days →';
+            loadMealPlan();
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                clearAllAuthData();
+                window.location.href = 'client-home.html';
+            }
+        }
+
+        function getMealStatus(mealId) {
+            const statuses = getMealStatuses();
+            const status = normalizeMealStatusValue(statuses[mealId]);
+            
+            const statusMap = {
+                'not-completed': { label: 'Not Completed', class: 'status-not-completed' },
+                'completed': { label: 'Completed', class: 'status-completed' }
+            };
+            
+            return statusMap[status] || statusMap['not-completed'];
+        }
+
+        function toggleStatusDropdown(mealId) {
+            // Close all other dropdowns
+            document.querySelectorAll('.status-dropdown').forEach(d => {
+                if (d.id !== `dropdown-${mealId}`) {
+                    d.classList.remove('active');
+                }
+            });
+            
+            // Toggle current dropdown
+            const dropdown = document.getElementById(`dropdown-${mealId}`);
+            dropdown.classList.toggle('active');
+        }
+
+        function updateMacroStatus(backendStatus, backendMessage, totalMeals, pendingMeals, inProgressMeals, completeMeals) {
+            const badge = document.getElementById('macro-status-badge');
+            const icon = document.getElementById('macro-status-icon');
+            const text = document.getElementById('macro-status-text');
+            const message = document.getElementById('macro-status-message');
+            
+            if (!badge || !icon || !text || !message) return;
+
+            const normalized = String(backendStatus || '').toLowerCase();
+            let resolvedStatus = 'not completed';
+
+            // Source of truth: meal completion counts from the current UI state.
+            if (totalMeals > 0 && completeMeals >= totalMeals) {
+                resolvedStatus = 'completed';
+            } else if (normalized === 'completed' || normalized === 'not completed') {
+                resolvedStatus = normalized;
+            }
+
+            if (resolvedStatus === 'not completed') {
+                icon.textContent = '⚠️';
+                text.textContent = 'Not Completed';
+                message.textContent = backendMessage || 'Meals are still not completed for today.';
+                badge.style.backgroundColor = '#e5e7eb';
+                badge.style.color = '#6b7280';
+            } else if (resolvedStatus === 'completed') {
+                icon.textContent = '✅';
+                text.textContent = 'Completed';
+                message.textContent = backendMessage || 'All tasks are completed for today.';
+                badge.style.backgroundColor = '#10b981';
+                badge.style.color = 'white';
+            }
+        }
+        
+        async function changeStatus(mealId, newStatus) {
+            // Save status to localStorage
+            const statuses = getMealStatuses();
+            statuses[mealId] = newStatus;
+            setMealStatuses(statuses);
+            await persistMealStatusesToBackend(statuses);
+            
+            // Update button appearance
+            const statusInfo = getMealStatus(mealId);
+            const button = document.getElementById(`status-btn-${mealId}`);
+            button.className = `px-4 py-2 rounded-lg border-2 ${statusInfo.class} font-semibold text-sm`;
+            button.textContent = statusInfo.label;
+            
+            // Close dropdown
+            document.getElementById(`dropdown-${mealId}`).classList.remove('active');
+            
+            // Update macros display
+            loadMealPlan();
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.relative')) {
+                document.querySelectorAll('.status-dropdown').forEach(d => {
+                    d.classList.remove('active');
+                });
+            }
+        });
+
+        // Debug function - logs all cache keys and values
+        function debugCacheState() {
+            console.log('=== CACHE DEBUG STATE ===');
+            console.log('All localStorage keys:');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.includes('Cache') || key.includes('clientId')) {
+                    const value = localStorage.getItem(key);
+                    try {
+                        console.log(`  ${key}:`, JSON.parse(value || '{}'));
+                    } catch (e) {
+                        console.log(`  ${key}:`, value);
+                    }
+                }
+            }
+            console.log('currentClient variable:', currentClient);
+            console.log('=== END DEBUG ===');
+        }
+
+        // ==================== NEW FEATURES ====================
+
+        // Meal Substitution Functions
+        let currentSubstitutionContext = null;
+
+        function parseClockMinutes(value) {
+            if (!value) return null;
+            const str = String(value).trim();
+            if (/^\d{2}:\d{2}$/.test(str)) {
+                const [h, m] = str.split(':').map(Number);
+                if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+                return (h * 60) + m;
+            }
+            return timeStringToMinutes(str);
+        }
+
+        function toTimeInputValue(value) {
+            if (!value) return '';
+            const str = String(value).trim();
+            if (/^\d{2}:\d{2}$/.test(str)) return str;
+            if (/^\d{2}:\d{2}:\d{2}(?:\.\d{3})?$/.test(str)) return str.slice(0, 5);
+
+            const minutes = timeStringToMinutes(str);
+            if (minutes === null) return '';
+
+            const hours = Math.floor(minutes / 60) % 24;
+            const mins = minutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        }
+
+        function minutesTo24HourString(totalMinutes) {
+            if (totalMinutes === null || totalMinutes === undefined || !Number.isFinite(totalMinutes)) return 'N/A';
+            const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+            const hours = Math.floor(normalized / 60);
+            const minutes = normalized % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        function getMealLabelFromKey(mealKey) {
+            const normalized = String(mealKey || '').toLowerCase().trim();
+            if (normalized === 'breakfast') return 'Breakfast';
+            if (normalized === 'snack1' || normalized === 'snack') return 'Snack';
+            if (normalized === 'lunch') return 'Lunch';
+            if (normalized === 'preworkout') return 'PreWorkout';
+            if (normalized === 'postworkout') return 'PostWorkout';
+            if (normalized === 'dinner') return 'Dinner';
+            return normalized;
+        }
+
+        function getMealKeyFromLabel(mealType) {
+            const normalized = String(mealType || '').toLowerCase().replace(/\s|-/g, '');
+            if (normalized.includes('breakfast')) return 'breakfast';
+            if (normalized.includes('snack')) return 'snack1';
+            if (normalized.includes('lunch')) return 'lunch';
+            if (normalized.includes('pre') && normalized.includes('workout')) return 'preworkout';
+            if (normalized.includes('post') && normalized.includes('workout')) return 'postworkout';
+            if (normalized.includes('dinner')) return 'dinner';
+            return null;
+        }
+
+        function getMealPresentation(mealType, smartSchedule = getSmartMealSchedule()) {
+            const mealKey = getMealKeyFromLabel(mealType);
+            if (!mealKey) return { visible: true, label: String(mealType || 'Meal') };
+
+            if (mealKey === 'preworkout' && smartSchedule.skipPreWorkout) {
+                return { visible: false, label: 'Pre-Workout' };
+            }
+
+            if (mealKey === 'dinner' && smartSchedule.mergeDinnerWithPostWorkout) {
+                return { visible: false, label: 'Dinner' };
+            }
+
+            if (mealKey === 'postworkout' && smartSchedule.skipPreWorkout && smartSchedule.mergeDinnerWithPostWorkout) {
+                return { visible: true, label: 'Breakfast / Post-Workout / Dinner' };
+            }
+
+            if (mealKey === 'postworkout' && smartSchedule.skipPreWorkout) {
+                return { visible: true, label: 'Breakfast / Post-Workout' };
+            }
+
+            if (mealKey === 'postworkout' && smartSchedule.mergeDinnerWithPostWorkout) {
+                return { visible: true, label: 'Post-Workout / Dinner' };
+            }
+
+            const defaultLabels = {
+                breakfast: 'Breakfast',
+                snack1: 'Snack',
+                lunch: 'Lunch',
+                preworkout: 'Pre-Workout',
+                postworkout: 'Post-Workout',
+                dinner: 'Dinner'
+            };
+
+            return { visible: true, label: defaultLabels[mealKey] || String(mealType || 'Meal') };
+        }
+
+        function normalizeTimelineMinutes(baseMinutes, comparisonMinutes) {
+            if (baseMinutes === null || comparisonMinutes === null) return baseMinutes;
+            let adjusted = baseMinutes;
+            while (adjusted <= comparisonMinutes) adjusted += 1440;
+            return adjusted;
+        }
+
+        function classifyTrainingWindow(wakeMinutes, trainingStartMinutes) {
+            if (wakeMinutes === null || trainingStartMinutes === null) return 'no-training';
+            const delta = trainingStartMinutes - wakeMinutes;
+            if (delta <= 90) return 'early-morning';
+            if (delta <= 240) return 'late-morning';
+            if (delta <= 480) return 'afternoon';
+            return 'evening';
+        }
+
+        function createSmartMealSchedule({ wakeUpTime, sleepTime, trainingStartTime, trainingEndTime }) {
+            const wakeMinutes = parseClockMinutes(wakeUpTime);
+            const sleepBase = parseClockMinutes(sleepTime);
+            if (wakeMinutes === null || sleepBase === null) {
+                return {
+                    trainingWindow: 'unavailable',
+                    skipPreWorkout: false,
+                    mergeDinnerWithPostWorkout: false,
+                    times: {},
+                    minuteMap: {}
+                };
+            }
+
+            let sleepMinutes = sleepBase;
+            if (sleepMinutes <= wakeMinutes) sleepMinutes += 1440;
+
+            let trainingStartMinutes = parseClockMinutes(trainingStartTime);
+            let trainingEndMinutes = parseClockMinutes(trainingEndTime);
+
+            if (trainingStartMinutes !== null && trainingStartMinutes <= wakeMinutes) {
+                trainingStartMinutes += 1440;
+            }
+
+            if (trainingStartMinutes !== null && trainingEndMinutes === null) {
+                trainingEndMinutes = trainingStartMinutes + 60;
+            }
+            if (trainingStartMinutes !== null && trainingEndMinutes !== null && trainingEndMinutes <= trainingStartMinutes) {
+                trainingEndMinutes += 1440;
+            }
+
+            const trainingWindow = classifyTrainingWindow(wakeMinutes, trainingStartMinutes);
+            const wakeToTraining = trainingStartMinutes !== null ? (trainingStartMinutes - wakeMinutes) : null;
+            const skipPreWorkout = wakeToTraining !== null && wakeToTraining <= 30;
+            const mergeDinnerWithPostWorkout = trainingEndMinutes !== null && (sleepMinutes - trainingEndMinutes) <= 90;
+
+            const minuteMap = {
+                breakfast: wakeMinutes + 30,
+                snack1: null,
+                lunch: null,
+                preworkout: skipPreWorkout || trainingStartMinutes === null ? null : trainingStartMinutes - 45,
+                postworkout: trainingEndMinutes === null ? null : trainingEndMinutes + 30,
+                dinner: sleepMinutes - 120
+            };
+
+            if (skipPreWorkout && minuteMap.postworkout !== null) {
+                minuteMap.breakfast = minuteMap.postworkout;
+            }
+
+            if (trainingWindow === 'early-morning' && minuteMap.postworkout !== null) {
+                minuteMap.breakfast = minuteMap.postworkout;
+            }
+
+            if (
+                minuteMap.preworkout !== null &&
+                minuteMap.breakfast !== null &&
+                minuteMap.preworkout - minuteMap.breakfast < 180 &&
+                minuteMap.postworkout !== null
+            ) {
+                minuteMap.breakfast = minuteMap.postworkout;
+            }
+
+            if (mergeDinnerWithPostWorkout && minuteMap.postworkout !== null) {
+                minuteMap.dinner = minuteMap.postworkout;
+            }
+
+            const fixedAnchors = [
+                { key: 'preworkout', time: minuteMap.preworkout },
+                { key: 'breakfast', time: minuteMap.breakfast },
+                { key: 'postworkout', time: minuteMap.postworkout },
+                { key: 'dinner', time: minuteMap.dinner }
+            ]
+                .filter((entry) => entry.time !== null)
+                .sort((left, right) => left.time - right.time);
+
+            const availableSlots = [];
+            for (let index = 0; index < fixedAnchors.length - 1; index += 1) {
+                const current = fixedAnchors[index].time;
+                const next = fixedAnchors[index + 1].time;
+                for (let slot = current + 180; slot <= next - 180; slot += 180) {
+                    availableSlots.push(slot);
+                }
+            }
+
+            let snackMinutes = availableSlots.shift() ?? null;
+            let lunchMinutes = availableSlots.shift() ?? null;
+            const breakfastMinutes = minuteMap.breakfast;
+            const dinnerMinutes = minuteMap.dinner;
+
+            if (snackMinutes === null && breakfastMinutes !== null && dinnerMinutes - breakfastMinutes >= 360) {
+                snackMinutes = breakfastMinutes + 180;
+            }
+
+            if (lunchMinutes === null) {
+                const baselineLunch = snackMinutes !== null ? snackMinutes + 180 : (breakfastMinutes !== null ? breakfastMinutes + 360 : null);
+                if (baselineLunch !== null && dinnerMinutes - baselineLunch >= 180) {
+                    lunchMinutes = baselineLunch;
+                } else if (snackMinutes !== null && dinnerMinutes - snackMinutes >= 360) {
+                    lunchMinutes = dinnerMinutes - 180;
+                }
+            }
+
+            if (snackMinutes === null && lunchMinutes !== null && breakfastMinutes !== null && lunchMinutes - breakfastMinutes >= 360) {
+                snackMinutes = lunchMinutes - 180;
+            }
+
+            if (snackMinutes === null && breakfastMinutes !== null) {
+                snackMinutes = breakfastMinutes + 180;
+            }
+            if (lunchMinutes === null && snackMinutes !== null) {
+                lunchMinutes = snackMinutes + 180;
+            }
+
+            minuteMap.snack1 = snackMinutes;
+            minuteMap.lunch = lunchMinutes;
+
+            const times = Object.fromEntries(
+                Object.entries(minuteMap).map(([mealKey, mealMinutes]) => [mealKey, minutesTo24HourString(mealMinutes)])
+            );
+
+            return {
+                trainingWindow,
+                skipPreWorkout,
+                mergeDinnerWithPostWorkout,
+                times,
+                minuteMap
+            };
+        }
+
+        function getSmartMealSchedule(overrides = {}) {
+            return createSmartMealSchedule({
+                wakeUpTime: overrides.wakeUpTime ?? document.getElementById('wake-up-time')?.value ?? '',
+                sleepTime: overrides.sleepTime ?? document.getElementById('sleep-time')?.value ?? '',
+                trainingStartTime: overrides.trainingStartTime ?? getExactTrainingTime(),
+                trainingEndTime: overrides.trainingEndTime ?? getExactTrainingEndTime()
+            });
+        }
+
+        function getTrainingTimeCategory(trainingTime) {
+            const mins = parseClockMinutes(trainingTime);
+            if (mins === null) return null;
+            if (mins < 11 * 60) return 'morning';
+            if (mins <= 16 * 60) return 'afternoon';
+            return 'evening';
+        }
+
+        function updateTrainingTimeCategoryLabel(trainingTime) {
+            const categoryEl = document.getElementById('training-time-category');
+            if (!categoryEl) return;
+            const category = getTrainingTimeCategory(trainingTime);
+            if (!category) {
+                categoryEl.textContent = 'Category: N/A';
+                return;
+            }
+            const pretty = category.charAt(0).toUpperCase() + category.slice(1);
+            categoryEl.textContent = `Category: ${pretty}`;
+        }
+
+        function getMealCategoryKey(mealType) {
+            const type = String(mealType || '').toLowerCase().trim();
+            if (!type) return 'other';
+            if (type.includes('pre') && type.includes('work')) return 'preworkout';
+            if (type.includes('post') && type.includes('work')) return 'postworkout';
+            if (type.includes('breakfast')) return 'breakfast';
+            if (type.includes('snack') && (type.includes('1') || type.includes('one'))) return 'snack1';
+            if (type.includes('snack')) return 'snack1';
+            if (type.includes('lunch')) return 'lunch';
+            if (type.includes('dinner')) return 'dinner';
+            return 'other';
+        }
+
+        function computeMealScheduleMinute(mealCategory, wakeMinutes, trainingStartMinutes, trainingEndMinutes) {
+            const smartSchedule = createSmartMealSchedule({
+                wakeUpTime: minutesTo24HourString(wakeMinutes),
+                sleepTime: document.getElementById('sleep-time')?.value || '23:00',
+                trainingStartTime: trainingStartMinutes !== null ? minutesTo24HourString(trainingStartMinutes) : '',
+                trainingEndTime: trainingEndMinutes !== null ? minutesTo24HourString(trainingEndMinutes) : ''
+            });
+            return smartSchedule.minuteMap[mealCategory] ?? Number.MAX_SAFE_INTEGER;
+        }
+
+        function reorderMealsBasedOnTraining(meals, trainingTime, trainingEndTime) {
+            if (!Array.isArray(meals) || !meals.length) return meals;
+
+            const wakeUpTime = document.getElementById('wake-up-time')?.value || '07:00';
+            const sleepTime = document.getElementById('sleep-time')?.value || '23:00';
+            const smartSchedule = createSmartMealSchedule({
+                wakeUpTime,
+                sleepTime,
+                trainingStartTime: trainingTime,
+                trainingEndTime
+            });
+
+            const decorated = meals.map((meal, index) => {
+                const category = getMealCategoryKey(meal?.type);
+                const scheduleMinute = smartSchedule.minuteMap[category] ?? Number.MAX_SAFE_INTEGER;
+                return { meal, index, category, scheduleMinute };
+            });
+
+            decorated.sort((a, b) => (a.scheduleMinute - b.scheduleMinute) || (a.index - b.index));
+
+            return decorated.map(item => item.meal);
+        }
+
+        function buildDayMealsFromPlan(plan) {
+            if (!plan || typeof plan !== 'object') return null;
+
+            const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const mealTypes = [
+                { key: 'breakfast', label: 'Breakfast' },
+                { key: 'snack1', label: 'Snack' },
+                { key: 'lunch', label: 'Lunch' },
+                { key: 'dinner', label: 'Dinner' },
+                { key: 'preworkout', label: 'Pre-Workout' },
+                { key: 'postworkout', label: 'Post-Workout' }
+            ];
+
+            const dayMeals = {};
+            dayNames.forEach((dayName, index) => {
+                const dayData = plan[dayKeys[index]] || {};
+                dayMeals[dayName] = [];
+
+                mealTypes.forEach((mealType) => {
+                    const meal = dayData[mealType.key];
+                    if (meal && (meal.en || meal.ar)) {
+                        dayMeals[dayName].push({
+                            type: mealType.label,
+                            en: meal.en || '',
+                            ar: meal.ar || '',
+                            time: meal.time || ''
+                        });
+                    }
+                });
+            });
+
+            return dayMeals;
+        }
+
+        function getAssignedDietPlanFromCache() {
+            if (!currentClient) return { plan: null, selectedPlanIndex: null };
+
+            const cacheCandidates = [
+                currentClient.id ? `clientDashboardCache_${currentClient.id}` : null,
+                currentClient.dbId ? `clientDashboardCache_${currentClient.dbId}` : null,
+                localStorage.getItem('currentClientId') ? `clientDashboardCache_${localStorage.getItem('currentClientId')}` : null,
+                'clientDashboardCache'
+            ].filter(Boolean);
+
+            let selectedPlanIndex = null;
+            cacheCandidates.some((key) => {
+                try {
+                    const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (parsed && Number.isInteger(parsed.assignedDietPlan) && parsed.assignedDietPlan >= 0) {
+                        selectedPlanIndex = parsed.assignedDietPlan;
+                        return true;
+                    }
+                } catch (_) {
+                    // Ignore bad cache entries.
+                }
+                return false;
+            });
+
+            if (!Number.isInteger(selectedPlanIndex)) {
+                selectedPlanIndex = Number.isInteger(currentClient.assignedDietPlan) ? currentClient.assignedDietPlan : null;
+            }
+
+            const dietPlans = JSON.parse(localStorage.getItem('dietPlans') || '[]');
+            const plan = Number.isInteger(selectedPlanIndex) ? dietPlans[selectedPlanIndex] : null;
+            return { plan: plan || null, selectedPlanIndex };
+        }
+
+        function getSavedProgramsState() {
+            if (currentClient && currentClient.mealSwaps && currentClient.mealSwaps.dayMeals) {
+                return { state: currentClient.mealSwaps, key: null };
+            }
+
+            const candidateProgramsKeys = [
+                `clientPrograms_${currentClient.id}`,
+                currentClient.dbId ? `clientPrograms_${currentClient.dbId}` : null,
+                localStorage.getItem('currentClientId') ? `clientPrograms_${localStorage.getItem('currentClientId')}` : null
+            ].filter(Boolean);
+
+            let savedProgramsState = null;
+            let usedProgramsKey = null;
+
+            candidateProgramsKeys.some((key) => {
+                try {
+                    const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+                    if (parsed && parsed.dayMeals) {
+                        savedProgramsState = parsed;
+                        usedProgramsKey = key;
+                        return true;
+                    }
+                } catch (error) {
+                    console.error(`Failed to parse saved programs state from ${key}:`, error);
+                }
+                return false;
+            });
+
+            if (!savedProgramsState) {
+                const { plan, selectedPlanIndex } = getAssignedDietPlanFromCache();
+                const generatedDayMeals = buildDayMealsFromPlan(plan);
+                if (generatedDayMeals) {
+                    const generatedState = {
+                        selectedPlanIndex: Number.isInteger(selectedPlanIndex) ? selectedPlanIndex : null,
+                        dayMeals: generatedDayMeals,
+                        generatedFromPlan: true
+                    };
+                    usedProgramsKey = candidateProgramsKeys[0] || `clientPrograms_${localStorage.getItem('currentClientId') || 'active'}`;
+                    localStorage.setItem(usedProgramsKey, JSON.stringify(generatedState));
+                    if (currentClient) {
+                        currentClient.mealSwaps = generatedState;
+                    }
+                    savedProgramsState = generatedState;
+                }
+            }
+
+            return { state: savedProgramsState, key: usedProgramsKey };
+        }
+
+        async function persistMealSwapsToBackend(payload) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ meal_swaps: payload })
+                });
+
+                if (response.ok) {
+                    const updatedProfile = await response.json();
+                    if (currentClient) {
+                        currentClient.mealSwaps = updatedProfile.meal_swaps || payload;
+                    }
+                } else {
+                    console.warn('Failed to persist meal swaps to backend');
+                }
+            } catch (error) {
+                console.error('Failed to persist meal swaps:', error);
+            }
+        }
+
+        function openMealSubstitution(dayName, mealIndex, mealType, mealCategoryOverride) {
+            currentSubstitutionContext = {
+                dayName,
+                mealIndex,
+                mealType,
+                mealCategory: mealCategoryOverride || getMealCategoryKey(mealType)
+            };
+
+            const savedData = getSavedProgramsState();
+            const savedProgramsState = savedData.state;
+
+            if (!savedProgramsState || !savedProgramsState.dayMeals) {
+                alert('No meal plan data available for substitution');
+                return;
+            }
+
+            if (!Array.isArray(savedProgramsState.dayMeals[dayName]) || !savedProgramsState.dayMeals[dayName].length) {
+                alert('No meals found for the selected day.');
+                return;
+            }
+
+            // Build substitution options from the same meal category only.
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let optionCount = 0;
+            let optionsHTML = `
+                <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="closeMealSubstitution()">
+                    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 600px; max-height: 80vh; overflow-y: auto; width: 90%;" onclick="event.stopPropagation();">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="font-size: 20px; font-weight: bold; color: #1f2937;">Substitute ${mealType}</h3>
+                            <button onclick="closeMealSubstitution()" style="font-size: 24px; color: #6b7280; background: none; border: none; cursor: pointer;">&times;</button>
+                        </div>
+                        <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Choose only ${mealType} options from other days:</p>
+                        <div id="substitution-options" style="space-y: 8px;">
+            `;
+
+            dayNames.forEach((day) => {
+                const dayMeals = savedProgramsState.dayMeals[day] || [];
+                if (day !== dayName && dayMeals.length > 0) {
+                    const sameCategoryMeals = dayMeals
+                        .map((meal, idx) => ({ meal, idx }))
+                        .filter(item => getMealCategoryKey(item.meal?.type) === currentSubstitutionContext.mealCategory);
+
+                    if (!sameCategoryMeals.length) {
+                        return;
+                    }
+
+                    optionsHTML += `<div style="margin-bottom: 12px;">
+                        <h4 style="font-weight: 600; color: #374151; margin-bottom: 8px;">${day}</h4>`;
+                    sameCategoryMeals.forEach(({ meal, idx }) => {
+                        optionCount += 1;
+                        optionsHTML += `
+                            <button onclick="selectMealSubstitution('${day}', ${idx})" 
+                                    style="width: 100%; text-align: left; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px; background: white; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#6eabf2';"
+                                    onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                                <div style="font-weight: 600; color: #111827; font-size: 14px;">${meal.type || 'Meal'}</div>
+                                ${meal.en ? `<div style="color: #6b7280; font-size: 13px; margin-top: 4px;">${meal.en}</div>` : ''}
+                                ${meal.ar ? `<div style="color: #6b7280; font-size: 13px; margin-top: 2px;">${meal.ar}</div>` : ''}
+                            </button>
+                        `;
+                    });
+                    optionsHTML += `</div>`;
+                }
+            });
+
+            if (optionCount === 0) {
+                optionsHTML += `<p style="color: #6b7280; font-size: 14px;">No same-category meal options are available from other days.</p>`;
+            }
+
+            optionsHTML += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'meal-substitution-modal';
+            modalContainer.innerHTML = optionsHTML;
+            document.body.appendChild(modalContainer);
+        }
+
+        function closeMealSubstitution() {
+            const modal = document.getElementById('meal-substitution-modal');
+            if (modal) {
+                modal.remove();
+            }
+            currentSubstitutionContext = null;
+        }
+
+        async function selectMealSubstitution(sourceDayName, sourceMealIndex) {
+            if (!currentSubstitutionContext) return;
+
+            const { dayName, mealIndex, mealType, mealCategory } = currentSubstitutionContext;
+            const savedData = getSavedProgramsState();
+            const savedProgramsState = savedData.state;
+            const usedProgramsKey = savedData.key || `clientPrograms_${currentClient.id}`;
+
+            if (!savedProgramsState) {
+                alert('Unable to save substitution');
+                return;
+            }
+
+            // Copy meal from source day to target day
+            const sourceMeal = savedProgramsState.dayMeals[sourceDayName][sourceMealIndex];
+            if (!sourceMeal) {
+                alert('Source meal not found');
+                return;
+            }
+
+            if (getMealCategoryKey(sourceMeal.type) !== mealCategory) {
+                alert('Please select a meal from the same meal category.');
+                return;
+            }
+
+            // Replace meal in target day (category-safe even when the UI list is re-ordered)
+            const replacement = JSON.parse(JSON.stringify(sourceMeal));
+            replacement.type = mealType;
+            const targetMeals = savedProgramsState.dayMeals[dayName] || [];
+            let targetMealIndex = Number.isInteger(mealIndex) ? mealIndex : -1;
+
+            if (
+                targetMealIndex < 0 ||
+                targetMealIndex >= targetMeals.length ||
+                getMealCategoryKey(targetMeals[targetMealIndex]?.type) !== mealCategory
+            ) {
+                targetMealIndex = targetMeals.findIndex((meal) => getMealCategoryKey(meal?.type) === mealCategory);
+            }
+
+            if (targetMealIndex < 0) {
+                alert('No target meal found in this category for today.');
+                return;
+            }
+
+            targetMeals[targetMealIndex] = replacement;
+            savedProgramsState.dayMeals[dayName] = targetMeals;
+
+            // Save back to localStorage and backend
+            localStorage.setItem(usedProgramsKey, JSON.stringify(savedProgramsState));
+            if (currentClient) {
+                currentClient.mealSwaps = savedProgramsState;
+            }
+            await persistMealSwapsToBackend(savedProgramsState);
+
+            // Close modal
+            closeMealSubstitution();
+
+            // Reload meal plan
+            loadMealPlan();
+
+            alert('✓ Meal substituted successfully!');
+        }
+
+        // Competition Date Edit
+        function editCompetitionDate() {
+            const currentDate = currentClient?.competitionDate || '';
+            const newDate = prompt('Enter competition date (YYYY-MM-DD):', currentDate);
+            if (newDate && newDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                updateCompetitionDate(newDate);
+            } else if (newDate !== null) {
+                alert('Invalid date format. Please use YYYY-MM-DD');
+            }
+        }
+
+        async function updateCompetitionDate(newDate) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ competition_date: newDate })
+                });
+
+                if (response.ok) {
+                    currentClient.competitionDate = newDate;
+                    
+                    // Update cache
+                    const cacheKey = `clientDashboardCache_${currentClient.id}`;
+                    localStorage.setItem(cacheKey, JSON.stringify(currentClient));
+                    
+                    // Update display
+                    const competition = new Date(newDate);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((competition - today) / (1000 * 60 * 60 * 24));
+                    document.getElementById('days-remaining').textContent = daysUntil > 0 ? `${daysUntil} days` : 'Today!';
+                    document.getElementById('competition-date').textContent = `Competition: ${competition.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    
+                    alert('✓ Competition date updated successfully!');
+                } else {
+                    alert('Failed to update competition date');
+                }
+            } catch (error) {
+                console.error('Error updating competition date:', error);
+                alert('Error updating competition date');
+            }
+        }
+
+        // Wake/Sleep Time Functionality
+        async function saveDailySchedule() {
+            const wakeUpTime = document.getElementById('wake-up-time').value;
+            const sleepTime = document.getElementById('sleep-time').value;
+            const trainingTime = document.getElementById('training-time')?.value || '';
+            const trainingEndTime = document.getElementById('training-end-time')?.value || '';
+
+            if (!wakeUpTime) {
+                alert('Please enter wake-up time');
+                return;
+            }
+
+            updateTrainingTimeCategoryLabel(trainingTime);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        wake_up_time: wakeUpTime,
+                        sleep_time: sleepTime,
+                        training_start_time: trainingTime || null,
+                        training_time: trainingTime || null,
+                        training_end_time: trainingEndTime || null
+                    })
+                });
+
+                if (response.ok) {
+                    syncCurrentClientScheduleState({
+                        wake_up_time: wakeUpTime || null,
+                        sleep_time: sleepTime || null,
+                        wakeUpTime: wakeUpTime || '',
+                        sleepTime: sleepTime || '',
+                        training_start_time: trainingTime || null,
+                        training_time: trainingTime || null,
+                        training_end_time: trainingEndTime || null,
+                        trainingTime: trainingTime || '',
+                        trainingEndTime: trainingEndTime || ''
+                    });
+                    alert('✓ Daily schedule saved!');
+                    updateMealTimes();
+                    loadMealPlan();
+                } else {
+                    alert('Failed to save schedule');
+                }
+            } catch (error) {
+                console.error('Error saving schedule:', error);
+                alert('Error saving schedule');
+            }
+        }
+
+        function updateMealTimes() {
+            const wakeUpTime = document.getElementById('wake-up-time').value;
+            if (!wakeUpTime) return;
+
+            const smartSchedule = getSmartMealSchedule();
+            console.log('[Dashboard - smart meal schedule]', smartSchedule);
+
+            // Reload meal plan to apply new times
+            loadMealPlan();
+        }
+
+        function calculateMealTimeFromWakeup(mealType) {
+            const mealKey = getMealKeyFromLabel(mealType);
+            if (!mealKey) return 'N/A';
+            const smartSchedule = getSmartMealSchedule();
+            return smartSchedule.times[mealKey] || 'N/A';
+        }
+
+        // Injury Mode Functions
+        function enableInjuryMode() {
+            document.getElementById('injury-status-view').style.display = 'none';
+            document.getElementById('injury-input-form').style.display = 'block';
+        }
+
+        function cancelInjuryMode() {
+            document.getElementById('injury-status-view').style.display = 'block';
+            document.getElementById('injury-input-form').style.display = 'none';
+            document.getElementById('injury-description').value = '';
+        }
+
+        async function saveInjuryMode() {
+            const description = document.getElementById('injury-description').value.trim();
+            if (!description) {
+                alert('Please describe your injury');
+                return;
+            }
+
+            try {
+                // Save current protein/carbs/fats as originals before adjustment
+                const original_protein = currentClient.protein_target || 150;
+                const original_carbs = currentClient.carbs_target || 220;
+                const original_fats = currentClient.fats_target || 60;
+
+                // Calculate new targets: reduce calories by 500, increase protein by 20%
+                const new_protein = Math.round(original_protein * 1.2);
+                
+                // Reduce carbs to account for calorie reduction (500 kcal)
+                // Protein increase: (new_protein - original_protein) * 4 kcal/g
+                const protein_calorie_increase = (new_protein - original_protein) * 4;
+                const carbs_calorie_reduction = 500 + protein_calorie_increase;
+                const new_carbs = Math.max(50, Math.round(original_carbs - carbs_calorie_reduction / 4));
+
+                const payload = { 
+                    injury_status: true,
+                    injury_description: description,
+                    original_protein: original_protein,
+                    original_carbs: original_carbs,
+                    original_fats: original_fats,
+                    protein_target: new_protein,
+                    carbs_target: new_carbs
+                };
+
+                console.log('Sending injury mode payload:', payload);
+
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                console.log('Injury mode response:', response.status, data);
+
+                if (response.ok) {
+                    // Update current client data
+                    currentClient.injury_status = true;
+                    currentClient.injury_description = description;
+                    currentClient.protein_target = new_protein;
+                    currentClient.carbs_target = new_carbs;
+                    currentClient.original_protein = original_protein;
+                    currentClient.original_carbs = original_carbs;
+                    currentClient.original_fats = original_fats;
+
+                    // Calculate new TDEE
+                    const currentTargetCalories = calculateClientCaloriesTarget(currentClient) || 0;
+                    const newTDEE = Math.max(1200, currentTargetCalories - 500);
+                    currentClient.tdee = newTDEE;
+                    
+                    // Update UI
+                    document.getElementById('injury-description-display').textContent = description;
+                    document.getElementById('injury-status-view').style.display = 'none';
+                    document.getElementById('injury-input-form').style.display = 'none';
+                    document.getElementById('injury-active-view').style.display = 'block';
+                    updateDashboardSummaryCards(currentClient);
+                    
+                    // Update macros display if exists
+                    if (document.getElementById('protein-display')) {
+                        document.getElementById('protein-display').textContent = new_protein + 'g';
+                    }
+                    if (document.getElementById('carbs-display')) {
+                        document.getElementById('carbs-display').textContent = new_carbs + 'g';
+                    }
+                    
+                    alert('✓ Injury mode activated successfully!\n\n• Calories reduced by 500 kcal\n• Protein increased by 20%\n• Carbs adjusted accordingly');
+                } else {
+                    const errorMsg = data.detail || data.message || 'Unknown error';
+                    console.error('Injury mode activation failed:', errorMsg);
+                    alert(`Failed to activate injury mode:\n${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error activating injury mode:', error);
+                alert('Error activating injury mode. Please check your connection and try again.');
+            }
+        }
+
+        async function removeInjuryMode() {
+            if (!confirm('Remove injury mode and restore original nutrition plan?')) return;
+
+            try {
+                const payload = { 
+                    injury_status: false,
+                    injury_description: null,
+                    protein_target: currentClient.original_protein || null,
+                    carbs_target: currentClient.original_carbs || null,
+                    fats_target: currentClient.original_fats || null
+                };
+
+                console.log('Removing injury mode with payload:', payload);
+
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                console.log('Remove injury mode response:', response.status, data);
+
+                if (response.ok) {
+                    // Reload profile to get fresh data
+                    const profile = await fetchClientProfile();
+                    if (profile) {
+                        currentClient = {
+                            ...currentClient,
+                            ...profile,
+                            id: profile.display_id,
+                            dbId: profile.id,
+                            weight: toFiniteNumber(profile.weight),
+                            tdee: toFiniteNumber(profile.tdee),
+                            goalWeight: toFiniteNumber(profile.goal_weight),
+                            progression_type: profile.progression_type || null
+                        };
+                        
+                        // Update UI
+                        document.getElementById('injury-active-view').style.display = 'none';
+                        document.getElementById('injury-status-view').style.display = 'block';
+                        document.getElementById('injury-status-text').textContent = 'No injury reported';
+                        updateDashboardSummaryCards(currentClient);
+                        
+                        // Update macros display if exists
+                        if (document.getElementById('protein-display')) {
+                            document.getElementById('protein-display').textContent = (profile.protein_target || 0) + 'g';
+                        }
+                        if (document.getElementById('carbs-display')) {
+                            document.getElementById('carbs-display').textContent = (profile.carbs_target || 0) + 'g';
+                        }
+                        
+                        alert('✓ Injury mode removed. Original nutrition plan restored.');
+                    }
+                } else {
+                    const errorMsg = data.detail || data.message || 'Unknown error';
+                    console.error('Remove injury mode failed:', errorMsg);
+                    alert(`Failed to remove injury mode:\n${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error removing injury mode:', error);
+                alert('Error removing injury mode. Please check your connection and try again.');
+            }
+        }
+
+        // Training Time
+        async function saveTrainingTime() {
+            const trainingTime = document.getElementById('training-time').value;
+            const trainingEndTime = document.getElementById('training-end-time')?.value || '';
+            if (!trainingTime && !trainingEndTime) return;
+
+            updateTrainingTimeCategoryLabel(trainingTime);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        training_start_time: trainingTime || null,
+                        training_time: trainingTime || null,
+                        training_end_time: trainingEndTime || null
+                    })
+                });
+
+                if (response.ok) {
+                    syncCurrentClientScheduleState({
+                        training_start_time: trainingTime || null,
+                        training_time: trainingTime || null,
+                        training_end_time: trainingEndTime || null,
+                        trainingTime: trainingTime || '',
+                        trainingEndTime: trainingEndTime || ''
+                    });
+                    alert('✓ Training time saved!');
+                    loadMealPlan(); // Reload to reorder meals
+                } else {
+                    alert('Failed to save training time');
+                }
+            } catch (error) {
+                console.error('Error saving training time:', error);
+            }
+        }
+
+        // Load injury/schedule state from backend
+        async function loadDashboardState() {
+            try {
+                const profile = await fetchClientProfile();
+                if (!profile) return;
+
+                // Load wake/sleep times
+                if (profile.wake_up_time) {
+                    document.getElementById('wake-up-time').value = profile.wake_up_time;
+                }
+                if (profile.sleep_time) {
+                    document.getElementById('sleep-time').value = profile.sleep_time;
+                }
+
+                // Load injury status
+                if (profile.injury_status) {
+                    document.getElementById('injury-description-display').textContent = profile.injury_description || 'Injury reported';
+                    document.getElementById('injury-status-view').style.display = 'none';
+                    document.getElementById('injury-active-view').style.display = 'block';
+                    
+                    if (currentClient) {
+                        currentClient.injury_status = true;
+                        currentClient.injury_description = profile.injury_description || currentClient.injury_description;
+                        currentClient.protein_target = profile.protein_target ?? currentClient.protein_target;
+                        currentClient.carbs_target = profile.carbs_target ?? currentClient.carbs_target;
+                        currentClient.fats_target = profile.fats_target ?? currentClient.fats_target;
+                        updateDashboardSummaryCards(currentClient);
+                    }
+                } else {
+                    document.getElementById('injury-status-view').style.display = 'block';
+                    document.getElementById('injury-active-view').style.display = 'none';
+                    if (currentClient) {
+                        currentClient.injury_status = false;
+                        updateDashboardSummaryCards(currentClient);
+                    }
+                }
+
+                // Load training time
+                const trainingStart = profile.training_time || profile.training_start_time || '';
+                const normalizedTrainingStart = toTimeInputValue(trainingStart);
+                if (normalizedTrainingStart) {
+                    document.getElementById('training-time').value = normalizedTrainingStart;
+                    updateTrainingTimeCategoryLabel(normalizedTrainingStart);
+                } else {
+                    updateTrainingTimeCategoryLabel('');
+                }
+
+                const trainingEndInput = document.getElementById('training-end-time');
+                if (trainingEndInput) {
+                    trainingEndInput.value = toTimeInputValue(profile.training_end_time || '');
+                }
+
+                if (currentClient) {
+                    syncCurrentClientScheduleState({
+                        wake_up_time: profile.wake_up_time || null,
+                        sleep_time: profile.sleep_time || null,
+                        wakeUpTime: profile.wake_up_time || '',
+                        sleepTime: profile.sleep_time || '',
+                        training_start_time: profile.training_time || profile.training_start_time || null,
+                        training_time: profile.training_time || profile.training_start_time || null,
+                        training_end_time: profile.training_end_time || null,
+                        trainingTime: profile.training_time || profile.training_start_time || '',
+                        trainingEndTime: profile.training_end_time || '',
+                        mealSwaps: profile.meal_swaps || currentClient.mealSwaps || null
+                    });
+
+                    const backendMealStatuses = profile?.meal_swaps?.meal_statuses;
+                    if (backendMealStatuses && typeof backendMealStatuses === 'object') {
+                        setMealStatuses(backendMealStatuses);
+                    }
+                }
+
+                updateMealTimes();
+                loadMealPlan();
+            } catch (error) {
+                console.error('Error loading dashboard state:', error);
+            }
+        }
+
+        function parseSupplementsList(rawSupplements) {
+            const raw = String(rawSupplements || '').trim();
+            if (!raw) return [];
+
+            const ignored = new Set(['no supplements added', 'no supplements added yet', 'no supplement notes yet', 'none', 'n/a']);
+            const clean = (value) => String(value || '').trim();
+            const keep = (value) => {
+                const normalized = clean(value).toLowerCase();
+                return normalized && !ignored.has(normalized);
+            };
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    return parsed
+                        .map((item) => {
+                            if (typeof item === 'string') return clean(item);
+                            if (item && typeof item === 'object') {
+                                return clean(item.name || item.supplement_info || item.supplement);
+                            }
+                            return '';
+                        })
+                        .filter(keep);
+                }
+            } catch (_) {
+                // Fall back to plain text splitting.
+            }
+
+            return raw
+                .split(/\r?\n|,|;/)
+                .map(clean)
+                .filter(keep);
+        }
+
+        function serializeSupplementsList(items) {
+            return (items || []).map((item) => String(item || '').trim()).filter(Boolean).join('\n');
+        }
+
+        async function updateClientSupplementsOnProfile(nextSupplementsText) {
+            const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                method: 'PUT',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ supplements: nextSupplementsText || '' })
+            });
+
+            if (!response.ok) {
+                let detail = 'Failed to update supplements.';
+                try {
+                    const payload = await response.json();
+                    detail = payload.detail || payload.message || detail;
+                } catch (_) {
+                    // Keep default detail.
+                }
+                throw new Error(detail);
+            }
+
+            return response.json();
+        }
+
+        function renderFallbackSupplementsSection(profile) {
+            const container = document.getElementById('nutritionEmbeddedSupplements');
+            if (!container) return;
+
+            const supplementsList = parseSupplementsList(profile?.supplements);
+            const listHtml = supplementsList.length
+                ? `<ul class="mt-2 space-y-2">${supplementsList.map((item) => `<li class="text-gray-800 bg-white border border-gray-200 rounded-lg px-3 py-2">${item}</li>`).join('')}</ul>`
+                : '<p class="text-gray-700 mt-2">No supplements saved for this client yet.</p>';
+
+            container.innerHTML = `
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                    <p class="text-sm text-gray-600">Taken supplements from your profile setup and add-client records:</p>
+                    <div class="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                        ${listHtml}
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                        <button type="button" id="dashboardAddSupplementBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition">+ Add Supplement</button>
+                        <span id="dashboardSupplementStatus" class="text-sm text-gray-600"></span>
+                    </div>
+                </div>
+            `;
+
+            const addBtn = document.getElementById('dashboardAddSupplementBtn');
+            const statusEl = document.getElementById('dashboardSupplementStatus');
+            if (!addBtn) return;
+
+            addBtn.addEventListener('click', async function () {
+                const entered = window.prompt('Enter supplement name (example: Creatine 5g)');
+                const value = String(entered || '').trim();
+                if (!value) return;
+
+                if (statusEl) {
+                    statusEl.textContent = 'Saving...';
+                    statusEl.className = 'text-sm text-blue-700';
+                }
+
+                try {
+                    const nextItems = [...supplementsList, value];
+                    const nextText = serializeSupplementsList(nextItems);
+                    await updateClientSupplementsOnProfile(nextText);
+                    profile.supplements = nextText;
+
+                    if (currentClient) {
+                        currentClient.supplements = nextText;
+                    }
+
+                    renderFallbackSupplementsSection(profile);
+                    const nextStatusEl = document.getElementById('dashboardSupplementStatus');
+                    if (nextStatusEl) {
+                        nextStatusEl.textContent = `Saved: ${value}`;
+                        nextStatusEl.className = 'text-sm text-green-700';
+                    }
+                } catch (error) {
+                    if (statusEl) {
+                        statusEl.textContent = `Save failed: ${error.message}`;
+                        statusEl.className = 'text-sm text-red-700';
+                    }
+                }
+            });
+        }
+
+        async function saveConsultationPlan(profileId, planValue) {
+            const response = await fetch(`${API_BASE_URL}/api/client/consultation`, {
+                method: 'POST',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_id: profileId,
+                    consultation_type: planValue,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (!response.ok) {
+                let detail = 'Failed to save consultation.';
+                try {
+                    const payload = await response.json();
+                    detail = payload.detail || payload.message || detail;
+                } catch (_) {
+                    // Keep default detail.
+                }
+                throw new Error(detail);
+            }
+
+            return response.json();
+        }
+
+        function renderFallbackConsultationSection(profile, consultation) {
+            const container = document.getElementById('nutritionEmbeddedConsultation');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                    <div class="mt-1">
+                        <button type="button" id="dashboardConsultationBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">+ Add Consultation</button>
+                    </div>
+                    <p id="dashboardConsultationStatus" class="text-sm text-gray-600 mt-3"></p>
+                </div>
+            `;
+
+            const button = document.getElementById('dashboardConsultationBtn');
+            const statusEl = document.getElementById('dashboardConsultationStatus');
+            if (button) {
+                button.addEventListener('click', async function () {
+                    const selected = window.prompt('Choose consultation plan: once, monthly, or annually', (consultation?.consultation_type || profile?.consultation_type || 'monthly'));
+                    const normalized = String(selected || '').trim().toLowerCase();
+                    if (!normalized) return;
+                    if (!['once', 'monthly', 'annually'].includes(normalized)) {
+                        if (statusEl) {
+                            statusEl.textContent = 'Invalid plan. Use once, monthly, or annually.';
+                            statusEl.className = 'text-sm text-red-700 mt-3';
+                        }
+                        return;
+                    }
+
+                    try {
+                        if (statusEl) {
+                            statusEl.textContent = 'Saving consultation plan...';
+                            statusEl.className = 'text-sm text-blue-700 mt-3';
+                        }
+                        await saveConsultationPlan(profile.id, normalized);
+                        if (statusEl) {
+                            statusEl.textContent = `Consultation saved: ${normalized}`;
+                            statusEl.className = 'text-sm text-green-700 mt-3';
+                        }
+                    } catch (error) {
+                        if (statusEl) {
+                            statusEl.textContent = `Save failed: ${error.message}`;
+                            statusEl.className = 'text-sm text-red-700 mt-3';
+                        }
+                    }
+                });
+            }
+        }
+
+        async function initNutritionSectionsFallback() {
+            const supplementsContainer = document.getElementById('nutritionEmbeddedSupplements');
+            const consultationContainer = document.getElementById('nutritionEmbeddedConsultation');
+            if (!supplementsContainer && !consultationContainer) return;
+
+            const hasRenderedSupplements = supplementsContainer && supplementsContainer.innerHTML.trim().length > 0;
+            const hasRenderedConsultation = consultationContainer && consultationContainer.innerHTML.trim().length > 0;
+            if (hasRenderedSupplements && hasRenderedConsultation) return;
+
+            try {
+                const profile = await fetchClientProfile();
+                let consultation = {};
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/client/consultation`, {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+                    if (response.ok) {
+                        consultation = await response.json();
+                    }
+                } catch (_) {
+                    // Keep graceful fallback to profile data.
+                }
+
+                renderFallbackSupplementsSection(profile || {});
+                renderFallbackConsultationSection(profile || {}, consultation || {});
+            } catch (error) {
+                console.warn('Fallback embedded sections failed to load:', error);
+            }
+        }
+
+        // ==================== END NEW FEATURES ====================
+
+        // Initialize global auth/session handling before protected API calls.
+        if (typeof initGlobalNavbarAuthState === 'function') {
+            initGlobalNavbarAuthState();
+        }
+
+        // Initialize
+        loadClientData();
+        
+        // Load dashboard state after client data
+        setTimeout(() => {
+            loadDashboardState();
+        }, 1000);
+        
+        // Debug after load
+        setTimeout(() => {
+            debugCacheState();
+        }, 500);
+        
+        // Show notification banner
+        setTimeout(() => {
+            showPageNotification('nutrition');
+            showDailyReminder();
+        }, 1500);
+
+        // Keep summary cards synced when returning to tab and during longer sessions.
+        window.addEventListener('focus', refreshSummaryCardsFromServer);
+        setInterval(refreshSummaryCardsFromServer, 60000);
+        if (typeof highlightActiveDashboardNav === 'function') {
+            highlightActiveDashboardNav();
+        }
+        if (typeof initEmbeddedDashboardSections === 'function') {
+            initEmbeddedDashboardSections({
+                mode: 'nutrition',
+                supplementsContainerId: 'nutritionEmbeddedSupplements',
+                consultationContainerId: 'nutritionEmbeddedConsultation'
+            });
+        }
+        setTimeout(() => {
+            initNutritionSectionsFallback();
+        }, 250);
+    </script>
+
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.app-navbar,
+.app-sidebar {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.ui-card {
+  border: 1px solid #d4d4d8;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.ui-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.ui-modal {
+  background: #fff;
+  border-radius: 0.5rem;
+  width: min(90vw, 560px);
+  padding: 1rem;
+}

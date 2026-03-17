@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plans | Vitality Nutrition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+        .plan-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .plan-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <!-- Navigation -->
+    <nav class="top-nav bg-white shadow-sm py-4 sticky top-0 z-50">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="top-nav-left flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold accent-text">Vitality Nutrition</div>
+            </div>
+            <div class="top-nav-links space-x-6">
+                <a href="client-login.html" class="text-gray-600 hover:text-gray-900">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Choose Your Plan</h1>
+                <p class="text-lg text-gray-600">Invest in your performance today.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
+                <!-- Basic Plan -->
+                <div class="plan-card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                    <h3 class="text-2xl font-bold mb-1">Basic</h3>
+                    <p class="accent-text font-medium mb-2">For beginners</p>
+                    <p class="text-3xl font-bold mb-6">Free</p>
+                    <ul class="space-y-4 text-gray-600 mb-8 flex-grow">
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Access to recipes</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>General nutrition articles</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Weekly tips</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 rounded-xl border-2 accent-border accent-text font-bold hover:accent-bg hover:text-white transition" onclick="selectPlan('basic')">Select Plan</button>
+                </div>
+
+                <!-- Pro Athlete Plan (Most Popular) -->
+                <div class="plan-card bg-white p-8 rounded-3xl shadow-xl border-2 accent-border flex flex-col transform scale-105 relative">
+                    <span class="absolute -top-4 left-1/2 -translate-x-1/2 accent-bg text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Most Popular</span>
+                    <h3 class="text-2xl font-bold mb-1">Pro Athlete</h3>
+                    <p class="accent-text font-medium mb-2">For serious athletes</p>
+                    <p class="text-3xl font-bold mb-6">$9.99<span class="text-lg text-gray-500">/month</span></p>
+                    <ul class="space-y-4 text-gray-600 mb-8 flex-grow">
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Personalized nutrition plan</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Supplement guide</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Monthly mental program</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Weekly tips & recipes</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 rounded-xl accent-bg text-white font-bold hover:opacity-90 transition" onclick="selectPlan('pro')">Select Plan</button>
+                </div>
+
+                <!-- Elite Performance Plan -->
+                <div class="plan-card bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                    <h3 class="text-2xl font-bold mb-1">Elite Performance</h3>
+                    <p class="accent-text font-medium mb-2">Maximum results</p>
+                    <p class="text-3xl font-bold mb-6">$24.99<span class="text-lg text-gray-500">/month</span></p>
+                    <ul class="space-y-4 text-gray-600 mb-8 flex-grow text-sm">
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Full customized diet</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Full mental coaching</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Weekly progress review</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Direct coach messaging</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span>
+                            <span>Priority support</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 rounded-xl border-2 border-gray-800 text-gray-800 font-bold hover:bg-gray-800 hover:text-white transition" onclick="selectPlan('elite')">Get Elite Access</button>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="max-w-2xl mx-auto mt-16">
+                <h2 class="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+                <div class="space-y-4">
+                    <details class="bg-white p-6 rounded-lg border border-gray-200">
+                        <summary class="font-bold cursor-pointer flex items-center justify-between">
+                            Can I upgrade or downgrade my plan?
+                            <span>+</span>
+                        </summary>
+                        <p class="mt-4 text-gray-600">Yes, you can change your plan anytime. Changes take effect at the start of your next billing cycle.</p>
+                    </details>
+                    <details class="bg-white p-6 rounded-lg border border-gray-200">
+                        <summary class="font-bold cursor-pointer flex items-center justify-between">
+                            Is there a free trial?
+                            <span>+</span>
+                        </summary>
+                        <p class="mt-4 text-gray-600">The Basic plan is completely free forever. Try it out with no commitment!</p>
+                    </details>
+                    <details class="bg-white p-6 rounded-lg border border-gray-200">
+                        <summary class="font-bold cursor-pointer flex items-center justify-between">
+                            What happens if I cancel my subscription?
+                            <span>+</span>
+                        </summary>
+                        <p class="mt-4 text-gray-600">You can cancel anytime. Your access continues until the end of your current billing period.</p>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white mt-16">
+        &copy; 2026 Vitality Nutrition. All rights reserved.
+    </footer>
+
+    <script>
+        function selectPlan(planType) {
+            // Store selected plan in localStorage
+            localStorage.setItem('selectedPlan', planType);
+            
+            // Redirect to profile setup
+            window.location.href = 'profile-setup.html';
+        }
+
+        // Add smooth interaction for details
+        document.querySelectorAll('details').forEach(detail => {
+            const summary = detail.querySelector('summary');
+            detail.addEventListener('toggle', () => {
+                const span = summary.querySelector('span');
+                span.textContent = detail.open ? '−' : '+';
+            });
+        });
+    </script>
+
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>
