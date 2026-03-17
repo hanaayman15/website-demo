@@ -1,34 +1,45 @@
-import { useEffect } from 'react';
-import { useLegacyPage } from '../hooks/useLegacyPage';
-import LegacyHtmlRenderer from '../components/layout/LegacyHtmlRenderer';
-import '../assets/styles/responsive.css';
-import '../assets/styles/dashboard-template.css';
+import Navbar from '../components/layout/Navbar';
+import Card from '../components/ui/Card';
+import '../assets/styles/react-pages.css';
 
 function SuccessStories() {
-  const { bodyHtml, inlineScripts, loading, error } = useLegacyPage('/legacy/success-stories.html');
+  const links = [
+    { path: '/', label: 'Home' },
+    { path: '/features', label: 'Features' },
+    { path: '/resources', label: 'Resources' },
+    { path: '/contact', label: 'Contact' },
+  ];
 
-  useEffect(() => {
-    // Migration metadata for this page.
-    const migrationInfo = {
-      file: 'success-stories.html',
-      inlineScriptCount: 1,
-      formCount: 0,
-    };
-
-    if (migrationInfo.inlineScriptCount > 0) {
-      // TODO: Replace legacy inline JS with dedicated React hooks and event handlers.
-      // This scaffold intentionally avoids executing legacy inline scripts.
-      console.debug('Legacy migration info', migrationInfo, inlineScripts.length);
-    }
-  }, [inlineScripts]);
+  const stories = [
+    {
+      title: 'From Inconsistent to Structured',
+      body: 'A recreational athlete improved meal consistency and reached weight goals within 12 weeks.',
+    },
+    {
+      title: 'Competition Prep Confidence',
+      body: 'A competitive client used weekly tracking and coach feedback to maintain stage-readiness.',
+    },
+    {
+      title: 'Better Habits, Better Recovery',
+      body: 'A busy professional improved sleep and recovery scores by aligning nutrition and schedule.',
+    },
+  ];
 
   return (
-    <LegacyHtmlRenderer
-      pageName="SuccessStories"
-      loading={loading}
-      error={error}
-      bodyHtml={bodyHtml}
-    />
+    <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
+      <Navbar links={links} />
+      <section className="react-panel">
+        <h1 style={{ marginTop: 0 }}>Success Stories</h1>
+        <p className="react-muted" style={{ marginBottom: 0 }}>Real outcomes from structured coaching and consistent execution.</p>
+      </section>
+      <section className="react-grid">
+        {stories.map((story) => (
+          <Card key={story.title} title={story.title}>
+            <p style={{ margin: 0 }}>{story.body}</p>
+          </Card>
+        ))}
+      </section>
+    </main>
   );
 }
 

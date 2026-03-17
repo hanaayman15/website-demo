@@ -9,6 +9,8 @@ import {
   buildTodayMacrosPayload,
   dashboardDataReducer,
 } from '../hooks/useDashboardDataReducer';
+import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
+import { buildFullProfilePayload, buildPersonalInfoPayload } from '../hooks/useSettings';
 import '../assets/styles/react-pages.css';
 
 function MigrationHarness() {
@@ -38,6 +40,59 @@ function MigrationHarness() {
       consumed: { calories: 0, protein: 0, carbs: 0, fats: 0 },
     });
   }, [mealsForDay]);
+
+  const reportsPayloads = useMemo(() => {
+    return {
+      measurement: buildMeasurementPayload({
+        currentClientId: 101,
+        weight: 82.5,
+        bodyFat: 16.2,
+        muscleMass: 41.8,
+      }),
+      workout: buildWorkoutPayload({
+        currentClientId: 101,
+        workoutName: 'Upper Body Session',
+      }),
+      mood: buildMoodPayload({
+        currentClientId: 101,
+        moodValue: 8,
+      }),
+      sleep: buildSleepPayload({
+        currentClientId: 101,
+        sleepHours: 7.5,
+      }),
+    };
+  }, []);
+
+  const settingsPayloads = useMemo(() => {
+    return {
+      personal: buildPersonalInfoPayload({
+        fullName: 'Harness User Full Name Example',
+        phone: '+20 1000000000',
+        country: 'Egypt',
+      }),
+      fullProfile: buildFullProfilePayload({
+        fullName: 'Harness User Full Name Example',
+        phone: '+20 1000000000',
+        birthday: '2000-01-01',
+        gender: 'male',
+        country: 'Egypt',
+        club: 'Harness Club',
+        sport: 'Football',
+        height: 178,
+        weight: 80,
+        bodyFat: 15,
+        skeletalMuscle: 40,
+        activityLevel: 'moderately_active',
+        goalWeight: 75,
+        foodAllergies: '',
+        injuries: '',
+        foodLikes: 'Rice',
+        foodDislikes: 'Sugar',
+        additionalNotes: 'Harness preview',
+      }),
+    };
+  }, []);
 
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
@@ -124,6 +179,16 @@ function MigrationHarness() {
 
         <pre className="react-json-block">{JSON.stringify(dashboardState.macro, null, 2)}</pre>
         <pre className="react-json-block">{JSON.stringify(macrosPayload, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Reports Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(reportsPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Settings Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(settingsPayloads, null, 2)}</pre>
       </section>
     </main>
   );

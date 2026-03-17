@@ -1,34 +1,36 @@
-import { useEffect } from 'react';
-import { useLegacyPage } from '../hooks/useLegacyPage';
-import LegacyHtmlRenderer from '../components/layout/LegacyHtmlRenderer';
-import '../assets/styles/responsive.css';
-import '../assets/styles/dashboard-template.css';
+import Navbar from '../components/layout/Navbar';
+import Card from '../components/ui/Card';
+import '../assets/styles/react-pages.css';
 
 function Resources() {
-  const { bodyHtml, inlineScripts, loading, error } = useLegacyPage('/legacy/resources.html');
+  const links = [
+    { path: '/', label: 'Home' },
+    { path: '/about', label: 'About' },
+    { path: '/features', label: 'Features' },
+    { path: '/contact', label: 'Contact' },
+  ];
 
-  useEffect(() => {
-    // Migration metadata for this page.
-    const migrationInfo = {
-      file: 'resources.html',
-      inlineScriptCount: 1,
-      formCount: 0,
-    };
-
-    if (migrationInfo.inlineScriptCount > 0) {
-      // TODO: Replace legacy inline JS with dedicated React hooks and event handlers.
-      // This scaffold intentionally avoids executing legacy inline scripts.
-      console.debug('Legacy migration info', migrationInfo, inlineScripts.length);
-    }
-  }, [inlineScripts]);
+  const resources = [
+    { title: 'Nutrition Basics Guide', body: 'Foundational principles for sustainable nutrition habits and meal timing.' },
+    { title: 'Performance Meal Templates', body: 'Sample meal structures to support training and recovery days.' },
+    { title: 'Coach Check-in Checklist', body: 'A repeatable structure for weekly coaching reviews and adjustments.' },
+  ];
 
   return (
-    <LegacyHtmlRenderer
-      pageName="Resources"
-      loading={loading}
-      error={error}
-      bodyHtml={bodyHtml}
-    />
+    <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
+      <Navbar links={links} />
+      <section className="react-panel">
+        <h1 style={{ marginTop: 0 }}>Resources</h1>
+        <p className="react-muted" style={{ marginBottom: 0 }}>Hand-picked learning and implementation material for clients and coaches.</p>
+      </section>
+      <section className="react-grid">
+        {resources.map((item) => (
+          <Card key={item.title} title={item.title}>
+            <p style={{ margin: 0 }}>{item.body}</p>
+          </Card>
+        ))}
+      </section>
+    </main>
   );
 }
 
