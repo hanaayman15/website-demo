@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="result"></pre>
+    
+    <script>
+    async function testAPI() {
+        const result = document.getElementById('result');
+        result.textContent = 'Testing...\n\n';
+        
+        try {
+            result.textContent += '1. Fetching from: http://127.0.0.1:8001/api/auth/clients-public?skip=0&limit=5\n';
+            const response = await fetch('http://127.0.0.1:8001/api/auth/clients-public?skip=0&limit=5');
+            result.textContent += '2. Response status: ' + response.status + '\n';
+            result.textContent += '3. Response OK: ' + response.ok + '\n';
+            
+            const data = await response.json();
+            result.textContent += '4. Data type: ' + typeof data + '\n';
+            result.textContent += '5. Is array: ' + Array.isArray(data) + '\n';
+            result.textContent += '6. Length: ' + (data.length || 0) + '\n\n';
+            result.textContent += '7. Data:\n' + JSON.stringify(data, null, 2);
+        } catch (error) {
+            result.textContent += '\n❌ ERROR: ' + error.message + '\n';
+            result.textContent += 'Stack: ' + error.stack;
+        }
+    }
+    </script>
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>

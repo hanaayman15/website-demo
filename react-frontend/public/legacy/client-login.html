@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Login | Vitality Nutrition Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+        .login-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body class="bg-gray-50">
+
+    <script>
+        sessionStorage.setItem('portalType', 'client');
+    </script>
+
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold accent-text">Client Nutrition Portal</div>
+            </div>
+            <div class="space-x-6">
+                <a href="client-home.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="about.html" class="text-gray-600 hover:text-gray-900">About</a>
+                <a href="features.html" class="text-gray-600 hover:text-gray-900">Features</a>
+                <a href="resources.html" class="text-gray-600 hover:text-gray-900">Our Clinic</a>
+                <a href="success-stories.html" class="text-gray-600 hover:text-gray-900">Success Stories</a>
+                <a href="contact.html" class="text-gray-600 hover:text-gray-900">Contact Us</a>
+                <a href="client-signup.html" class="accent-text font-semibold">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="min-h-screen flex items-center justify-center py-12 px-4">
+        <div class="max-w-5xl w-full grid md:grid-cols-2 gap-8 items-stretch">
+            
+            <!-- Left Side - Login Form -->
+            <div class="bg-white rounded-3xl shadow-xl p-10">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back! 👋</h1>
+                    <p class="text-gray-600">Login to access your nutrition dashboard</p>
+                </div>
+
+                <div id="login-notification" class="hidden mb-6 rounded-xl border p-4">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p id="login-notification-message" class="text-sm font-medium"></p>
+                        </div>
+                        <button type="button" id="login-notification-close" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
+                    </div>
+                    <div id="login-notification-actions" class="mt-3"></div>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                            placeholder="your.email@example.com"
+                        >
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            required
+                            class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                            placeholder="Enter your password"
+                        >
+                    </div>
+
+                    <div class="flex items-center justify-between mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="rememberMe" class="w-4 h-4 accent-blue-600 rounded">
+                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                        </label>
+                        <a href="forgot-password.html" class="text-sm accent-text font-semibold hover:underline">Forgot password?</a>
+                    </div>
+
+                    <button 
+                        id="login-submit-btn"
+                        type="submit" 
+                        class="w-full accent-bg text-white py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition"
+                    >
+                        Login to Dashboard
+                    </button>
+                </form>
+
+                <div class="mt-8 text-center">
+                    <p class="text-gray-600">Don't have an account? <a href="client-signup.html" class="accent-text font-bold hover:underline">Sign Up</a></p>
+                </div>
+
+                <div class="mt-8">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-4 bg-white text-gray-500">Demo Accounts</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                            <p class="text-sm text-gray-700 mb-2"><strong>🏃 Demo Client:</strong></p>
+                            <p class="text-xs text-gray-600">Email: demo@client.com</p>
+                            <p class="text-xs text-gray-600">Password: demo123</p>
+                        </div>
+                        <div class="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                            <p class="text-sm text-gray-700 mb-2"><strong>👨‍💼 Demo Admin:</strong></p>
+                            <p class="text-xs text-gray-600">Email: admin@demo.com</p>
+                            <p class="text-xs text-gray-600">Password: admin123</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Info Panel -->
+            <div class="login-gradient rounded-3xl shadow-xl p-10 text-white flex flex-col justify-center">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-4">Your Nutrition Journey Awaits</h2>
+                    <p class="text-white/90 leading-relaxed">
+                        Access your personalized meal plans, track your progress, and stay connected with your nutrition coach.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-1">Track Your Progress</h4>
+                            <p class="text-sm text-white/80">Monitor weight, body composition, and performance metrics</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="text-2xl">🥗</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-1">Custom Meal Plans</h4>
+                            <p class="text-sm text-white/80">Get daily nutrition guidance tailored to your goals</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="text-2xl">💬</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-1">Coach Support</h4>
+                            <p class="text-sm text-white/80">Message your nutritionist anytime with questions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-white/20">
+                    <p class="text-sm text-white/70 italic">"This portal has completely transformed how I manage my nutrition and athletic performance!"</p>
+                    <p class="text-sm font-semibold mt-2">- Ahmed M., Professional Athlete</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = CONFIG.API_BASE_URL;
+        const LOGIN_TIMEOUT_MS = 12000;
+
+        function getLoginNotificationEls() {
+            return {
+                wrapper: document.getElementById('login-notification'),
+                message: document.getElementById('login-notification-message'),
+                actions: document.getElementById('login-notification-actions')
+            };
+        }
+
+        function hideLoginNotification() {
+            const { wrapper, message, actions } = getLoginNotificationEls();
+            if (!wrapper || !message || !actions) return;
+            wrapper.className = 'hidden mb-6 rounded-xl border p-4';
+            message.textContent = '';
+            actions.innerHTML = '';
+        }
+
+        function showLoginNotification(type, messageText, options = {}) {
+            const { wrapper, message, actions } = getLoginNotificationEls();
+            if (!wrapper || !message || !actions) return;
+
+            const themes = {
+                error: 'mb-6 rounded-xl border p-4 border-red-200 bg-red-50 text-red-800',
+                success: 'mb-6 rounded-xl border p-4 border-emerald-200 bg-emerald-50 text-emerald-800',
+                info: 'mb-6 rounded-xl border p-4 border-blue-200 bg-blue-50 text-blue-800'
+            };
+
+            wrapper.className = themes[type] || themes.info;
+            message.textContent = messageText;
+            actions.innerHTML = '';
+
+            if (options.retryLabel && typeof options.onRetry === 'function') {
+                const retryBtn = document.createElement('button');
+                retryBtn.type = 'button';
+                retryBtn.className = 'px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-current/25 hover:bg-white/80';
+                retryBtn.textContent = options.retryLabel;
+                retryBtn.addEventListener('click', options.onRetry);
+                actions.appendChild(retryBtn);
+            }
+        }
+
+        function setLoginSubmitting(isSubmitting) {
+            const submitBtn = document.getElementById('login-submit-btn');
+            if (!submitBtn) return;
+
+            submitBtn.disabled = isSubmitting;
+            submitBtn.classList.toggle('opacity-70', isSubmitting);
+            submitBtn.classList.toggle('cursor-not-allowed', isSubmitting);
+            submitBtn.textContent = isSubmitting ? 'Signing in...' : 'Login to Dashboard';
+        }
+
+        async function fetchWithTimeout(url, options = {}, timeoutMs = LOGIN_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function parseJsonSafe(response) {
+            const text = await response.text();
+            if (!text) return null;
+            try {
+                return JSON.parse(text);
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function extractErrorMessage(payload, fallbackMessage) {
+            if (!payload) return fallbackMessage;
+            if (typeof payload.detail === 'string' && payload.detail.trim()) return payload.detail;
+            if (Array.isArray(payload.detail)) {
+                const joined = payload.detail.map((item) => item?.msg || String(item)).join(', ').trim();
+                if (joined) return joined;
+            }
+            if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+            return fallbackMessage;
+        }
+
+        async function loginWithApiBase(apiBaseUrl, email, password) {
+            const response = await fetchWithTimeout(`${apiBaseUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            }, LOGIN_TIMEOUT_MS);
+
+            const payload = await parseJsonSafe(response);
+            return { response, payload };
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            hideLoginNotification();
+            setLoginSubmitting(true);
+            
+            // Normalize email to lowercase to match backend behavior
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            // Handle Remember Me
+            if (rememberMe) {
+                localStorage.setItem('rememberedEmail', email);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+            }
+
+            try {
+                let activeApiBaseUrl = API_BASE_URL;
+                let loginResponse;
+                let loginData;
+
+                try {
+                    const initialResult = await loginWithApiBase(activeApiBaseUrl, email, password);
+                    loginResponse = initialResult.response;
+                    loginData = initialResult.payload;
+                } catch (initialError) {
+                    const fallbackApiBaseUrl = typeof getAlternativeLocalApiBaseUrl === 'function'
+                        ? getAlternativeLocalApiBaseUrl(activeApiBaseUrl)
+                        : null;
+
+                    if (!fallbackApiBaseUrl) {
+                        throw initialError;
+                    }
+
+                    const retryResult = await loginWithApiBase(fallbackApiBaseUrl, email, password);
+                    loginResponse = retryResult.response;
+                    loginData = retryResult.payload;
+                    activeApiBaseUrl = fallbackApiBaseUrl;
+                }
+
+                if (!loginResponse.ok || !loginData.access_token) {
+                    if (loginResponse.status >= 500) {
+                        showLoginNotification(
+                            'error',
+                            'Server error while signing in. Please try again in a moment.',
+                            {
+                                retryLabel: 'Retry',
+                                onRetry: () => document.getElementById('loginForm')?.requestSubmit()
+                            }
+                        );
+                    } else {
+                        showLoginNotification('error', extractErrorMessage(loginData, 'Invalid email or password. Please try again.'));
+                    }
+                    return;
+                }
+
+                localStorage.setItem('authToken', loginData.access_token);
+                localStorage.setItem('authTokenType', loginData.token_type || 'bearer');
+                localStorage.setItem('clientEmail', email);
+                const normalizedRole = String(loginData.role || 'doctor').toLowerCase();
+                localStorage.setItem('authRole', normalizedRole);
+                sessionStorage.setItem('authRole', normalizedRole);
+                sessionStorage.setItem('role', normalizedRole);
+
+                if (
+                    (String(loginData.role || '').toLowerCase() === 'doctor' || String(loginData.role || '').toLowerCase() === 'admin') &&
+                    typeof window.markDoctorAdminSessionActive === 'function'
+                ) {
+                    window.markDoctorAdminSessionActive();
+                }
+
+                if (String(loginData.role || '').toLowerCase() === 'doctor') {
+                    window.location.href = 'add_team.html';
+                    return;
+                }
+
+                if (String(loginData.role || '').toLowerCase() === 'admin') {
+                    window.location.href = 'clients.html';
+                    return;
+                }
+
+                const profileResponse = await fetchWithTimeout(`${activeApiBaseUrl}/api/client/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${loginData.access_token}`
+                    }
+                }, LOGIN_TIMEOUT_MS);
+
+                const profileData = await parseJsonSafe(profileResponse);
+                if (profileResponse.ok && profileData?.id) {
+                    // Store user data from profile
+                    localStorage.setItem('currentClientId', String(profileData.id));
+                    localStorage.setItem('clientEmail', profileData.email || email);
+
+                    // Get full name from profile
+                    const fullName = profileData.full_name || email.split('@')[0];
+                    localStorage.setItem('clientFullName', fullName);
+                    window.location.href = `client-main.html`;
+                    return;
+                }
+
+                // Allow login flow to continue even if profile endpoint fails transiently.
+                localStorage.setItem('clientFullName', email.split('@')[0]);
+                window.location.href = 'client-main.html';
+            } catch (error) {
+                const isTimeout = error?.name === 'AbortError';
+                showLoginNotification(
+                    'error',
+                    isTimeout
+                        ? 'The server is taking too long to respond. Please try again.'
+                        : 'Unable to connect to the server. Please check your internet connection or try again later.',
+                    {
+                        retryLabel: 'Retry',
+                        onRetry: () => document.getElementById('loginForm')?.requestSubmit()
+                    }
+                );
+            } finally {
+                setLoginSubmitting(false);
+            }
+        }
+
+        // Load remembered email on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-notification-close')?.addEventListener('click', hideLoginNotification);
+            const rememberedEmail = localStorage.getItem('rememberedEmail');
+            if (rememberedEmail) {
+                document.getElementById('email').value = rememberedEmail;
+                document.getElementById('rememberMe').checked = true;
+            }
+        });
+    </script>
+
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>

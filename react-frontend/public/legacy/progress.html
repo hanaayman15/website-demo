@@ -1,0 +1,767 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Progress - Nutrition Management</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	<style>
+		body {
+			background: linear-gradient(135deg, #d4e8e8 0%, #7eb9b9 100%);
+			min-height: 100vh;
+			font-family: "Source Sans Pro", sans-serif;
+		}
+
+		#page-wrapper {
+			background: transparent;
+		}
+
+		.progress-container {
+			max-width: 1200px;
+			margin: 40px auto;
+			padding: 0 20px;
+		}
+
+		.detail-nav {
+			background: white;
+			border-radius: 15px;
+			padding: 12px 16px;
+			margin-bottom: 20px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+		}
+
+		.nav-left {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.nav-title {
+			font-size: 16px;
+			font-weight: 700;
+			color: #333;
+		}
+
+		.nav-right {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.nav-btn {
+			padding: 8px 14px;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			background: #f7f9fc;
+			cursor: pointer;
+			font-size: 13px;
+			color: #1b3b5f;
+		}
+
+		.nav-btn.active {
+			background: #4a9ff5;
+			color: white;
+			border-color: #4a9ff5;
+		}
+
+		.back-btn {
+			background: white;
+			border: 1px solid #e0e0e0;
+			padding: 10px 16px;
+			border-radius: 10px;
+			cursor: pointer;
+			font-size: 14px;
+			color: #1b3b5f;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+		}
+
+		.section {
+			background: white;
+			border-radius: 20px;
+			padding: 24px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+		}
+
+		.section-title {
+			font-size: 18px;
+			font-weight: 700;
+			color: #333;
+			margin-bottom: 16px;
+		}
+
+		.chart-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+			gap: 16px;
+		}
+
+		.chart-card {
+			background: #f9f9f9;
+			border-radius: 12px;
+			padding: 16px;
+			min-height: 140px;
+			color: #666;
+		}
+
+		.timeline-entry {
+			border: 1px solid #eee;
+			border-radius: 12px;
+			padding: 16px;
+			margin-bottom: 16px;
+			background: #fafafa;
+		}
+
+		.entry-title {
+			font-weight: 700;
+			color: #333;
+			margin-bottom: 6px;
+		}
+
+		.entry-meta {
+			font-size: 13px;
+			color: #888;
+			margin-bottom: 12px;
+		}
+
+		.entry-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+			gap: 10px;
+		}
+
+		.entry-item {
+			background: white;
+			border-radius: 10px;
+			padding: 10px 12px;
+			border: 1px solid #eee;
+		}
+
+		.entry-label {
+			font-size: 12px;
+			color: #888;
+			margin-bottom: 4px;
+		}
+
+		.entry-value {
+			font-size: 14px;
+			color: #333;
+			font-weight: 600;
+		}
+
+		.entry-notes {
+			margin-top: 10px;
+			color: #666;
+			font-size: 13px;
+		}
+
+		.entry-actions {
+			margin-top: 10px;
+			display: flex;
+			justify-content: flex-end;
+		}
+
+		.edit-entry-btn {
+			background: white;
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			padding: 6px 10px;
+			font-size: 12px;
+			cursor: pointer;
+			color: #1b3b5f;
+		}
+
+		.add-entry-btn {
+			background: #4a9ff5;
+			color: white;
+			border: none;
+			border-radius: 10px;
+			padding: 10px 16px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+		.entry-form {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+			gap: 12px;
+			margin-top: 10px;
+		}
+
+		.entry-field {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.entry-input {
+			padding: 10px 12px;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			font-size: 14px;
+		}
+
+		.entry-error {
+			color: #d9534f;
+			font-size: 13px;
+			margin-top: 8px;
+			display: none;
+		}
+
+		.modal {
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0,0,0,0.45);
+			align-items: center;
+			justify-content: center;
+		}
+
+		.modal.active {
+			display: flex;
+		}
+
+		.modal-content {
+			background: white;
+			border-radius: 18px;
+			padding: 24px;
+			max-width: 480px;
+			width: 90%;
+		}
+
+		.modal-title {
+			font-size: 18px;
+			font-weight: 700;
+			color: #333;
+			margin-bottom: 6px;
+		}
+
+		.modal-subtitle {
+			font-size: 14px;
+			color: #666;
+			margin-bottom: 16px;
+		}
+
+		.modal-option {
+			border: 1px solid #e0e0e0;
+			border-radius: 12px;
+			padding: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+
+		.modal-actions {
+			display: flex;
+			gap: 10px;
+			margin-top: 16px;
+		}
+
+		.btn-outline {
+			flex: 1;
+			padding: 10px;
+			border: 1px solid #e0e0e0;
+			border-radius: 10px;
+			background: white;
+			cursor: pointer;
+			color: #1b3b5f;
+			font-size: 14px;
+		}
+
+		.btn-primary {
+			flex: 1;
+			padding: 10px;
+			border: none;
+			border-radius: 10px;
+			background: #4a9ff5;
+			color: white;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+	</style>
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body>
+	<div id="page-wrapper">
+		<div class="progress-container">
+			<div class="detail-nav">
+				<div class="nav-left">
+					<button class="back-btn" id="back-btn">← Back</button>
+					<div class="nav-title" id="nav-client-name">Client</div>
+				</div>
+				<div class="nav-right">
+					<button class="nav-btn" id="pdf-btn">Generate PDF</button>
+					<button class="nav-btn active">Progress</button>
+					<button class="nav-btn" id="edit-btn">Edit</button>
+				</div>
+			</div>
+
+			<div class="section">
+				<div class="section-title">Progress Charts</div>
+				<div class="chart-grid">
+					<div class="chart-card"><canvas id="progress-weight"></canvas></div>
+					<div class="chart-card"><canvas id="progress-bodyfat"></canvas></div>
+					<div class="chart-card"><canvas id="progress-muscle"></canvas></div>
+					<div class="chart-card"><canvas id="progress-bmi"></canvas></div>
+				</div>
+			</div>
+
+			<div class="section">
+				<div class="section-title">Timeline Events</div>
+				<div id="timeline">
+					<div class="timeline-entry">
+						<div class="entry-title">Progress Entry #1</div>
+						<div class="entry-meta">23/2/2026 at 13:08</div>
+						<div class="entry-grid">
+							<div class="entry-item">
+								<div class="entry-label">Weight</div>
+								<div class="entry-value">31.4 kg</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Body Fat</div>
+								<div class="entry-value">12 %</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">BMI</div>
+								<div class="entry-value">14</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Height</div>
+								<div class="entry-value">147.3 cm</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Activity Level</div>
+								<div class="entry-value">Extremely Active</div>
+							</div>
+						</div>
+						<div class="entry-notes">Notes: Test entry - debugging client lookup</div>
+					</div>
+
+					<div class="timeline-entry">
+						<div class="entry-title">Progress Entry #2</div>
+						<div class="entry-meta">23/2/2026 at 13:08</div>
+						<div class="entry-grid">
+							<div class="entry-item">
+								<div class="entry-label">Weight</div>
+								<div class="entry-value">31.6 kg</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Body Fat</div>
+								<div class="entry-value">11.8 %</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">BMI</div>
+								<div class="entry-value">14.1</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Height</div>
+								<div class="entry-value">147.3 cm</div>
+							</div>
+							<div class="entry-item">
+								<div class="entry-label">Activity Level</div>
+								<div class="entry-value">Extremely Active</div>
+							</div>
+						</div>
+						<div class="entry-notes">Notes: Follow-up entry</div>
+					</div>
+				</div>
+
+				<button class="add-entry-btn" id="add-entry">Add Manual Entry</button>
+			</div>
+		</div>
+
+		<div class="modal" id="pdf-modal">
+			<div class="modal-content">
+				<div class="modal-title">Select PDF Language</div>
+				<div class="modal-subtitle" id="pdf-client-name">Generate PDF for client</div>
+				<div class="modal-option">
+					<div>
+						<div style="font-weight: 700;">English</div>
+						<div class="section-muted">Generate PDF in English</div>
+					</div>
+					<button class="btn-primary" id="pdf-en">Generate</button>
+				</div>
+				<div class="modal-option">
+					<div>
+						<div style="font-weight: 700;">(Arabic) العربية</div>
+						<div class="section-muted">Generate PDF in Arabic</div>
+					</div>
+					<button class="btn-primary" id="pdf-ar">Generate</button>
+				</div>
+				<div class="modal-actions">
+					<button class="btn-outline" id="pdf-cancel">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="modal" id="entry-modal">
+			<div class="modal-content">
+				<div class="modal-title">Add Progress Entry</div>
+				<div class="modal-subtitle">Fill in measurements</div>
+				<div class="entry-form">
+					<div class="entry-field">
+						<label class="entry-label" for="entry-weight">Weight (kg)</label>
+						<input class="entry-input" id="entry-weight" type="number" step="0.1" />
+					</div>
+					<div class="entry-field">
+						<label class="entry-label" for="entry-bodyfat">Body Fat (%)</label>
+						<input class="entry-input" id="entry-bodyfat" type="number" step="0.1" />
+					</div>
+					<div class="entry-field">
+						<label class="entry-label" for="entry-bmi">BMI</label>
+						<input class="entry-input" id="entry-bmi" type="number" step="0.1" />
+					</div>
+					<div class="entry-field">
+						<label class="entry-label" for="entry-height">Height (cm)</label>
+						<input class="entry-input" id="entry-height" type="number" step="0.1" />
+					</div>
+					<div class="entry-field">
+						<label class="entry-label" for="entry-activity">Activity Level</label>
+						<input class="entry-input" id="entry-activity" type="text" />
+					</div>
+					<div class="entry-field" style="grid-column: 1 / -1;">
+						<label class="entry-label" for="entry-notes">Notes</label>
+						<input class="entry-input" id="entry-notes" type="text" />
+					</div>
+				</div>
+				<div class="entry-error" id="entry-error">Weight and height are required.</div>
+				<div class="modal-actions">
+					<button class="btn-outline" id="entry-cancel">Cancel</button>
+					<button class="btn-primary" id="entry-save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+	<script>
+		const clientsData = [
+			{ id: 101, name: "abdelrhman mohamed ramdan" },
+			{ id: 102, name: "joudy aly" }
+		];
+		let activeClient = null;
+
+		const urlParams = new URLSearchParams(window.location.search);
+		const clientId = parseInt(urlParams.get('id')) || 101;
+		const client = clientsData.find(c => c.id === clientId) || clientsData[0];
+		const storageKey = `progressEntries_${clientId}`;
+
+		document.getElementById('nav-client-name').textContent = client.name;
+		document.getElementById('pdf-client-name').textContent = `Generate PDF for ${client.name}`;
+
+		document.getElementById('back-btn').addEventListener('click', () => {
+			window.location.href = `client-detail.html?id=${clientId}`;
+		});
+
+		const pdfModal = document.getElementById('pdf-modal');
+		const entryModal = document.getElementById('entry-modal');
+		const pdfBtn = document.getElementById('pdf-btn');
+		const editBtn = document.getElementById('edit-btn');
+
+		if (pdfBtn) {
+			pdfBtn.addEventListener('click', () => {
+				pdfModal.classList.add('active');
+			});
+		}
+
+		document.getElementById('pdf-cancel').addEventListener('click', () => {
+			pdfModal.classList.remove('active');
+		});
+
+		function downloadPdf(path, filename) {
+			const link = document.createElement('a');
+			link.href = path;
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		}
+
+		document.getElementById('pdf-en').addEventListener('click', () => {
+			downloadPdf('assets/pdfs/english.pdf', 'client-plan-en.pdf');
+		});
+
+		document.getElementById('pdf-ar').addEventListener('click', () => {
+			downloadPdf('assets/pdfs/arabic.pdf', 'client-plan-ar.pdf');
+		});
+
+		if (editBtn) {
+			editBtn.addEventListener('click', () => {
+				window.location.href = `client-detail.html?id=${clientId}&edit=1`;
+			});
+		}
+
+		if (pdfModal) {
+			pdfModal.addEventListener('click', (e) => {
+				if (e.target === pdfModal) {
+					pdfModal.classList.remove('active');
+				}
+			});
+		}
+
+		if (entryModal) {
+			entryModal.addEventListener('click', (e) => {
+				if (e.target === entryModal) {
+					entryModal.classList.remove('active');
+				}
+			});
+		}
+
+		function renderTimeline(entries) {
+			const container = document.getElementById('timeline');
+			container.innerHTML = '';
+			entries.forEach((entry, index) => {
+				const entryEl = document.createElement('div');
+				entryEl.className = 'timeline-entry';
+				entryEl.innerHTML = `
+					<div class="entry-title">Progress Entry #${index + 1}</div>
+					<div class="entry-meta">${entry.date}</div>
+					<div class="entry-grid">
+						<div class="entry-item">
+							<div class="entry-label">Weight</div>
+							<div class="entry-value">${entry.weight || 'N/A'}</div>
+						</div>
+						<div class="entry-item">
+							<div class="entry-label">Body Fat</div>
+							<div class="entry-value">${entry.bodyFat || 'N/A'}</div>
+						</div>
+						<div class="entry-item">
+							<div class="entry-label">BMI</div>
+							<div class="entry-value">${entry.bmi || 'N/A'}</div>
+						</div>
+						<div class="entry-item">
+							<div class="entry-label">Height</div>
+							<div class="entry-value">${entry.height || 'N/A'}</div>
+						</div>
+						<div class="entry-item">
+							<div class="entry-label">Activity Level</div>
+							<div class="entry-value">${entry.activityLevel || 'N/A'}</div>
+						</div>
+					</div>
+					<div class="entry-notes">Notes: ${entry.notes || 'N/A'}</div>
+					<div class="entry-actions">
+						<button class="edit-entry-btn" data-index="${index}">Edit</button>
+					</div>
+				`;
+				container.appendChild(entryEl);
+			});
+
+			container.querySelectorAll('.edit-entry-btn').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const idx = parseInt(btn.getAttribute('data-index'), 10);
+					openEntryModal(entries[idx], idx);
+				});
+			});
+		}
+
+		function parseValue(value) {
+			if (value === null || value === undefined) return null;
+			if (typeof value === 'number') return value;
+			const num = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+			return Number.isNaN(num) ? null : num;
+		}
+
+		function calculateBmi(weight, heightCm) {
+			const w = parseValue(weight);
+			const h = parseValue(heightCm);
+			if (!w || !h) return null;
+			const meters = h / 100;
+			return Math.round((w / (meters * meters)) * 10) / 10;
+		}
+
+		function deriveMusclePercent(entry, fallbackWeight) {
+			const explicit = parseValue(entry.skeletalMusclePercent || entry.skeletalMuscle || entry.musclePercent);
+			if (explicit !== null) return explicit;
+			const mass = parseValue(entry.muscleMass);
+			const weight = parseValue(entry.weight || fallbackWeight);
+			if (!mass || !weight) return null;
+			return Math.round((mass / weight) * 1000) / 10;
+		}
+
+		let charts = {};
+		function renderCharts(entries) {
+			const labels = entries.map((entry, index) => entry.date || `Entry ${index + 1}`);
+			const weightData = entries.map(entry => parseValue(entry.weight));
+			const bodyFatData = entries.map(entry => parseValue(entry.bodyFat));
+			const muscleData = entries.map(entry => deriveMusclePercent(entry, activeClient?.weight));
+			const bmiData = entries.map(entry => {
+				const direct = parseValue(entry.bmi);
+				if (direct !== null) return direct;
+				return calculateBmi(entry.weight || activeClient?.weight, entry.height || activeClient?.height);
+			});
+
+			const chartOptions = {
+				responsive: true,
+				plugins: { legend: { display: false } },
+				scales: { y: { beginAtZero: false } },
+				spanGaps: true
+			};
+
+			function buildChart(id, data, label) {
+				const ctx = document.getElementById(id);
+				if (!ctx) return;
+				if (charts[id]) charts[id].destroy();
+				charts[id] = new Chart(ctx, {
+					type: 'line',
+					data: {
+						labels,
+						datasets: [{
+							label,
+							data,
+							borderColor: '#4a9ff5',
+							backgroundColor: 'rgba(74, 159, 245, 0.15)',
+							tension: 0.35,
+							fill: true
+						}]
+					},
+					options: chartOptions
+				});
+			}
+
+			buildChart('progress-weight', weightData, 'Weight (kg)');
+			buildChart('progress-bodyfat', bodyFatData, 'Body Fat (%)');
+			buildChart('progress-muscle', muscleData, 'Skeletal Muscle (%)');
+			buildChart('progress-bmi', bmiData, 'BMI');
+		}
+
+		function loadProgress() {
+			const stored = localStorage.getItem(storageKey);
+			let entries = [];
+			if (stored) {
+				try {
+					entries = JSON.parse(stored) || [];
+				} catch (error) {
+					entries = [];
+				}
+			}
+			if (!entries.length) {
+				entries = [
+					{
+						date: "23/2/2026 at 13:08",
+						weight: "31.4 kg",
+						bodyFat: "12 %",
+						bmi: "14",
+						height: "147.3 cm",
+						activityLevel: "Extremely Active",
+						notes: "Test entry - debugging client lookup"
+					}
+				];
+			}
+			activeClient = { ...client, progressEntries: entries };
+			renderTimeline(entries);
+			renderCharts(entries);
+		}
+
+		function saveProgressEntry(entry) {
+			const existing = activeClient?.progressEntries || [];
+			const updatedEntries = [...existing, entry];
+			activeClient = { ...activeClient, progressEntries: updatedEntries };
+			localStorage.setItem(storageKey, JSON.stringify(updatedEntries));
+			renderTimeline(updatedEntries);
+			renderCharts(updatedEntries);
+		}
+
+		function updateProgressEntry(index, entry) {
+			const existing = activeClient?.progressEntries || [];
+			const updatedEntries = existing.map((item, idx) => (idx === index ? entry : item));
+			activeClient = { ...activeClient, progressEntries: updatedEntries };
+			localStorage.setItem(storageKey, JSON.stringify(updatedEntries));
+			renderTimeline(updatedEntries);
+			renderCharts(updatedEntries);
+		}
+
+		function formatUnit(value, unit) {
+			if (value === null || value === undefined || value === "") return "N/A";
+			return `${value} ${unit}`;
+		}
+
+		const entryOpen = document.getElementById('add-entry');
+		const entryCancel = document.getElementById('entry-cancel');
+		const entrySave = document.getElementById('entry-save');
+		const entryWeight = document.getElementById('entry-weight');
+		const entryBodyFat = document.getElementById('entry-bodyfat');
+		const entryBmi = document.getElementById('entry-bmi');
+		const entryHeight = document.getElementById('entry-height');
+		const entryActivity = document.getElementById('entry-activity');
+		const entryNotes = document.getElementById('entry-notes');
+		const entryError = document.getElementById('entry-error');
+
+		let editingIndex = null;
+
+		function openEntryModal(entry = null, index = null) {
+			editingIndex = index;
+			entryError.style.display = 'none';
+			document.querySelector('#entry-modal .modal-title').textContent = index === null ? 'Add Progress Entry' : 'Edit Progress Entry';
+			entryWeight.value = entry?.weight ? parseValue(entry.weight) ?? '' : '';
+			entryBodyFat.value = entry?.bodyFat ? parseValue(entry.bodyFat) ?? '' : '';
+			entryBmi.value = entry?.bmi ? parseValue(entry.bmi) ?? '' : '';
+			entryHeight.value = entry?.height ? parseValue(entry.height) ?? '' : '';
+			entryActivity.value = entry?.activityLevel || '';
+			entryNotes.value = entry?.notes || '';
+			entryModal.classList.add('active');
+		}
+
+		if (entryOpen) {
+			entryOpen.addEventListener('click', () => {
+				openEntryModal();
+			});
+		}
+
+		if (entryCancel) {
+			entryCancel.addEventListener('click', () => {
+				entryModal.classList.remove('active');
+			});
+		}
+
+		if (entrySave) {
+			entrySave.addEventListener('click', async () => {
+				entryError.style.display = 'none';
+				if (!entryWeight.value || !entryHeight.value) {
+					entryError.style.display = 'block';
+					return;
+				}
+				const now = new Date();
+				const timestamp = now.toLocaleString();
+				const payload = {
+					date: editingIndex === null ? timestamp : (activeClient?.progressEntries?.[editingIndex]?.date || timestamp),
+					weight: formatUnit(entryWeight.value, 'kg'),
+					bodyFat: entryBodyFat.value ? formatUnit(entryBodyFat.value, '%') : "N/A",
+					bmi: entryBmi.value ? entryBmi.value : "N/A",
+					height: formatUnit(entryHeight.value, 'cm'),
+					activityLevel: entryActivity.value ? entryActivity.value : "N/A",
+					notes: entryNotes.value ? entryNotes.value : "N/A"
+				};
+				if (editingIndex === null) {
+					await saveProgressEntry(payload);
+				} else {
+					await updateProgressEntry(editingIndex, payload);
+				}
+				entryModal.classList.remove('active');
+				entryWeight.value = '';
+				entryBodyFat.value = '';
+				entryBmi.value = '';
+				entryHeight.value = '';
+				entryActivity.value = '';
+				entryNotes.value = '';
+				editingIndex = null;
+			});
+		}
+
+		loadProgress();
+	</script>
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Client Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <script src="dashboard-nav.js"></script>
+    <script src="notification-banner.js"></script>
+    <style>
+        .accent-text { color: #6eabf2; }
+        .accent-bg { background-color: #6eabf2; }
+        .accent-border { border-color: #6eabf2; }
+        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+    </style>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <!-- Navigation -->
+    <nav class="top-nav bg-white shadow-sm py-4 sticky top-0 z-50">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="top-nav-left flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold accent-text">My Nutrition Portal</div>
+            </div>
+            <div class="top-nav-links flex items-center gap-6">
+                <a href="client-main.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="client-dashboard.html" class="text-gray-600 hover:text-gray-900">Nutrition</a>
+                <a href="mental-coaching.html" class="text-gray-600 hover:text-gray-900">Mental Coaching</a>
+                <a href="anti-doping.html" class="text-gray-600 hover:text-gray-900">Anti-Doping</a>
+                <a href="progress-tracking.html" class="text-gray-600 hover:text-gray-900">Progress</a>
+                <a href="settings.html" class="font-semibold accent-text">Settings</a>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full accent-bg text-white flex items-center justify-center font-bold" id="client-avatar">--</div>
+                    <button onclick="logout()" class="text-sm text-gray-600 hover:text-gray-900">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="py-8 bg-gradient-to-r from-gray-50 to-blue-50">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center gap-4">
+                <div class="text-5xl">⚙️</div>
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900">Settings</h1>
+                    <p class="text-gray-600 mt-2">Manage your account and preferences</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-8">
+        <div class="container mx-auto px-6 max-w-4xl">
+
+            <!-- Update Personal Info -->
+            <div class="card-hover bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">👤</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Update Personal Info</h2>
+                        <p class="text-gray-600">Edit your profile information</p>
+                    </div>
+                </div>
+
+                <form onsubmit="updatePersonalInfo(event)" class="space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name <span class="text-gray-500 text-xs">(At least 4 names)</span></label>
+                            <input type="text" id="fullName" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="First Second Third Fourth">
+                            <p id="fullNameError" class="text-xs text-red-600 mt-1 hidden">⚠️ Please enter at least 4 names (e.g., Mohamed Ahmed Ali Hassan)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                            <input type="email" id="email" readonly class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-50 cursor-not-allowed focus:ring-2 focus:ring-blue-200 outline-none" placeholder="john@example.com">
+                            <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+                            <input type="tel" id="phone" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="+20 50 123 4567">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                            <input type="text" id="country" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Egypt">
+                        </div>
+                    </div>
+                    <button type="submit" class="px-8 py-3 accent-bg text-white rounded-xl font-semibold shadow-lg hover:opacity-90 transition">
+                        💾 Save Changes
+                    </button>
+                </form>
+            </div>
+
+            <!-- Edit Full Profile -->
+            <div class="card-hover bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">📋</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Edit Full Profile</h2>
+                        <p class="text-gray-600">Update your complete profile including physical measurements, nutrition plan, and health information</p>
+                    </div>
+                </div>
+
+                <a id="edit-full-profile-link" href="profile-setup.html?edit=1" class="w-full inline-block px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition transform text-center">
+                    ✏️ Edit Full Profile
+                </a>
+            </div>
+
+            <!-- Change Password -->
+            <div class="card-hover bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">🔒</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Change Password</h2>
+                        <p class="text-gray-600">Update your password to keep your account secure</p>
+                    </div>
+                </div>
+
+                <form onsubmit="changePassword(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
+                        <input type="password" id="currentPassword" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Enter current password">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                        <input type="password" id="newPassword" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Enter new password">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Confirm new password">
+                    </div>
+                    <button type="submit" class="px-8 py-3 accent-bg text-white rounded-xl font-semibold shadow-lg hover:opacity-90 transition">
+                        🔐 Update Password
+                    </button>
+                </form>
+            </div>
+
+            <!-- Manage Subscription -->
+            <div class="card-hover bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">💳</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Manage Subscription</h2>
+                        <p class="text-gray-600">View and update your subscription plan</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl mb-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Current Plan</p>
+                            <p class="text-2xl font-bold text-gray-900" id="currentPlan">Pro Athlete</p>
+                            <p class="text-sm text-gray-600 mt-2">$9.99/month • Renews on March 15, 2026</p>
+                        </div>
+                        <span class="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold">Active</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="changePlan()" class="w-full px-6 py-3 border-2 accent-border accent-text rounded-xl font-semibold hover:accent-bg hover:text-white transition">
+                        🔄 Change Plan
+                    </button>
+                    <button onclick="cancelSubscription()" class="w-full px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition">
+                        ⏸️ Cancel Subscription
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-4">💡 You'll retain access to all features until the end of your billing period</p>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card-hover bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">🔔</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Notification Preferences</h2>
+                        <p class="text-gray-600">Choose what updates you want to receive</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">📧</span>
+                            <div>
+                                <p class="font-semibold text-gray-900">Email Notifications</p>
+                                <p class="text-sm text-gray-600">Receive meal reminders and updates</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" checked class="w-6 h-6 accent-blue-500">
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">📱</span>
+                            <div>
+                                <p class="font-semibold text-gray-900">SMS Reminders</p>
+                                <p class="text-sm text-gray-600">Get text reminders for check-ins</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" checked class="w-6 h-6 accent-blue-500">
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🎯</span>
+                            <div>
+                                <p class="font-semibold text-gray-900">Progress Reports</p>
+                                <p class="text-sm text-gray-600">Weekly performance summaries</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" checked class="w-6 h-6 accent-blue-500">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="bg-red-50 p-8 rounded-3xl border-2 border-red-200 mb-6">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="text-4xl">⚠️</div>
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-red-900 mb-2">Danger Zone</h2>
+                        <p class="text-red-700">Irreversible actions that affect your account</p>
+                    </div>
+                </div>
+
+                <button onclick="deleteAccount()" class="w-full px-6 py-4 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition shadow-lg">
+                    🗑️ Delete Account Permanently
+                </button>
+                <p class="text-xs text-red-600 mt-3">⚠️ Warning: This action cannot be undone. All your data will be permanently deleted.</p>
+            </div>
+
+            <!-- Logout -->
+            <div class="text-center">
+                <button onclick="logout()" class="px-12 py-4 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-900 transition shadow-lg">
+                    🚪 Logout
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Edit Profile Modal -->
+    <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="text-4xl">✏️</div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Edit Full Profile</h2>
+                        <p class="text-blue-100 text-sm">Update your complete profile information</p>
+                    </div>
+                </div>
+                <button onclick="closeProfileModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                <form id="fullProfileForm" onsubmit="saveFullProfile(event)" class="space-y-6">
+                    
+                    <!-- BASIC INFORMATION -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-blue-200">Basic Information</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name * <span class="text-gray-500 text-xs">(At least 4 names)</span></label>
+                                <input type="text" id="modal_fullName" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="First Second Third Fourth">
+                                <p id="modal_fullNameError" class="text-xs text-red-600 mt-1 hidden">⚠️ Please enter at least 4 names (e.g., Mohamed Ahmed Ali Hassan)</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Phone *</label>
+                                <input type="tel" id="modal_phone" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="+20 123 456">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Birthday</label>
+                                <input type="date" id="modal_birthday" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+                                <select id="modal_gender" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none">
+                                    <option value="">Select</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                                <input type="text" id="modal_country" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Country">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Sport Club</label>
+                                <input type="text" id="modal_club" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Sport club">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Sport</label>
+                                <input type="text" id="modal_sport" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="Football, Swimming, etc.">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PHYSICAL MEASUREMENTS -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-blue-200">Physical Measurements</h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Height (cm)</label>
+                                <input type="number" id="modal_height" step="0.1" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="170">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Weight (kg)</label>
+                                <input type="number" id="modal_weight" step="0.1" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="75">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Body Fat %</label>
+                                <input type="number" id="modal_bodyFat" step="0.1" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="15">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Muscle Mass (kg)</label>
+                                <input type="number" id="modal_muscleMass" step="0.1" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="35">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Activity Level</label>
+                                <select id="modal_activityLevel" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none">
+                                    <option value="">Select</option>
+                                    <option value="sedentary">Sedentary</option>
+                                    <option value="lightly_active">Lightly Active</option>
+                                    <option value="moderately_active">Moderately Active</option>
+                                    <option value="very_active">Very Active</option>
+                                    <option value="extremely_active">Extremely Active</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Goal Weight (kg)</label>
+                                <input type="number" id="modal_goalWeight" step="0.1" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="70">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HEALTH INFORMATION -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2 border-blue-200">Health Information</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Food Allergies</label>
+                                <input type="text" id="modal_foodAllergies" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="None">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Injuries</label>
+                                <input type="text" id="modal_injuries" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="None">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Food Likes</label>
+                                <textarea id="modal_foodLikes" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" rows="2" placeholder="Foods you enjoy"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Food Dislikes</label>
+                                <textarea id="modal_foodDislikes" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" rows="2" placeholder="Foods to avoid"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Additional Notes</label>
+                                <textarea id="modal_additionalNotes" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none" rows="3" placeholder="Any additional details"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="border-t border-gray-200 p-6 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeProfileModal()" class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition">
+                    Cancel
+                </button>
+                <button onclick="saveFullProfile(event)" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition">
+                    💾 Save Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = CONFIG.API_BASE_URL;
+
+        function buildEditProfileUrl() {
+            const currentUrl = window.location.href;
+            sessionStorage.setItem('profileEditReturnTo', currentUrl);
+            return `profile-setup.html?edit=1&returnTo=${encodeURIComponent(currentUrl)}`;
+        }
+
+        // Authentication utilities
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // getAuthHeaders is now defined in config.js
+        // No need to redefine it here - use the global function
+
+        function ensureAuthenticated() {
+            return typeof enforceProtectedPageSession === 'function'
+                ? enforceProtectedPageSession()
+                : !!getAuthToken();
+        }
+
+        async function loadClientData() {
+            if (!ensureAuthenticated()) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.status === 401) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('settings-load-profile');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const profile = await response.json();
+                
+                // Update UI with profile data
+                const fullName = profile.full_name || '';
+                document.getElementById('client-avatar').textContent = fullName.substring(0, 2).toUpperCase() || 'CL';
+                document.getElementById('fullName').value = fullName;
+                document.getElementById('email').value = profile.email || '';
+                document.getElementById('phone').value = profile.phone || '';
+                document.getElementById('country').value = profile.country || '';
+
+                // Load subscription plan (keeping localStorage for now as backend doesn't track plans)
+                const selectedPlan = localStorage.getItem('selectedPlan') || 'basic';
+                const planNames = {
+                    'basic': 'Basic (Free)',
+                    'pro': 'Pro Athlete',
+                    'elite': 'Elite Performance'
+                };
+                document.getElementById('currentPlan').textContent = planNames[selectedPlan] || 'Basic (Free)';
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                alert('❌ Failed to load profile data. Please try again.');
+            }
+        }
+
+        async function updatePersonalInfo(event) {
+            event.preventDefault();
+            
+            if (!ensureAuthenticated()) return;
+
+            // Validate Full Name (must have at least 4 names)
+            const fullName = document.getElementById('fullName').value.trim();
+            const nameError = document.getElementById('fullNameError');
+            const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
+            
+            if (nameParts.length < 4) {
+                nameError.classList.remove('hidden');
+                document.getElementById('fullName').classList.add('border-red-500');
+                document.getElementById('fullName').focus();
+                return;
+            } else {
+                nameError.classList.add('hidden');
+                document.getElementById('fullName').classList.remove('border-red-500');
+            }
+
+            const updateData = {
+                full_name: fullName,
+                phone: document.getElementById('phone').value,
+                country: document.getElementById('country').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(updateData)
+                });
+
+                if (response.status === 401) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('settings-update-personal-info');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Failed to update profile');
+                }
+
+                const updatedProfile = await response.json();
+                alert('✅ Personal information updated successfully!');
+                
+                // Reload profile data to ensure UI is in sync
+                await loadClientData();
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('❌ ' + error.message);
+            }
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+            
+            if (!ensureAuthenticated()) return;
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('❌ Please fill in all password fields');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('❌ New passwords do not match');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('❌ Password must be at least 6 characters long');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                if (response.status === 401) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('settings-change-password');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Failed to change password');
+                }
+
+                alert('✅ Password changed successfully!');
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (error) {
+                console.error('Error changing password:', error);
+                alert('❌ ' + error.message);
+            }
+        }
+
+        function changePlan() {
+            if (confirm('Would you like to view available plans?')) {
+                window.location.href = 'plans.html';
+            }
+        }
+
+        function cancelSubscription() {
+            if (confirm('⚠️ Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.')) {
+                alert('Your subscription has been scheduled for cancellation. You will retain access until March 15, 2026.');
+            }
+        }
+
+        function deleteAccount() {
+            const confirmation = prompt('⚠️ WARNING: This will permanently delete your account and all data. Type "DELETE" to confirm:');
+            
+            if (confirmation === 'DELETE') {
+                if (confirm('This is your final warning. Are you absolutely sure you want to delete your account permanently?')) {
+                    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                    const currentClientId = localStorage.getItem('currentClientId');
+                    const updatedClients = clients.filter(c => c.id != currentClientId);
+                    
+                    localStorage.setItem('clients', JSON.stringify(updatedClients));
+                    localStorage.removeItem('currentClientId');
+                    
+                    alert('Your account has been deleted. You will now be logged out.');
+                    window.location.href = 'index.html';
+                }
+            } else if (confirmation !== null) {
+                alert('Account deletion cancelled. You must type "DELETE" exactly to confirm.');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                clearAllAuthData();
+                window.location.href = 'client-home.html';
+            }
+        }
+
+        // Modal Functions
+        async function openProfileModal() {
+            const modal = document.getElementById('profileModal');
+            modal.classList.remove('hidden');
+            
+            // Load current profile data into modal
+            if (!ensureAuthenticated()) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.status === 401) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('settings-load-full-profile');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const profile = await response.json();
+                
+                // Populate modal fields with profile data
+                document.getElementById('modal_fullName').value = profile.full_name || '';
+                document.getElementById('modal_phone').value = profile.phone || '';
+                document.getElementById('modal_birthday').value = profile.birthday || '';
+                document.getElementById('modal_gender').value = profile.gender || '';
+                document.getElementById('modal_country').value = profile.country || '';
+                document.getElementById('modal_club').value = profile.club || '';
+                document.getElementById('modal_sport').value = profile.sport || '';
+                document.getElementById('modal_height').value = profile.height || '';
+                document.getElementById('modal_weight').value = profile.weight || '';
+                document.getElementById('modal_bodyFat').value = profile.body_fat || '';
+                document.getElementById('modal_muscleMass').value = profile.muscle_mass || '';
+                document.getElementById('modal_activityLevel').value = profile.activity_level || '';
+                document.getElementById('modal_goalWeight').value = profile.goal_weight || '';
+                document.getElementById('modal_foodAllergies').value = profile.food_allergies || '';
+                document.getElementById('modal_injuries').value = profile.injuries || '';
+                document.getElementById('modal_foodLikes').value = profile.food_likes || '';
+                document.getElementById('modal_foodDislikes').value = profile.food_dislikes || '';
+                document.getElementById('modal_additionalNotes').value = profile.additional_notes || '';
+            } catch (error) {
+                console.error('Error loading profile for edit:', error);
+                alert('❌ Failed to load profile data. Please try again.');
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profileModal');
+            modal.classList.add('hidden');
+        }
+
+        async function saveFullProfile(event) {
+            event.preventDefault();
+            
+            if (!ensureAuthenticated()) return;
+
+            // Validate Full Name (must have at least 4 names)
+            const fullName = document.getElementById('modal_fullName').value.trim();
+            const nameError = document.getElementById('modal_fullNameError');
+            const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
+            
+            if (nameParts.length < 4) {
+                nameError.classList.remove('hidden');
+                document.getElementById('modal_fullName').classList.add('border-red-500');
+                document.getElementById('modal_fullName').focus();
+                return;
+            } else {
+                nameError.classList.add('hidden');
+                document.getElementById('modal_fullName').classList.remove('border-red-500');
+            }
+
+            const updateData = {
+                full_name: fullName,
+                phone: document.getElementById('modal_phone').value,
+                birthday: document.getElementById('modal_birthday').value || null,
+                gender: document.getElementById('modal_gender').value || null,
+                country: document.getElementById('modal_country').value || null,
+                club: document.getElementById('modal_club').value || null,
+                sport: document.getElementById('modal_sport').value || null,
+                height: parseFloat(document.getElementById('modal_height').value) || null,
+                weight: parseFloat(document.getElementById('modal_weight').value) || null,
+                body_fat: parseFloat(document.getElementById('modal_bodyFat').value) || null,
+                muscle_mass: parseFloat(document.getElementById('modal_muscleMass').value) || null,
+                activity_level: document.getElementById('modal_activityLevel').value || null,
+                goal_weight: parseFloat(document.getElementById('modal_goalWeight').value) || null,
+                food_allergies: document.getElementById('modal_foodAllergies').value || null,
+                injuries: document.getElementById('modal_injuries').value || null,
+                food_likes: document.getElementById('modal_foodLikes').value || null,
+                food_dislikes: document.getElementById('modal_foodDislikes').value || null,
+                additional_notes: document.getElementById('modal_additionalNotes').value || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/client/profile`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(updateData)
+                });
+
+                if (response.status === 401) {
+                    if (typeof handleSessionExpired === 'function') {
+                        handleSessionExpired('settings-update-full-profile');
+                    }
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to update profile');
+                }
+
+                alert('✅ Profile updated successfully!');
+                closeProfileModal();
+                
+                // Reload the page data to reflect changes
+                await loadClientData();
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('❌ ' + error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const editProfileLink = document.getElementById('edit-full-profile-link');
+            if (editProfileLink) {
+                editProfileLink.href = buildEditProfileUrl();
+                editProfileLink.addEventListener('click', () => {
+                    sessionStorage.setItem('profileEditReturnTo', window.location.href);
+                });
+            }
+
+            if (typeof initGlobalNavbarAuthState === 'function') {
+                initGlobalNavbarAuthState();
+            }
+            if (typeof highlightActiveDashboardNav === 'function') {
+                highlightActiveDashboardNav();
+            }
+            loadClientData();
+
+            // Show settings notification banner
+            setTimeout(() => {
+                showPageNotification('settings');
+                showDailyReminder();
+            }, 500);
+        });
+    </script>
+
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>

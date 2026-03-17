@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | Vitality Nutrition Management</title>
+    <script src="config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .contact-header {
+            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .contact-header::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 1;
+        }
+        .contact-header > div { position: relative; z-index: 2; }
+    </style>
+    <link rel="stylesheet" href="assets/css/responsive.css" />
+    <link rel="stylesheet" href="assets/css/dashboard-template.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans leading-normal">
+
+    <nav class="bg-white shadow-sm py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition p-2 hover:bg-gray-100 rounded-lg" title="Go back">
+                    ← Back
+                </button>
+                <div class="text-2xl font-bold" style="color: #6eabf2;">Client Nutrition Management</div>
+            </div>
+            <div class="space-x-6">
+                <a href="index.html" id="nav-home" class="text-black">Home</a>
+                <a href="about.html" class="text-black">About</a>
+                <a href="features.html" class="text-black">Features</a>
+                <a href="resources.html" class="text-black">Our Clinic</a>
+                <a href="success-stories.html" class="text-black">Success Stories</a>
+                <a href="contact.html" class="font-semibold border-b-2" style="color: #6eabf2; border-color: #6eabf2;">Contact Us</a>
+                <a href="add-client.html" id="nav-action" class="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style="background-color: #6eabf2;">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        if (typeof initGlobalNavbarAuthState === 'function') {
+            initGlobalNavbarAuthState();
+        }
+    </script>
+
+    <header class="contact-header py-16">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Get in <span style="color: #6eabf2;">Touch.</span></h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Have questions? We're here to help. Reach out and our clinical team will respond within 24 hours.</p>
+        </div>
+    </header>
+
+    <section class="py-16">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-wrap -mx-6">
+                
+                <div class="w-full lg:w-2/3 px-6 mb-12">
+                    <div class="bg-white p-8 rounded-2xl shadow-md border border-gray-100">
+                        <form id="contactForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Full Name</label>
+                                <input type="text" id="fullName" placeholder="Jane Doe" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 transition" style="--tw-ring-color: #6eabf2;" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Email Address</label>
+                                <input type="email" id="senderEmail" placeholder="jane@example.com" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 transition" style="--tw-ring-color: #6eabf2;" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Reason for Inquiry</label>
+                                <select id="inquiryReason" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 transition" style="--tw-ring-color: #6eabf2;">
+                                    <option>Weight Management</option>
+                                    <option>Medical Nutrition Therapy</option>
+                                    <option>Sports Performance</option>
+                                    <option>General Inquiry</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Message</label>
+                                <textarea id="messageText" rows="5" placeholder="Tell us about your goals..." class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 transition" style="--tw-ring-color: #6eabf2;" required></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="button" onclick="sendContactEmail()" class="w-full md:w-auto text-white font-bold py-3 px-10 rounded-full shadow-lg hover:opacity-90 transition duration-300" style="background-color: #6eabf2;">
+                                    Send Message
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-1/3 px-6">
+                    <div class="space-y-8">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2 italic">Direct Contact</h4>
+                            <p class="text-gray-600 flex items-center">
+                                <span class="mr-3">📧</span> MohamedAlaa2864@gmail.com
+                            </p>
+                            <p class="text-gray-600 flex items-center mt-2">
+                                <span class="mr-3">📞</span> +20 155 018 8581
+                            </p>
+                        </div>
+                        
+                        <div class="p-6 rounded-2xl text-white shadow-lg" style="background-color: #6eabf2;">
+                            <h4 class="text-lg font-bold mb-4 flex items-center">
+                                <span class="mr-2">🕒</span> Office Hours
+                            </h4>
+                            <ul class="space-y-2 opacity-90 text-sm">
+                                <li class="flex justify-between border-b pb-2" style="border-color: rgba(255,255,255,0.2);"><span>Mon - Thu:</span> <span>8am - 6pm</span></li>
+                                <li class="flex justify-between border-b pb-2" style="border-color: rgba(255,255,255,0.2);"><span>Friday:</span> <span>8am - 4pm</span></li>
+                                <li class="flex justify-between"><span>Sat - Sun:</span> <span class="font-bold">Closed</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200">
+        &copy; 2026 Client Nutrition Management. All rights reserved.
+    </footer>
+
+    <script>
+        function sendContactEmail() {
+            // Get form values
+            const fullName = document.getElementById('fullName').value.trim();
+            const senderEmail = document.getElementById('senderEmail').value.trim();
+            const inquiryReason = document.getElementById('inquiryReason').value;
+            const messageText = document.getElementById('messageText').value.trim();
+
+            // Validate required fields
+            if (!fullName || !senderEmail || !messageText) {
+                alert('Please fill in all required fields (Name, Email, and Message).');
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(senderEmail)) {
+                alert('Please enter a valid email address.');
+                return;
+            }
+
+            // Construct email
+            const recipient = 'MohamedAlaa2864@gmail.com';
+            const subject = encodeURIComponent(`Contact Form: ${inquiryReason} - ${fullName}`);
+            const body = encodeURIComponent(
+                `Name: ${fullName}\n` +
+                `Email: ${senderEmail}\n` +
+                `Reason for Inquiry: ${inquiryReason}\n\n` +
+                `Message:\n${messageText}`
+            );
+
+            // Open mailto link
+            window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+
+            // Optional: Show confirmation message
+            setTimeout(() => {
+                alert('Your email client should open now. Please send the email from there.');
+            }, 500);
+        }
+    </script>
+
+    <script src="assets/js/responsive-ui.js"></script>
+</body>
+</html>
