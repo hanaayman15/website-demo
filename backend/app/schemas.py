@@ -2,7 +2,7 @@
 from datetime import datetime, date
 import re
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, ConfigDict
 
 
 # ==================== User & Auth Schemas ====================
@@ -782,19 +782,41 @@ class MessageResponse(BaseModel):
 
 class MacroMealEntry(BaseModel):
     """Single meal payload for macro status sync."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     meal_id: str
     meal_key: str
     meal_label: str
     scheduled_time: Optional[str] = None
-    status: str
+    status: Optional[str] = None
     calories: Optional[float] = None
     protein: Optional[float] = None
     carbs: Optional[float] = None
     fats: Optional[float] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_meal_aliases(cls, value):
+        if not isinstance(value, dict):
+            return value
+
+        data = dict(value)
+        if "meal_id" not in data and "mealId" in data:
+            data["meal_id"] = data.get("mealId")
+        if "meal_key" not in data and "mealKey" in data:
+            data["meal_key"] = data.get("mealKey")
+        if "meal_label" not in data and "mealLabel" in data:
+            data["meal_label"] = data.get("mealLabel")
+        if "scheduled_time" not in data and "scheduledTime" in data:
+            data["scheduled_time"] = data.get("scheduledTime")
+
+        return data
+
 
 class TodayMacrosSyncRequest(BaseModel):
     """Client payload for syncing today's macro progress."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     date: Optional[str] = None
     target_calories: Optional[float] = None
     target_protein: Optional[float] = None
@@ -805,6 +827,45 @@ class TodayMacrosSyncRequest(BaseModel):
     consumed_carbs: Optional[float] = None
     consumed_fats: Optional[float] = None
     meals: List[MacroMealEntry] = []
+    meal_statuses: Optional[Dict[str, str]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_payload_variants(cls, value):
+        if not isinstance(value, dict):
+            return value
+
+        data = dict(value)
+
+        # Accept legacy/nested payloads: { target: {...}, consumed: {...} }
+        target = data.get("target") if isinstance(data.get("target"), dict) else {}
+        consumed = data.get("consumed") if isinstance(data.get("consumed"), dict) else {}
+
+        data.setdefault("target_calories", data.get("targetCalories") or target.get("calories"))
+        data.setdefault("target_protein", data.get("targetProtein") or target.get("protein"))
+        data.setdefault("target_carbs", data.get("targetCarbs") or target.get("carbs"))
+        data.setdefault("target_fats", data.get("targetFats") or target.get("fats"))
+
+        data.setdefault("consumed_calories", data.get("consumedCalories") or consumed.get("calories"))
+        data.setdefault("consumed_protein", data.get("consumedProtein") or consumed.get("protein"))
+        data.setdefault("consumed_carbs", data.get("consumedCarbs") or consumed.get("carbs"))
+        data.setdefault("consumed_fats", data.get("consumedFats") or consumed.get("fats"))
+
+        status_map = data.get("meal_statuses") or data.get("mealStatuses")
+        if isinstance(status_map, dict) and isinstance(data.get("meals"), list):
+            normalized_meals = []
+            for meal in data["meals"]:
+                if isinstance(meal, dict):
+                    row = dict(meal)
+                    meal_id = row.get("meal_id") or row.get("mealId")
+                    if "status" not in row and meal_id in status_map:
+                        row["status"] = status_map.get(meal_id)
+                    normalized_meals.append(row)
+                else:
+                    normalized_meals.append(meal)
+            data["meals"] = normalized_meals
+
+        return data
 
 
 class TodayMacrosSyncResponse(BaseModel):
