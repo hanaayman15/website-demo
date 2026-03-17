@@ -9,6 +9,12 @@ import {
   buildTodayMacrosPayload,
   dashboardDataReducer,
 } from '../hooks/useDashboardDataReducer';
+import { buildConsultationPayload } from '../hooks/useSubscriptionPlans';
+import {
+  buildCompleteResetPayload,
+  buildResetRequestPayload,
+  buildVerificationPayload,
+} from '../hooks/usePasswordRecovery';
 import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
@@ -141,6 +147,21 @@ function MigrationHarness() {
     };
   }, []);
 
+  const utilityPayloads = useMemo(() => {
+    return {
+      subscription: buildConsultationPayload({ clientId: 101, plan: 'monthly' }),
+      passwordRecovery: {
+        request: buildResetRequestPayload('Athlete@Example.com '),
+        verify: buildVerificationPayload({ email: 'Athlete@Example.com ', code: '123456' }),
+        complete: buildCompleteResetPayload({
+          email: 'Athlete@Example.com ',
+          code: '123456',
+          newPassword: 'newStrongPass123',
+        }),
+      },
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -241,6 +262,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Doctor/Auth Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(doctorPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Utility Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(utilityPayloads, null, 2)}</pre>
       </section>
     </main>
   );
