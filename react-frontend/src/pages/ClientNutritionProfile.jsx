@@ -21,6 +21,9 @@ function ClientNutritionProfile() {
     state,
     constants,
     caloriesLabel,
+    hasDraft,
+    restoreDraft,
+    discardDraft,
     updateField,
     autofill,
     addTraining,
@@ -58,6 +61,15 @@ function ClientNutritionProfile() {
 
       {state.error ? <div className="react-alert react-alert-error">{state.error}</div> : null}
       {state.success ? <div className="react-alert react-alert-success">{state.success}</div> : null}
+      {hasDraft ? (
+        <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
+          <p className="react-muted" style={{ margin: 0 }}>Saved draft detected for this nutrition profile.</p>
+          <div className="react-inline-actions">
+            <button className="react-btn react-btn-ghost" type="button" onClick={restoreDraft}>Restore Draft</button>
+            <button className="react-btn react-btn-danger" type="button" onClick={discardDraft}>Discard Draft</button>
+          </div>
+        </section>
+      ) : null}
 
       <form className="react-grid" style={{ gap: '1rem' }} onSubmit={onSave}>
         <section className="react-panel react-grid">

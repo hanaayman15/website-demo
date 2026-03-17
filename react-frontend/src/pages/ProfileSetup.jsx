@@ -14,8 +14,11 @@ function ProfileSetup() {
     countries,
     phoneOptions,
     redirectClientId,
+    hasDraft,
     updateField,
     runAutofill,
+    restoreDraft,
+    discardDraft,
     saveBasicInfo,
   } = useProfileSetup();
 
@@ -36,6 +39,15 @@ function ProfileSetup() {
 
       {error ? <div className="react-alert react-alert-error">{error}</div> : null}
       {message ? <div className="react-alert react-alert-success">{message}</div> : null}
+      {hasDraft ? (
+        <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
+          <p className="react-muted" style={{ margin: 0 }}>Saved draft detected for this form.</p>
+          <div className="react-inline-actions">
+            <button className="react-btn react-btn-ghost" type="button" onClick={restoreDraft}>Restore Draft</button>
+            <button className="react-btn react-btn-danger" type="button" onClick={discardDraft}>Discard Draft</button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="react-panel">
         <h2 style={{ marginTop: 0 }}>Basic Information</h2>

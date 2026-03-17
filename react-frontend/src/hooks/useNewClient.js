@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import { PHONE_OPTIONS, WORLD_COUNTRIES, fullNameIsValid } from './useProfileSetup';
+import { usePersistentDraft } from './usePersistentDraft';
+import { getStorage, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
 
 const AUTOFILL_KEY = 'addClientBasicAutofillV1';
 const LAST_CLIENT_CONTEXT_KEY = 'lastClientContextV1';
@@ -75,17 +77,8 @@ function getFallbackAutofill() {
   };
 }
 
-function readDraft() {
-  try {
-    const raw = localStorage.getItem(AUTOFILL_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === 'object' ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
 function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
+  const local = getStorage('local');
   const userId = String(editClientId || responseData.user_id || '');
   const displayId = String(responseData.display_id || responseData.client_id || '');
   const phone = `${payload.phone_country_code || ''}${payload.phone_number || ''}`.trim() || 'N/A';
@@ -111,15 +104,15 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
     .forEach((key) => {
       const storageKey = `clientData_${key}`;
       try {
-        const existing = JSON.parse(localStorage.getItem(storageKey) || '{}') || {};
-        localStorage.setItem(storageKey, JSON.stringify({ ...existing, ...snapshot }));
+        const existing = safeJsonGet(local, storageKey, {}) || {};
+        safeJsonSet(local, storageKey, { ...existing, ...snapshot });
       } catch {
-        localStorage.setItem(storageKey, JSON.stringify(snapshot));
+        safeJsonSet(local, storageKey, snapshot);
       }
     });
 
   try {
-    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const clients = safeJsonGet(local, 'clients', []);
     if (Array.isArray(clients)) {
       const updatedClients = clients.map((client) => {
         if (Number(client?.id) !== Number(userId) && Number(client?.display_id) !== Number(displayId)) {
@@ -140,7 +133,7 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
           birthday: payload.birthday || client.birthday,
         };
       });
-      localStorage.setItem('clients', JSON.stringify(updatedClients));
+      safeJsonSet(local, 'clients', updatedClients);
     }
   } catch {
     // Keep save flow non-blocking for malformed local cache.
@@ -148,6 +141,7 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
 }
 
 export function useNewClient() {
+  const local = getStorage('local');
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -158,6 +152,12 @@ export function useNewClient() {
 
   const editClientId = useMemo(() => searchParams.get('client_id') || null, [searchParams]);
   const isEditMode = Boolean(editClientId);
+  const {
+    draft,
+    setDraft,
+    clearDraft,
+    hasDraft,
+  } = usePersistentDraft({ key: AUTOFILL_KEY, initialValue: null, enabled: !isEditMode });
 
   const canSubmit = useMemo(() => {
     const hasPassword = isEditMode ? true : Boolean(form.password);
@@ -184,7 +184,7 @@ export function useNewClient() {
       club: nextForm.club.trim(),
       religion: nextForm.religion,
     };
-    localStorage.setItem(AUTOFILL_KEY, JSON.stringify(draft));
+    setDraft(draft);
   };
 
   const updateField = (field, value) => {
@@ -197,25 +197,48 @@ export function useNewClient() {
 
   const runAutofill = () => {
     if (isEditMode) return;
-    const draft = readDraft();
+    const localDraft = draft;
     const fallback = getFallbackAutofill();
     const next = {
       ...form,
-      fullName: draft?.full_name || fallback.fullName,
-      phoneCountryCode: draft?.phone_country_code || fallback.phoneCountryCode,
-      phoneNumber: draft?.phone_number || fallback.phoneNumber,
-      email: draft?.email || fallback.email,
+      fullName: localDraft?.full_name || fallback.fullName,
+      phoneCountryCode: localDraft?.phone_country_code || fallback.phoneCountryCode,
+      phoneNumber: localDraft?.phone_number || fallback.phoneNumber,
+      email: localDraft?.email || fallback.email,
       password: form.password || fallback.password,
-      gender: draft?.gender || fallback.gender,
-      birthday: draft?.birthday || fallback.birthday,
-      country: draft?.country || fallback.country,
-      club: draft?.club || fallback.club,
-      religion: draft?.religion || fallback.religion,
+      gender: localDraft?.gender || fallback.gender,
+      birthday: localDraft?.birthday || fallback.birthday,
+      country: localDraft?.country || fallback.country,
+      club: localDraft?.club || fallback.club,
+      religion: localDraft?.religion || fallback.religion,
     };
     setForm(next);
     persistAutofillDraft(next);
     setError('');
     setMessage('Autofill completed for all missing basic fields.');
+  };
+
+  const restoreDraft = () => {
+    if (isEditMode || !draft) return;
+    const restored = {
+      ...form,
+      fullName: draft.full_name || '',
+      phoneCountryCode: draft.phone_country_code || '+20',
+      phoneNumber: draft.phone_number || '',
+      email: draft.email || '',
+      gender: draft.gender || '',
+      birthday: draft.birthday || '',
+      country: draft.country || 'Egypt',
+      club: draft.club || '',
+      religion: draft.religion || '',
+    };
+    setForm(restored);
+    setMessage('Saved draft restored.');
+  };
+
+  const discardDraft = () => {
+    clearDraft();
+    setMessage('Saved draft discarded.');
   };
 
   useEffect(() => {
@@ -308,16 +331,17 @@ export function useNewClient() {
       }));
       persistAutofillDraft(form);
       syncClientCachesAfterBasicSave(data, payload, editClientId);
-      localStorage.setItem(
-        LAST_CLIENT_CONTEXT_KEY,
-        JSON.stringify({
-          user_id: targetClientId,
-          display_id: data.display_id || null,
-          full_name: payload.full_name,
-          email: payload.email,
-          source: 'add_client',
-        })
-      );
+      safeJsonSet(local, LAST_CLIENT_CONTEXT_KEY, {
+        user_id: targetClientId,
+        display_id: data.display_id || null,
+        full_name: payload.full_name,
+        email: payload.email,
+        source: 'add_client',
+      });
+
+      if (!isEditMode) {
+        clearDraft();
+      }
 
       setMessage(isEditMode ? 'Basic information updated successfully.' : 'Client basic information saved successfully. Redirecting to services...');
       setRedirectClientId(targetClientId);
@@ -340,8 +364,11 @@ export function useNewClient() {
     countries: WORLD_COUNTRIES,
     phoneOptions: PHONE_OPTIONS,
     redirectClientId,
+    hasDraft: !isEditMode && hasDraft,
     updateField,
     runAutofill,
+    restoreDraft,
+    discardDraft,
     saveBasicInfo,
   };
 }

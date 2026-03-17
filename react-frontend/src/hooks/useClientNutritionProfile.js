@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
+import { usePersistentDraft } from './usePersistentDraft';
+import { getStorage, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
 
 const DEFAULT_ACTIVITY = 'extremely_active';
 const DEFAULT_COMPETITION = 'none';
@@ -254,25 +256,6 @@ function mapApiNutritionToState(data = {}) {
   };
 }
 
-function safeStorageGetJson(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function safeStorageSetJson(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Ignore draft persistence errors.
-  }
-}
-
 function normalizeDraftSnapshot(rawDraft) {
   if (!rawDraft || typeof rawDraft !== 'object') {
     return buildNutritionFallbackDraft();
@@ -476,6 +459,14 @@ export function clientNutritionProfileReducer(state, action) {
       return { ...state, saving: false, error: '', success: action.payload };
     case 'SAVE_ERROR':
       return { ...state, saving: false, error: action.payload, success: '' };
+    case 'RESTORE_DRAFT':
+      return {
+        ...state,
+        fields: buildNutritionFields(action.payload.fields),
+        trainingSessions: action.payload.trainingSessions,
+        supplements: action.payload.supplements,
+        success: 'Saved draft restored.',
+      };
     default:
       return state;
   }
@@ -490,6 +481,7 @@ function extractApiError(error, fallback) {
 }
 
 export function useClientNutritionProfile() {
+  const local = getStorage('local');
   const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(
     clientNutritionProfileReducer,
@@ -498,6 +490,13 @@ export function useClientNutritionProfile() {
   );
 
   const clientId = searchParams.get('client_id') || '';
+  const draftKey = useMemo(() => buildNutritionDraftKey(clientId), [clientId]);
+  const {
+    draft,
+    setDraft,
+    clearDraft,
+    hasDraft,
+  } = usePersistentDraft({ key: draftKey, initialValue: buildNutritionFallbackDraft(), enabled: Boolean(clientId) });
 
   useEffect(() => {
     dispatch({ type: 'SET_CLIENT', payload: clientId });
@@ -513,9 +512,8 @@ export function useClientNutritionProfile() {
 
     const load = async () => {
       dispatch({ type: 'LOAD_START' });
-      const draftKey = buildNutritionDraftKey(clientId);
       const fallbackDraft = buildNutritionFallbackDraft();
-      const localDraft = normalizeDraftSnapshot(safeStorageGetJson(draftKey, fallbackDraft));
+      const localDraft = normalizeDraftSnapshot(draft || fallbackDraft);
 
       try {
         const response = await apiClient.get(`/api/admin/clients/${encodeURIComponent(clientId)}/nutrition`);
@@ -550,13 +548,12 @@ export function useClientNutritionProfile() {
 
   useEffect(() => {
     if (!state.clientId || state.loading) return;
-    const draftKey = buildNutritionDraftKey(state.clientId);
-    safeStorageSetJson(draftKey, {
+    setDraft({
       fields: state.fields,
       trainingSessions: state.trainingSessions,
       supplements: state.supplements,
     });
-  }, [state.clientId, state.fields, state.loading, state.supplements, state.trainingSessions]);
+  }, [setDraft, state.clientId, state.fields, state.loading, state.supplements, state.trainingSessions]);
 
   const saveProfile = async () => {
     if (!state.clientId) {
@@ -575,7 +572,7 @@ export function useClientNutritionProfile() {
 
       try {
         const cacheKey = `clientData_${state.clientId}`;
-        const existing = safeStorageGetJson(cacheKey, {});
+        const existing = safeJsonGet(local, cacheKey, {});
         const merged = {
           ...existing,
           height: payload.height,
@@ -600,11 +597,12 @@ export function useClientNutritionProfile() {
           minerals: payload.minerals,
           trainingDetails: payload.training_sessions,
         };
-        safeStorageSetJson(cacheKey, merged);
+        safeJsonSet(local, cacheKey, merged);
       } catch {
         // Cache updates are best effort only.
       }
 
+      clearDraft();
       dispatch({ type: 'SAVE_SUCCESS', payload: 'Nutrition profile saved successfully.' });
       return { ok: true };
     } catch (error) {
@@ -641,6 +639,15 @@ export function useClientNutritionProfile() {
       ],
     },
     caloriesLabel,
+    hasDraft,
+    restoreDraft: () => {
+      const normalized = normalizeDraftSnapshot(draft || buildNutritionFallbackDraft());
+      dispatch({ type: 'RESTORE_DRAFT', payload: normalized });
+    },
+    discardDraft: () => {
+      clearDraft();
+      dispatch({ type: 'SAVE_SUCCESS', payload: 'Saved draft discarded.' });
+    },
     updateField: (field, value) => dispatch({ type: 'SET_FIELD', payload: { field, value } }),
     autofill: () => dispatch({ type: 'AUTOFILL' }),
     addTraining: () => dispatch({ type: 'ADD_TRAINING' }),
