@@ -25,6 +25,9 @@ import { buildSignupProfilePayload, buildSignupRegistrationPayload } from '../ho
 import { buildAdClientTestPayload, calculateAdClientMetrics } from '../hooks/useAdClientTest';
 import { buildAddClientDetailsPayload, recalcAddClientDetails } from '../hooks/useAddClientDetails';
 import { buildTeamPayload, createTeamPlayer, recalcTeamPlayer } from '../hooks/useAddTeam';
+import { buildDietPlanDraft, buildDietPlanPayload, buildDietPlanSummary } from '../hooks/useDietManagement';
+import { buildPdfRequestPayload } from '../hooks/usePdfGenerator';
+import { buildTeamViewRow } from '../hooks/useTeamView';
 import { buildAuthPayload, candidatePaths } from '../hooks/useAuth';
 import { normalizeDoctorDashboardConfig, summarizeTeams } from '../hooks/useDoctorDashboard';
 import { buildMeasurementPayload, buildMoodPayload, buildSleepPayload, buildWorkoutPayload } from '../hooks/useReports';
@@ -334,6 +337,49 @@ function MigrationHarness() {
     };
   }, []);
 
+  const finalWrapperPayloads = useMemo(() => {
+    const dietDraft = {
+      ...buildDietPlanDraft(),
+      minCalories: '1600',
+      maxCalories: '2100',
+      dietType: 'harness seasonal',
+    };
+    dietDraft.sunday.breakfast = { time: '09:00', en: 'Oats and berries', ar: 'شوفان وتوت' };
+
+    const dietPayload = buildDietPlanPayload(dietDraft);
+
+    const pdfPayload = buildPdfRequestPayload({
+      language: 'english',
+      clients: [
+        {
+          id: 101,
+          displayId: '501',
+          name: 'Harness Client',
+          age: 24,
+          gender: 'male',
+          phone: '+201000000000',
+          source: 'Add Client',
+          teamName: null,
+        },
+      ],
+    });
+
+    const teamRow = buildTeamViewRow(
+      { player_number: 1, id: 101, full_name: 'Harness Player', email: 'p@example.com', phone: '+2010', gender: 'male', height: 178, weight: 75 },
+      55,
+      true
+    );
+
+    return {
+      diet: {
+        payload: dietPayload,
+        summary: buildDietPlanSummary(dietPayload),
+      },
+      pdf: pdfPayload,
+      teamViewRow: teamRow,
+    };
+  }, []);
+
   return (
     <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
       <section className="react-panel">
@@ -459,6 +505,11 @@ function MigrationHarness() {
       <section className="react-panel react-grid">
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Team/Details Payloads</h2>
         <pre className="react-json-block">{JSON.stringify(rosterPayloads, null, 2)}</pre>
+      </section>
+
+      <section className="react-panel react-grid">
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Phase 4 Final Wrapper Payloads</h2>
+        <pre className="react-json-block">{JSON.stringify(finalWrapperPayloads, null, 2)}</pre>
       </section>
     </main>
   );
