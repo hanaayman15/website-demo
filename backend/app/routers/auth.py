@@ -36,6 +36,58 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
+def _get_or_create_admin_user(db: Session) -> User:
+    """Ensure a persisted admin user exists and return it.
+
+    Refresh tokens are tracked in DB with FK to users.id, so admin auth
+    cannot use synthetic user_id=0 when issuing token pairs.
+    """
+    admin_email = settings.ADMIN_EMAIL.lower().strip()
+    admin_user = db.query(User).filter(User.email == admin_email).first()
+
+    if admin_user:
+        needs_update = False
+        if admin_user.role != "admin":
+            admin_user.role = "admin"
+            needs_update = True
+        if not admin_user.is_active:
+            admin_user.is_active = True
+            needs_update = True
+        if not admin_user.full_name:
+            admin_user.full_name = "System Admin"
+            needs_update = True
+        if not admin_user.name:
+            admin_user.name = admin_user.full_name
+            needs_update = True
+        if not admin_user.hashed_password:
+            admin_hash = hash_password(settings.ADMIN_PASSWORD)
+            admin_user.hashed_password = admin_hash
+            admin_user.password_hash = admin_hash
+            needs_update = True
+
+        if needs_update:
+            db.add(admin_user)
+            db.commit()
+            db.refresh(admin_user)
+
+        return admin_user
+
+    admin_hash = hash_password(settings.ADMIN_PASSWORD)
+    admin_user = User(
+        email=admin_email,
+        name="System Admin",
+        full_name="System Admin",
+        password_hash=admin_hash,
+        hashed_password=admin_hash,
+        role="admin",
+        is_active=True,
+    )
+    db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+    return admin_user
+
+
 class ClientCreatePayload(BaseModel):
     full_name: str
     phone_country_code: str = "+20"
@@ -285,8 +337,9 @@ async def login(
     
     # Check for admin login
     if normalized_email == settings.ADMIN_EMAIL.lower() and credentials.password == settings.ADMIN_PASSWORD:
+        admin_user = _get_or_create_admin_user(db)
         token_data = {
-            "user_id": 0,
+            "user_id": admin_user.id,
             "email": settings.ADMIN_EMAIL,
             "role": "admin"
         }
@@ -303,7 +356,7 @@ async def login(
         
         return {
             **tokens,
-            "user_id": 0,
+            "user_id": admin_user.id,
             "role": "admin"
         }
     
@@ -429,8 +482,10 @@ async def admin_login(
     if normalized_email != settings.ADMIN_EMAIL.lower() or credentials.password != settings.ADMIN_PASSWORD:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin credentials")
 
+    admin_user = _get_or_create_admin_user(db)
+
     token_data = {
-        "user_id": 0,
+        "user_id": admin_user.id,
         "email": settings.ADMIN_EMAIL,
         "role": "admin",
     }
@@ -443,7 +498,7 @@ async def admin_login(
 
     return {
         **tokens,
-        "user_id": 0,
+        "user_id": admin_user.id,
         "role": "admin",
     }
 
@@ -615,11 +670,11 @@ async def refresh_access_token(
         old_jti = None
     
     # Verify user still exists and is active
-    if token_data.user_id == 0:  # Admin
-        # Admin tokens always valid
+    if token_data.user_id == 0:  # Legacy admin tokens
+        admin_user = _get_or_create_admin_user(db)
         token_payload = {
-            "user_id": 0,
-            "email": token_data.email,
+            "user_id": admin_user.id,
+            "email": admin_user.email,
             "role": "admin"
         }
         # Issue new token pair with rotation (revoke old token)

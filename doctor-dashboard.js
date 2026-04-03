@@ -11,6 +11,7 @@
                 { label: 'Home', href: 'doctor_dashboard.html' },
                 { label: 'Teams', href: 'clients.html' },
                 { label: 'Add Team', href: 'add_team.html' },
+                { label: 'Add Client', href: 'add-client.html' },
                 { label: 'Team View', href: 'clients.html' },
             ],
             modules: [
@@ -31,6 +32,12 @@
                     href: 'add_team.html',
                     image: 'images/football-team.jpg',
                     description: 'Create and manage team rosters.',
+                },
+                {
+                    label: 'Add Client',
+                    href: 'add-client.html',
+                    image: 'images/pexels-beyzahzah-89810429-15319038.jpg',
+                    description: 'Start with basic information, then continue to Client Services and Open Nutrition.',
                 },
                 {
                     label: 'Team View',
@@ -69,6 +76,24 @@
                 return module;
             })
             : getFallbackConfig().modules;
+
+        const hasAddClientNav = normalized.navigation.some((item) => String(item && item.label || '').trim().toLowerCase() === 'add client');
+        if (!hasAddClientNav) {
+            normalized.navigation = [...normalized.navigation, { label: 'Add Client', href: 'add-client.html' }];
+        }
+
+        const hasAddClientModule = normalized.modules.some((item) => String(item && item.label || '').trim().toLowerCase() === 'add client');
+        if (!hasAddClientModule) {
+            normalized.modules = [
+                ...normalized.modules,
+                {
+                    label: 'Add Client',
+                    href: 'add-client.html',
+                    image: 'images/pexels-beyzahzah-89810429-15319038.jpg',
+                    description: 'Start with basic information, then continue to Client Services and Open Nutrition.',
+                },
+            ];
+        }
 
         return normalized;
     }

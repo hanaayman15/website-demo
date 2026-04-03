@@ -1,38 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
-
-function decodeRoleFromToken(token) {
-  try {
-    const payload = JSON.parse(atob(String(token || '').split('.')[1] || ''));
-    return String(payload?.role || '').toLowerCase();
-  } catch {
-    return '';
-  }
-}
-
-function safeStorageGet(storage, key, fallback = '') {
-  try {
-    if (storage && typeof storage.getItem === 'function') {
-      return storage.getItem(key) || fallback;
-    }
-  } catch {
-    // Ignore storage access errors in restricted runtimes.
-  }
-  return fallback;
-}
-
-export function getCurrentRole() {
-  const fromStorage = String(
-    safeStorageGet(typeof sessionStorage !== 'undefined' ? sessionStorage : null, 'role') ||
-    safeStorageGet(typeof sessionStorage !== 'undefined' ? sessionStorage : null, 'authRole') ||
-    safeStorageGet(typeof localStorage !== 'undefined' ? localStorage : null, 'authRole') ||
-    ''
-  ).toLowerCase();
-  if (fromStorage) return fromStorage;
-  const token =
-    safeStorageGet(typeof localStorage !== 'undefined' ? localStorage : null, 'token') ||
-    safeStorageGet(typeof localStorage !== 'undefined' ? localStorage : null, 'authToken');
-  return decodeRoleFromToken(token);
-}
+import { useSearchParams } from 'react-router-dom';
+import { resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 
 export function normalizePdfClient(item) {
   const asInt = (value) => {
@@ -60,9 +28,7 @@ export function buildPdfRequestPayload({ language, clients }) {
 }
 
 function getAuthHeader() {
-  const token =
-    safeStorageGet(typeof localStorage !== 'undefined' ? localStorage : null, 'token') ||
-    safeStorageGet(typeof localStorage !== 'undefined' ? localStorage : null, 'authToken');
+  const token = resolveAuthToken();
   if (!token) return null;
   return `Bearer ${token}`;
 }
@@ -108,7 +74,7 @@ function formatApiError(detail, fallback) {
 
 export function buildPdfGeneratorInitialState() {
   return {
-    role: getCurrentRole(),
+    role: String(resolveAuthRole() || '').toLowerCase(),
     loading: true,
     generating: false,
     error: '',
@@ -147,11 +113,29 @@ export function pdfGeneratorReducer(state, action) {
 }
 
 export function usePdfGenerator() {
+  const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(pdfGeneratorReducer, undefined, buildPdfGeneratorInitialState);
+  const preselectedClientId = searchParams.get('client_id') || '';
+  const preselectedTeamId = searchParams.get('team_id') || '';
+  const canUsePdfGenerator = state.role === 'admin' || state.role === 'doctor';
 
   useEffect(() => {
-    if (state.role !== 'admin') {
+    if (preselectedClientId) {
+      dispatch({ type: 'SET_CLIENT', payload: preselectedClientId });
+      return;
+    }
+    if (preselectedTeamId) {
+      dispatch({ type: 'SET_TEAM', payload: preselectedTeamId });
+    }
+  }, [preselectedClientId, preselectedTeamId]);
+
+  useEffect(() => {
+    const token = resolveAuthToken();
+    if (!canUsePdfGenerator || !token) {
       dispatch({ type: 'LOAD_SUCCESS', payload: { teams: [], clients: [] } });
+      if (canUsePdfGenerator && !token) {
+        dispatch({ type: 'LOAD_ERROR', payload: 'Missing active doctor/admin session token. Please login again.' });
+      }
       return;
     }
 
@@ -164,7 +148,7 @@ export function usePdfGenerator() {
         const authHeader = getAuthHeader();
         const response = await fetch(`${baseUrl}/api/pdf-options`, {
           method: 'GET',
-          credentials: 'include',
+          credentials: 'omit',
           cache: 'no-cache',
           headers: authHeader ? { Authorization: authHeader } : {},
         });
@@ -192,7 +176,7 @@ export function usePdfGenerator() {
     return () => {
       mounted = false;
     };
-  }, [state.role]);
+  }, [canUsePdfGenerator]);
 
   const selectionSummary = useMemo(() => {
     if (state.teamId) {
@@ -209,68 +193,94 @@ export function usePdfGenerator() {
   }, [state.clientId, state.clients, state.teamId, state.teams]);
 
   const canGenerate = useMemo(() => {
-    return state.role === 'admin' && Boolean(state.teamId || state.clientId) && !state.generating;
-  }, [state.generating, state.role, state.teamId, state.clientId]);
+    return canUsePdfGenerator && Boolean(state.teamId || state.clientId) && !state.generating;
+  }, [canUsePdfGenerator, state.generating, state.teamId, state.clientId]);
 
   const setLanguage = (language) => dispatch({ type: 'SET_LANGUAGE', payload: language });
   const setTeam = (teamId) => dispatch({ type: 'SET_TEAM', payload: teamId });
   const setClient = (clientId) => dispatch({ type: 'SET_CLIENT', payload: clientId });
 
   const generatePdf = async () => {
-    if (state.role !== 'admin') {
-      dispatch({ type: 'SET_ERROR', payload: 'Only admin users can generate PDFs on this page.' });
+    if (!canUsePdfGenerator) {
+      dispatch({ type: 'SET_ERROR', payload: 'Only admin or doctor users can generate PDFs on this page.' });
       return;
     }
 
-    if (state.clientId) {
-      const langParam = state.language === 'arabic' ? 'ar' : 'en';
-      window.location.href = `/client-detail?id=${encodeURIComponent(state.clientId)}&auto_pdf=1&pdf_lang=${encodeURIComponent(langParam)}`;
-      return;
+    const ok = await generateServerPdf();
+    if (!ok) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to generate PDF for the selected team/client.' });
     }
-
-    if (state.teamId) {
-      dispatch({ type: 'SET_ERROR', payload: 'Select a single client for the same PDF format used by Client Details.' });
-      return;
-    }
-
-    dispatch({ type: 'SET_ERROR', payload: 'Select a team or client first.' });
   };
 
   const generateServerPdf = async () => {
-    if (!state.clientId) return false;
+    if (!state.clientId && !state.teamId) return false;
+
+    const selectedClients = [];
+    if (state.clientId) {
+      const selectedClient = state.clients.find((item) => String(item.id) === String(state.clientId));
+      if (!selectedClient) {
+        dispatch({ type: 'SET_ERROR', payload: 'Selected client is not available.' });
+        return false;
+      }
+      selectedClients.push({
+        id: selectedClient.id,
+        displayId: selectedClient.display_id || selectedClient.id,
+        name: selectedClient.full_name || 'Unknown',
+        age: selectedClient.age,
+        gender: selectedClient.gender || 'N/A',
+        phone: selectedClient.phone || 'N/A',
+        source: String(selectedClient.created_source || '').toLowerCase() === 'profile_setup' ? 'Profile Setup' : 'Add Client',
+        teamName: selectedClient.team_name || null,
+      });
+    }
+
+    if (state.teamId) {
+      const selectedTeam = state.teams.find((item) => String(item.id) === String(state.teamId));
+      const teamPlayers = Array.isArray(selectedTeam?.players) ? selectedTeam.players : [];
+      if (!selectedTeam || !teamPlayers.length) {
+        dispatch({ type: 'SET_ERROR', payload: 'Selected team has no players available for PDF export.' });
+        return false;
+      }
+
+      for (const player of teamPlayers) {
+        selectedClients.push({
+          id: player.id,
+          displayId: player.display_id || player.id,
+          name: player.full_name || 'Unknown',
+          age: player.age,
+          gender: player.gender || 'N/A',
+          phone: player.phone || 'N/A',
+          source: 'Team',
+          teamName: player.team_name || selectedTeam.team_name || null,
+        });
+      }
+    }
+
+    if (!selectedClients.length) {
+      dispatch({ type: 'SET_ERROR', payload: 'No valid team/client rows found for PDF export.' });
+      return;
+    }
 
     dispatch({ type: 'GENERATE_START' });
     const baseUrl = getApiBaseUrl();
 
-    const client = state.clients.find((item) => String(item.id) === String(state.clientId));
-    if (!client) {
-      dispatch({ type: 'SET_ERROR', payload: 'Selected client is not available.' });
-      return false;
-    }
-
     const payload = buildPdfRequestPayload({
       language: state.language,
-      clients: [
-        {
-          id: client.id,
-          displayId: client.display_id || client.id,
-          name: client.full_name || 'Unknown',
-          age: client.age,
-          gender: client.gender || 'N/A',
-          phone: client.phone || 'N/A',
-          source: String(client.created_source || '').toLowerCase() === 'profile_setup' ? 'Profile Setup' : 'Add Client',
-        },
-      ],
+      clients: selectedClients,
     });
 
     try {
       const authHeader = getAuthHeader();
+      if (!authHeader) {
+        dispatch({ type: 'SET_ERROR', payload: 'Missing active doctor/admin session token. Please login again.' });
+        return false;
+      }
       const response = await fetch(`${baseUrl}/api/reports/clients-pdf`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'omit',
         headers: {
           'Content-Type': 'application/json',
-          ...(authHeader ? { Authorization: authHeader } : {}),
+          Authorization: authHeader,
         },
         body: JSON.stringify(payload),
       });
@@ -294,7 +304,12 @@ export function usePdfGenerator() {
       dispatch({ type: 'GENERATE_DONE', payload: 'PDF generated successfully.' });
       return true;
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to generate PDF.' });
+      const fallback = 'Failed to generate PDF.';
+      const message =
+        (typeof error?.message === 'string' && error.message.trim()) ||
+        (typeof error === 'string' && error.trim()) ||
+        fallback;
+      dispatch({ type: 'SET_ERROR', payload: message });
       return false;
     }
   };

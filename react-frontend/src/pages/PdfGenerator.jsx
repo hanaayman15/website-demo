@@ -13,9 +13,33 @@ function PdfGenerator() {
     generatePdf,
     generateServerPdf,
   } = usePdfGenerator();
+  const canUsePdfGenerator = state.role === 'admin' || state.role === 'doctor';
+  const isDoctor = state.role === 'doctor';
+
+  const getSafeErrorText = (err) => {
+    if (typeof err?.message === 'string' && err.message.trim()) return err.message;
+    if (typeof err === 'string' && err.trim()) return err;
+    if (err && typeof err === 'object') {
+      const maybeDetail = err.detail || err.error || err.msg;
+      if (typeof maybeDetail === 'string' && maybeDetail.trim()) return maybeDetail;
+    }
+    return 'Unknown error. Check console/network for details.';
+  };
 
   const onGenerate = async () => {
-    await generatePdf();
+    try {
+      if (state.clientId) {
+        const ok = await generateServerPdf();
+        if (!ok) {
+          alert(`PDF generation failed: ${state.error || 'Unknown server error.'}`);
+        }
+        return;
+      }
+
+      await generatePdf();
+    } catch (err) {
+      alert(`PDF generation failed: ${getSafeErrorText(err)}`);
+    }
   };
 
   return (
@@ -27,12 +51,12 @@ function PdfGenerator() {
         </div>
         <div className="react-inline-actions">
           <Link className="react-btn react-btn-ghost" to="/clients">Clients</Link>
-          <Link className="react-btn react-btn-ghost" to="/diet-management">Diet Management</Link>
+          {!isDoctor && <Link className="react-btn react-btn-ghost" to="/diet-management">Diet Management</Link>}
         </div>
       </section>
 
-      {state.role !== 'admin' ? (
-        <section className="react-alert react-alert-error">Only admin users can access PDF generation on this page.</section>
+      {!canUsePdfGenerator ? (
+        <section className="react-alert react-alert-error">Only admin or doctor users can access PDF generation on this page.</section>
       ) : null}
 
       {state.error ? <div className="react-alert react-alert-error">{state.error}</div> : null}
@@ -49,7 +73,7 @@ function PdfGenerator() {
 
         <label>
           <span className="react-label">Team Selection</span>
-          <select className="react-input" value={state.teamId} onChange={(e) => setTeam(e.target.value)} disabled={state.role !== 'admin' || state.loading}>
+          <select className="react-input" value={state.teamId} onChange={(e) => setTeam(e.target.value)} disabled={!canUsePdfGenerator || state.loading}>
             <option value="">Select a team...</option>
             {state.teams.map((team) => (
               <option key={team.id} value={team.id}>{team.team_name || '-'} ({team.players_count || 0} players)</option>
@@ -59,7 +83,7 @@ function PdfGenerator() {
 
         <label style={{ gridColumn: '1 / -1' }}>
           <span className="react-label">Client Selection</span>
-          <select className="react-input" value={state.clientId} onChange={(e) => setClient(e.target.value)} disabled={state.role !== 'admin' || state.loading}>
+          <select className="react-input" value={state.clientId} onChange={(e) => setClient(e.target.value)} disabled={!canUsePdfGenerator || state.loading}>
             <option value="">Select a client...</option>
             {state.clients.map((client) => (
               <option key={client.id} value={client.id}>{client.full_name || '-'} (ID: {client.display_id || client.id})</option>

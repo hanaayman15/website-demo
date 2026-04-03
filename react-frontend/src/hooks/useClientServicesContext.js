@@ -13,10 +13,16 @@ function readStoredContext() {
   }
 }
 
-export function resolveClientServicesLinks(clientId) {
-  const suffix = clientId ? `?client_id=${encodeURIComponent(clientId)}` : '';
+export function resolveClientServicesLinks(clientId, flow) {
+  const params = new URLSearchParams();
+  if (clientId) params.set('client_id', String(clientId));
+  if (flow) params.set('flow', String(flow));
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  const nutritionPath = String(flow || '').toLowerCase() === 'signup'
+    ? `/add-client${suffix}`
+    : `/client-nutrition-profile${suffix}`;
   return {
-    nutrition: `/client-nutrition-profile${suffix}`,
+    nutrition: nutritionPath,
     mental: `/mental-coaching${suffix}`,
     antiDoping: `/anti-doping${suffix}`,
   };
@@ -41,11 +47,16 @@ export function useClientServicesContext() {
     return '';
   }, [context, searchParams]);
 
-  const links = useMemo(() => resolveClientServicesLinks(clientId), [clientId]);
+  const flow = useMemo(() => {
+    return searchParams.get('flow') || String(localStorage.getItem('onboardingSource') || '').toLowerCase() || '';
+  }, [searchParams]);
+
+  const links = useMemo(() => resolveClientServicesLinks(clientId, flow), [clientId, flow]);
   const summary = useMemo(() => buildClientSummary(context, clientId), [context, clientId]);
 
   return {
     clientId,
+    flow,
     summary,
     links,
   };

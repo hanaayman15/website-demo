@@ -20,6 +20,9 @@ function setSubmitButtonState(button, isBusy, idleLabel) {
 
 function getApiBaseCandidates() {
     const bases = [];
+    const currentProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const currentHost = window.location.hostname || 'localhost';
+    const looksLocalHost = currentHost === 'localhost' || currentHost === '127.0.0.1';
 
     if (typeof API_BASE_URL === 'string' && API_BASE_URL.trim()) {
         bases.push(API_BASE_URL.trim());
@@ -34,11 +37,22 @@ function getApiBaseCandidates() {
         });
     }
 
-    if (!bases.length) {
-        bases.push('http://127.0.0.1:8011', 'http://127.0.0.1:8001');
+    if (looksLocalHost) {
+        // Prefer same host as frontend to avoid localhost/127 mismatch issues.
+        bases.push(`${currentProtocol}//${currentHost}:8001`);
+        bases.push(`${currentProtocol}//${currentHost}:8011`);
     }
 
-    return [...new Set(bases)];
+    if (!bases.length) {
+        bases.push('http://localhost:8001', 'http://127.0.0.1:8001');
+    }
+
+    // Never try frontend static server port as API backend.
+    return [...new Set(
+        bases
+            .map((url) => String(url || '').replace(/\/$/, ''))
+            .filter((url) => /:\d+$/.test(url) && !url.endsWith(':8000'))
+    )];
 }
 
 function buildAuthUrl(base, path) {

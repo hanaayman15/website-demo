@@ -32,6 +32,9 @@ python-json-logger>=2.0.7
 # Production Server
 gunicorn>=22.0.0
 
+# Migrations
+alembic>=1.13.0
+
 # =================================================================
 # DEVELOPMENT DEPENDENCIES (Install separately for testing)
 # pip install pytest httpx

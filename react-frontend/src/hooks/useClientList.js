@@ -1,30 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { apiClient } from '../services/api';
+import { resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 
 export function getCurrentRole() {
-  const fromStorage = String(
-    sessionStorage.getItem('role') ||
-      sessionStorage.getItem('authRole') ||
-      localStorage.getItem('authRole') ||
-      ''
-  ).toLowerCase();
-  if (fromStorage) return fromStorage;
-
-  const token =
-    localStorage.getItem('authToken') ||
-    sessionStorage.getItem('authToken') ||
-    localStorage.getItem('access_token') ||
-    sessionStorage.getItem('access_token');
-
+  const token = resolveAuthToken();
   if (!token) return '';
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return '';
-    const payload = JSON.parse(atob(parts[1]));
-    return String(payload?.role || '').toLowerCase();
-  } catch {
-    return '';
-  }
+  return String(resolveAuthRole() || '').toLowerCase();
 }
 
 export function sourceLabel(source) {
@@ -56,6 +37,21 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+function explainHttpError(err, fallback) {
+  const status = Number(err?.response?.status || 0);
+  const detail = err?.response?.data?.detail;
+  if (status === 502) {
+    return 'Backend unavailable (502 Bad Gateway). Start/restart backend API server and verify Vite proxy target is reachable.';
+  }
+  if (status === 401) {
+    return 'Unauthorized (401). Doctor/Admin login is required and session token must be active.';
+  }
+  if (typeof detail === 'string' && detail.trim()) {
+    return detail;
+  }
+  return fallback;
+}
+
 export function useClientList() {
   const [teamsData, setTeamsData] = useState([]);
   const [clientsData, setClientsData] = useState([]);
@@ -65,6 +61,7 @@ export function useClientList() {
   const [error, setError] = useState('');
 
   const role = getCurrentRole();
+  const hasToken = Boolean(resolveAuthToken());
   const isAdmin = role === 'admin';
 
   const { addClientData, profileSetupData } = useMemo(() => splitClientsBySource(clientsData), [clientsData]);
@@ -117,6 +114,11 @@ export function useClientList() {
   }, [isAdmin, profileSetupData, searchTerm]);
 
   const refreshTeams = useCallback(async () => {
+    if (!hasToken) {
+      setTeamsData([]);
+      setLoadingTeams(false);
+      return;
+    }
     setLoadingTeams(true);
     setError('');
     try {
@@ -125,16 +127,15 @@ export function useClientList() {
       });
       setTeamsData(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
-      const detail = err?.response?.data?.detail || err?.message || 'Failed to load teams.';
-      setError(typeof detail === 'string' ? detail : 'Failed to load teams.');
+      setError(explainHttpError(err, 'Failed to load teams.'));
       setTeamsData([]);
     } finally {
       setLoadingTeams(false);
     }
-  }, []);
+  }, [hasToken]);
 
   const refreshClients = useCallback(async () => {
-    if (!isAdmin) {
+    if (!hasToken || !isAdmin) {
       setClientsData([]);
       return;
     }
@@ -145,13 +146,13 @@ export function useClientList() {
         params: { skip: 0, limit: 1000 },
       });
       setClientsData(Array.isArray(response?.data) ? response.data : []);
-    } catch {
+    } catch (err) {
       setClientsData([]);
-      setError('Failed to load clients list.');
+      setError(explainHttpError(err, 'Failed to load clients list.'));
     } finally {
       setLoadingClients(false);
     }
-  }, [isAdmin]);
+  }, [hasToken, isAdmin]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([refreshTeams(), refreshClients()]);

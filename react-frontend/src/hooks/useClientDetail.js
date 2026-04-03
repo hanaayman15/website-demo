@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
-import { resolveAuthToken } from '../utils/authSession';
+import { hasDoctorAdminSession, resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 import { getStorage, safeGet, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
 import {
   WEEK_DAYS,
@@ -16,10 +16,130 @@ function parseClientId(rawValue) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function parsePositiveInt(rawValue) {
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function mapTeamPlayerToClient(player, teamId) {
+  if (!player) return null;
+  return {
+    id: Number(player.client_id) || null,
+    team_id: teamId,
+    player_id: player.id || player.player_number || null,
+    client_id: player.client_id || null,
+    name: player.full_name || 'Client',
+    full_name: player.full_name || 'Client',
+    email: player.email || '',
+    phone: player.phone || '',
+    gender: player.gender || '',
+    birthday: player.birthday || '',
+    age: player.age || '',
+    country: player.country || '',
+    club: player.club || '',
+    religion: player.religion || '',
+    sport: player.sport || '',
+    position: player.position || '',
+    height: player.height || '',
+    weight: player.weight || '',
+    bmi: player.bmi || '',
+    bmr: player.bmr || '',
+    tdee: player.tdee || '',
+    activity_level: player.activity_level || '',
+    calories: player.calories || '',
+    protein_target: player.protein_target || '',
+    carbs_target: player.carbs_target || '',
+    fats_target: player.fats_target || '',
+    water_intake: player.water_intake || '',
+    water_in_body: player.water_in_body || '',
+    body_fat_percentage: player.body_fat_percentage || '',
+    skeletal_muscle: player.skeletal_muscle || '',
+    minerals: player.minerals || '',
+    goal_weight: player.goal_weight || '',
+    progression_type: player.progression_type || '',
+    competition_status: player.competition_status || '',
+    medical_notes: player.medical_notes || '',
+    food_allergies: player.food_allergies || '',
+    injuries: player.injuries || '',
+    supplements: player.supplements || '',
+    additionalNotes: player.additional_notes || '',
+    mentalObservation: player.mental_notes || '',
+    meal_swaps: null,
+    created_source: 'team_player',
+  };
+}
+
 function normalizeNotes(value) {
   const text = String(value || '').trim();
   if (!text || text === 'No notes added' || text === 'N/A') return '';
   return text;
+}
+
+function toNullableNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeTextOrNull(value) {
+  const text = String(value || '').trim();
+  return text ? text : null;
+}
+
+function normalizeDateOrNull(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function safeReadDietPlans(local) {
+  try {
+    const raw = safeGet(local, 'dietPlans');
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function countPlanMeals(plan = {}) {
+  const planDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const mealKeys = ['breakfast', 'snack1', 'lunch', 'dinner', 'preworkout', 'postworkout'];
+  let count = 0;
+  planDays.forEach((day) => {
+    const dayData = plan?.[day] || {};
+    mealKeys.forEach((meal) => {
+      const item = dayData?.[meal] || {};
+      const hasText = String(item.en || '').trim() || String(item.ar || '').trim();
+      if (hasText) count += 1;
+    });
+  });
+  return count;
+}
+
+function mergePreferNonEmpty(base = {}, incoming = {}) {
+  const next = { ...base };
+  Object.entries(incoming || {}).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    if (typeof value === 'string' && value.trim() === '') return;
+    next[key] = value;
+  });
+  return next;
+}
+
+function syncClientCaches(local, clientId, updates = {}) {
+  if (!clientId) return;
+  const cacheKey = `clientData_${clientId}`;
+  const dashboardKey = `clientDashboardCache_${clientId}`;
+
+  const existing = safeJsonGet(local, cacheKey, {}) || {};
+  safeJsonSet(local, cacheKey, { ...existing, ...updates });
+
+  const existingDashboard = safeJsonGet(local, dashboardKey, {}) || {};
+  safeJsonSet(local, dashboardKey, { ...existingDashboard, ...updates });
 }
 
 export function useClientDetail() {
@@ -32,10 +152,32 @@ export function useClientDetail() {
   const [client, setClient] = useState(null);
   const [selectedDay, setSelectedDay] = useState('Monday');
   const [programsState, dispatch] = useReducer(programsReducer, undefined, buildInitialProgramsState);
+  const dietPlans = useMemo(() => safeReadDietPlans(local), [local]);
+  const dietPlansWithSummary = useMemo(() => (
+    dietPlans.map((plan, index) => ({
+      index,
+      plan,
+      min: Number(plan?.minCalories || 0),
+      max: Number(plan?.maxCalories || 0),
+      dietType: String(plan?.dietType || 'No type specified'),
+      mealsCount: countPlanMeals(plan),
+    }))
+  ), [dietPlans]);
+  const teamId = parsePositiveInt(searchParams.get('team_id'));
+  const playerId = parsePositiveInt(searchParams.get('player_id'));
 
   const selectedClientId = useMemo(() => {
-    return parseClientId(searchParams.get('id')) || parseClientId(safeGet(local, 'currentClientId'));
+    const explicitId = parseClientId(searchParams.get('id'));
+    if (explicitId) return explicitId;
+
+    // When opening via Team View, do not use stale locally remembered client id.
+    const teamParam = parsePositiveInt(searchParams.get('team_id'));
+    const playerParam = parsePositiveInt(searchParams.get('player_id'));
+    if (teamParam && playerParam) return null;
+
+    return parseClientId(safeGet(local, 'currentClientId'));
   }, [searchParams]);
+  const detailStorageKey = selectedClientId ? `clientDetail_${selectedClientId}` : (teamId && playerId ? `teamPlayerDetail_${teamId}_${playerId}` : '');
 
   useEffect(() => {
     let mounted = true;
@@ -46,39 +188,86 @@ export function useClientDetail() {
       setMessage('');
 
       try {
-        if (!selectedClientId) {
-          throw new Error('No client selected.');
-        }
-
         let resolvedClient = null;
         const token = resolveAuthToken();
+        const role = String(resolveAuthRole() || '').toLowerCase();
+        const doctorSession = hasDoctorAdminSession();
+        const canUseAdminDetail = Boolean(
+          token && (
+            role === 'admin' ||
+            (role === 'doctor' && doctorSession)
+          )
+        );
 
-        if (token) {
+        // Always hydrate from team player when route includes team/player ids.
+        // This ensures player-form fields (body fat, skeletal muscle, water in body,
+        // minerals, goal/progression/competition, medical notes) appear in Client Detail.
+        if (teamId && playerId) {
+          try {
+            const teamResponse = await apiClient.get(`/api/teams/${encodeURIComponent(teamId)}`);
+            const players = Array.isArray(teamResponse?.data?.players) ? teamResponse.data.players : [];
+            const matched = players.find((item) => Number(item?.id) === Number(playerId) || Number(item?.player_number) === Number(playerId));
+            resolvedClient = mapTeamPlayerToClient(matched, teamId);
+          } catch {
+            // Continue with other fallbacks.
+          }
+        }
+
+        if (selectedClientId && canUseAdminDetail) {
           try {
             const clientResponse = await apiClient.get(`/api/admin/clients/${selectedClientId}`);
-            resolvedClient = clientResponse?.data || null;
+            const adminClient = clientResponse?.data || null;
+            resolvedClient = resolvedClient ? { ...adminClient, ...resolvedClient } : adminClient;
           } catch {
             // Fallback to local cache.
           }
         }
 
-        if (!resolvedClient) {
+        if (!resolvedClient && selectedClientId) {
           const clients = safeJsonGet(local, 'clients', []);
           resolvedClient = clients.find((item) => Number(item?.id) === Number(selectedClientId)) || null;
         }
 
+        // Merge nutrition profile fields so measurement/goals/health fields are available.
+        if (resolvedClient && selectedClientId && canUseAdminDetail) {
+          try {
+            const nutritionResponse = await apiClient.get(`/api/admin/clients/${selectedClientId}/nutrition`);
+            const nutritionClient = nutritionResponse?.data || {};
+            // Keep existing identity fields and fill/refresh with non-empty nutrition values.
+            resolvedClient = mergePreferNonEmpty(resolvedClient, nutritionClient);
+          } catch {
+            // Keep base profile if nutrition endpoint is not available.
+          }
+        }
+
+        if (selectedClientId) {
+          const clientCache = safeJsonGet(local, `clientData_${selectedClientId}`, null);
+          if (clientCache && typeof clientCache === 'object') {
+            resolvedClient = mergePreferNonEmpty(resolvedClient || {}, clientCache);
+          }
+        }
+
         if (!resolvedClient) {
-          throw new Error('Client details not found.');
+          throw new Error('No client selected.');
+        }
+
+        // Re-apply last locally edited values for both clients and team players.
+        if (detailStorageKey) {
+          const localDetail = safeJsonGet(local, detailStorageKey, null);
+          if (localDetail && typeof localDetail === 'object') {
+            resolvedClient = { ...resolvedClient, ...localDetail };
+          }
         }
 
         if (!mounted) return;
 
         setClient(resolvedClient);
 
-        const programsKey = `clientPrograms_${selectedClientId}`;
-        const savedPrograms = safeJsonGet(local, programsKey, null);
+        const programsKey = selectedClientId ? `clientPrograms_${selectedClientId}` : '';
+        const savedPrograms = programsKey ? safeJsonGet(local, programsKey, null) : null;
         const mealSwaps = resolvedClient.meal_swaps || null;
-        const source = savedPrograms && savedPrograms.dayMeals ? savedPrograms : mealSwaps;
+        // Prefer backend meal_swaps first to avoid stale local programs overriding fresh saves.
+        const source = mealSwaps && mealSwaps.dayMeals ? mealSwaps : (savedPrograms && savedPrograms.dayMeals ? savedPrograms : null);
 
         dispatch({
           type: 'INIT_FROM_SOURCE',
@@ -96,7 +285,7 @@ export function useClientDetail() {
     return () => {
       mounted = false;
     };
-  }, [selectedClientId]);
+  }, [selectedClientId, teamId, playerId]);
 
   const updateProgramField = (field, value) => {
     dispatch({ type: 'UPDATE_FIELD', payload: { field, value } });
@@ -124,6 +313,14 @@ export function useClientDetail() {
 
   const deleteMeal = (mealId) => {
     dispatch({ type: 'REMOVE_MEAL', payload: { dayName: selectedDay, mealId } });
+  };
+
+  const applyDietPlan = (planIndex) => {
+    const selectedPlan = dietPlans[planIndex];
+    if (!selectedPlan) return false;
+    dispatch({ type: 'APPLY_DIET_PLAN', payload: { selectedPlanIndex: planIndex, plan: selectedPlan } });
+    setMessage('Diet plan applied to weekly meal plan. Save Programs to persist.');
+    return true;
   };
 
   const saveNotes = async (event) => {
@@ -162,10 +359,17 @@ export function useClientDetail() {
         safeJsonSet(local, 'clients', clients);
       }
 
-      const programsKey = `clientPrograms_${selectedClientId}`;
-      safeJsonSet(local, programsKey, mealSwapsPayload);
+      const programsKey = selectedClientId ? `clientPrograms_${selectedClientId}` : '';
+      if (programsKey) safeJsonSet(local, programsKey, mealSwapsPayload);
+      syncClientCaches(local, selectedClientId, {
+        notes: updated.notes,
+        additionalNotes: updated.additionalNotes,
+        mentalObservation: updated.mentalObservation,
+        supplements: updated.supplements,
+        meal_swaps: mealSwapsPayload,
+      });
 
-      if (resolveAuthToken()) {
+        if (resolveAuthToken() && selectedClientId) {
         try {
           await apiClient.put(`/api/admin/clients/${selectedClientId}`, {
             additional_notes: updated.additionalNotes,
@@ -180,9 +384,89 @@ export function useClientDetail() {
         }
       }
 
-      setMessage('Notes saved successfully.');
+      setMessage('Programs and meal plan saved successfully.');
     } catch (err) {
       setError(err?.message || 'Failed to save notes.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveDetailFields = async (updates = {}) => {
+    if (!client) return false;
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const merged = { ...client, ...updates };
+      setClient(merged);
+
+      if (detailStorageKey) {
+        safeJsonSet(local, detailStorageKey, updates);
+      }
+
+      syncClientCaches(local, selectedClientId, updates);
+
+      if (selectedClientId) {
+        const clients = safeJsonGet(local, 'clients', []);
+        const idx = clients.findIndex((item) => Number(item?.id) === Number(selectedClientId));
+        if (idx >= 0) {
+          clients[idx] = { ...clients[idx], ...updates };
+          safeJsonSet(local, 'clients', clients);
+        }
+
+        if (resolveAuthToken()) {
+          try {
+            await apiClient.put(`/api/admin/clients/${selectedClientId}`, {
+              birthday: normalizeDateOrNull(merged.birthday),
+              gender: normalizeTextOrNull(merged.gender),
+              club: normalizeTextOrNull(merged.club),
+              country: normalizeTextOrNull(merged.country),
+              religion: normalizeTextOrNull(merged.religion),
+              height: toNullableNumber(merged.height),
+              weight: toNullableNumber(merged.weight),
+              bmi: toNullableNumber(merged.bmi),
+              bmr: toNullableNumber(merged.bmr),
+              tdee: toNullableNumber(merged.tdee),
+              activity_level: normalizeTextOrNull(merged.activity_level),
+              sport: normalizeTextOrNull(merged.sport),
+              position: normalizeTextOrNull(merged.position),
+              mental_observation: normalizeTextOrNull(merged.mental_observation || merged.mentalObservation),
+            });
+
+            await apiClient.put(`/api/admin/clients/${selectedClientId}/nutrition`, {
+              body_fat_percentage: toNullableNumber(merged.body_fat_percentage),
+              skeletal_muscle: toNullableNumber(merged.skeletal_muscle),
+              water_in_body: toNullableNumber(merged.water_in_body),
+              minerals: toNullableNumber(merged.minerals),
+              bmi: toNullableNumber(merged.bmi),
+              bmr: toNullableNumber(merged.bmr),
+              tdee: toNullableNumber(merged.tdee),
+              activity_level: normalizeTextOrNull(merged.activity_level),
+              sport: normalizeTextOrNull(merged.sport),
+              position: normalizeTextOrNull(merged.position),
+              calories: toNullableNumber(merged.calories),
+              goal_weight: toNullableNumber(merged.goal_weight),
+              progression_type: normalizeTextOrNull(merged.progression_type),
+              competition_status: normalizeTextOrNull(merged.competition_status),
+              medical_notes: normalizeTextOrNull(merged.medical_notes),
+              injuries: normalizeTextOrNull(merged.injuries),
+              food_allergies: normalizeTextOrNull(merged.food_allergies),
+              mental_notes: normalizeTextOrNull(merged.mental_observation || merged.mentalObservation),
+            });
+          } catch {
+            // Keep local persistence even if backend save is unavailable.
+          }
+        }
+      }
+
+      setMessage('Client details saved successfully.');
+      return true;
+    } catch (err) {
+      setError(err?.message || 'Failed to save client details.');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -199,13 +483,16 @@ export function useClientDetail() {
     selectedDay,
     setSelectedDay,
     programsState,
+    dietPlansWithSummary,
     updateNotes,
     updateProgramField,
+    applyDietPlan,
     addMeal,
     updateMeal,
     moveMealUp,
     moveMealDown,
     deleteMeal,
     saveNotes,
+    saveDetailFields,
   };
 }

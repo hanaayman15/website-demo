@@ -5,7 +5,7 @@
 
 Write-Host "`nStarting Frontend Server..." -ForegroundColor Cyan
 Write-Host "   Port: 3000" -ForegroundColor White
-Write-Host "   Host: localhost" -ForegroundColor White
+Write-Host "   Host: 0.0.0.0 (all interfaces)" -ForegroundColor White
 Write-Host ""
 
 # Navigate to frontend directory
@@ -30,6 +30,18 @@ Write-Host "   • Home: http://localhost:3000/" -ForegroundColor White
 Write-Host "   • Client Login: http://localhost:3000/client-login.html" -ForegroundColor White
 Write-Host "   • Client Signup: http://localhost:3000/client-signup.html" -ForegroundColor White
 Write-Host "   • Test Connection: http://localhost:3000/test-connection.html" -ForegroundColor White
+
+$lanIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.IPAddress -notlike '127.*' -and
+        $_.IPAddress -notlike '169.254*' -and
+        $_.ValidLifetime -gt 0
+    } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+
+if ($lanIp) {
+    Write-Host "   • Mobile/LAN: http://$lanIp:3000/" -ForegroundColor White
+}
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Press CTRL+C to stop the server" -ForegroundColor Yellow
@@ -48,7 +60,7 @@ $pythonExe = $pythonCandidates | Where-Object { Test-Path $_ } | Select-Object -
 
 if ($pythonExe) {
     Write-Host "Using Python: $pythonExe" -ForegroundColor White
-    & $pythonExe -m http.server 3000
+    & $pythonExe -m http.server 3000 --bind 0.0.0.0
 } else {
     $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
     if (-not $pythonCmd) {
@@ -57,5 +69,5 @@ if ($pythonExe) {
         exit 1
     }
     Write-Host "Using system Python: $($pythonCmd.Source)" -ForegroundColor White
-    python -m http.server 3000
+    python -m http.server 3000 --bind 0.0.0.0
 }

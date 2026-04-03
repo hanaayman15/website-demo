@@ -1,0 +1,291 @@
+#header.home-hero {
+  min-height: 100vh;
+  background-image:url('/images/pexels-jplenio-1103970.jpg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100;
+}
+
+#header.home-hero::after {
+  display: none;
+}
+
+.home-hero-content {
+  min-height: 100vh;
+  width: min(1200px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8.5rem 1.5rem 4rem;
+  position: relative;
+  z-index: 2;
+}
+
+.home-hero-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+}
+
+.home-hero-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 4vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  font-weight: 700;
+  text-transform:lowercase;
+  
+
+  font-family: 'Poppins', sans-serif; /* 👈 change font here */
+}
+
+#header.home-hero #start-button {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+#header.home-hero #nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+}
+
+.home-quick-actions-header {
+  padding: 3.5rem 1.5rem 2rem;
+  background: #b8c9d3;
+}
+
+#banner.home-quick-actions-header {
+  background-image: url('/images/pexels-jplenio-1103970.jpg');
+}
+
+.home-quick-actions-header h2 {
+    font-size: 40px;
+  font-weight: 700;
+}
+
+.home-card-section {
+  padding: 1rem 1.5rem 4rem;
+  
+  position: relative;
+}
+
+.home-carousel-wrap {
+  position: static;
+  padding: 0 0.75rem;
+}
+
+.home-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.home-card-track {
+  display: flex;
+  gap: 1.3rem;
+  transition: transform 0.45s ease;
+  max-width: max-content;
+}
+
+.home-action-card {
+  flex: 0 0 0 auto;
+  background: #ffffff;
+  border: 1px solid rgba(27, 41, 51, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 14px 34px rgba(17, 30, 38, 0.08);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  min-height: 29rem;
+}
+
+.home-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 34px rgba(17, 30, 38, 0.16);
+}
+
+.home-action-card p {
+  margin: 0 1.4rem 1.4rem;
+  text-align: left;
+}
+
+.home-action-card header {
+  margin: 0;
+  padding: 1.45rem 1.55rem 0.4rem;
+}
+
+.home-action-card header h3,
+.home-action-card header h3 a {
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.home-action-card .image.featured {
+  margin: 0;
+}
+
+.home-action-card .image.featured img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+.home-action-card p {
+  font-size: 1.25rem;
+  line-height: 1.55;
+}
+
+.home-carousel-arrow {
+  width: 60px;
+  height: 100px;
+  border-radius: 999px;
+  border: none;
+  font-size: 64px;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(60, 60, 70, 0.38);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+}
+
+.home-carousel-arrow-left {
+  left: 0;
+  padding-right: 18px;
+}
+
+.home-carousel-arrow-right {
+  right: 0;
+  padding-left: 18px;
+}
+
+.home-carousel-arrow:hover {
+  background: rgba(60, 60, 70, 0.52);
+}
+
+.wrapper.style2,
+.wrapper.style1 {
+  padding-top: clamp(2.5rem, 5vw, 5rem);
+  padding-bottom: clamp(2.5rem, 5vw, 5rem);
+}
+
+.home-benefits-header {
+  margin-top: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.home-benefits-header h2 {
+  font-size: clamp(1.7rem, 4vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1.22;
+  text-align: center;
+  margin-bottom: 0.9rem;
+}
+
+.home-feature-title,
+.home-feature-title a {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.featuress-title h2 {
+  font-size: clamp(1.7rem, 4vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1.22;
+  text-align: center;
+  margin-bottom: 0.9rem;
+}
+
+#features .row {
+  margin-top: -2rem;
+}
+
+#features .row > article {
+  padding-top: 2rem;
+}
+
+@media screen and (max-width: 980px) {
+  .home-card-track {
+    gap: 1rem;
+  }
+
+  .home-carousel-arrow {
+    width: 72px;
+    height: 112px;
+    font-size: 50px;
+  }
+
+  .home-carousel-arrow-left {
+    left: 0;
+  }
+
+  .home-carousel-arrow-right {
+    right: 0;
+  }
+}
+
+@media screen and (max-width: 736px) {
+  .home-hero-content {
+    padding: 6.25rem 1.25rem 3.75rem;
+  }
+
+  .home-quick-actions-header {
+    padding-top: 2.75rem;
+  }
+
+  .home-card-section {
+    padding: 0.5rem 1rem 2.75rem;
+  }
+
+  .home-card-track {
+    gap: 0.75rem;
+  }
+
+  .home-carousel-arrow {
+    width: 48px;
+    height: 84px;
+    font-size: 34px;
+  }
+
+  .home-carousel-arrow-left {
+    left: 0;
+    padding-right: 8px;
+  }
+
+  .home-carousel-arrow-right {
+    right: 0;
+    padding-left: 8px;
+  }
+
+  .home-action-card {
+    min-height: 27rem;
+  }
+
+  .home-action-card .image.featured img {
+    height: 220px;
+  }
+
+  .home-action-card p {
+    font-size: 1.1rem;
+  }
+
+  .home-benefits-header {
+    margin-bottom: 1.4rem;
+  }
+}

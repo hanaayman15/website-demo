@@ -4,21 +4,37 @@
 # ========================================
 
 Write-Host "`nStarting FastAPI Backend Server..." -ForegroundColor Cyan
-Write-Host "   Port: 8001" -ForegroundColor White
-Write-Host "   Host: 127.0.0.1" -ForegroundColor White
-Write-Host "   Mode: Development (with reload)" -ForegroundColor Yellow
+Write-Host "   Port: 8011" -ForegroundColor White
+Write-Host "   Host: 0.0.0.0 (all interfaces)" -ForegroundColor White
+Write-Host "   Mode: Development" -ForegroundColor Yellow
 Write-Host ""
 
 # Navigate to backend directory
 Set-Location $PSScriptRoot
 
-# Kill any existing Python processes on port 8001
-Write-Host "Checking for existing processes on port 8001..." -ForegroundColor Yellow
-$conn = Get-NetTCPConnection -LocalPort 8001 -ErrorAction SilentlyContinue
+# Kill any existing uvicorn backend processes first (covers stale reloader pairs)
+Write-Host "Checking for existing backend uvicorn processes..." -ForegroundColor Yellow
+$uvicornTargets = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.Name -match 'python' -and
+        $_.CommandLine -match 'uvicorn app.main:app'
+    }
+
+if ($uvicornTargets) {
+    $uvicornTargets | ForEach-Object {
+        Write-Host "   Stopping uvicorn PID: $($_.ProcessId)" -ForegroundColor Yellow
+        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 1
+}
+
+# Also clear any remaining process that still owns port 8011
+$conn = Get-NetTCPConnection -LocalPort 8011 -ErrorAction SilentlyContinue
 if ($conn) {
-    $processId = $conn.OwningProcess | Select-Object -First 1
-    Write-Host "   Found existing process (PID: $processId), stopping..." -ForegroundColor Yellow
-    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    $conn.OwningProcess | Select-Object -Unique | ForEach-Object {
+        Write-Host "   Releasing port 8011 from PID: $_" -ForegroundColor Yellow
+        Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Seconds 1
 }
 
@@ -27,10 +43,22 @@ Write-Host "Starting server..." -ForegroundColor Green
 Write-Host ""
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host "Backend URLs:" -ForegroundColor Cyan
-Write-Host "   • API Root: http://127.0.0.1:8001/" -ForegroundColor White
-Write-Host "   • Health: http://127.0.0.1:8001/health" -ForegroundColor White
-Write-Host "   • Swagger Docs: http://127.0.0.1:8001/docs" -ForegroundColor White
-Write-Host "   • ReDoc: http://127.0.0.1:8001/redoc" -ForegroundColor White
+Write-Host "   • API Root: http://127.0.0.1:8011/" -ForegroundColor White
+Write-Host "   • Health: http://127.0.0.1:8011/health" -ForegroundColor White
+Write-Host "   • Swagger Docs: http://127.0.0.1:8011/docs" -ForegroundColor White
+Write-Host "   • ReDoc: http://127.0.0.1:8011/redoc" -ForegroundColor White
+
+$lanIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.IPAddress -notlike '127.*' -and
+        $_.IPAddress -notlike '169.254*' -and
+        $_.ValidLifetime -gt 0
+    } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+
+if ($lanIp) {
+    Write-Host "   • Mobile/LAN: http://$lanIp:8011/" -ForegroundColor White
+}
 Write-Host "═══════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Press CTRL+C to stop the server" -ForegroundColor Yellow
@@ -54,11 +82,11 @@ if (-not $pythonExe) {
 Write-Host "Using Python: $pythonExe" -ForegroundColor White
 Write-Host "Launching Uvicorn..." -ForegroundColor Green
 
-& $pythonExe -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+& $pythonExe -m uvicorn app.main:app --host 0.0.0.0 --port 8011
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "" 
     Write-Host "Backend failed to start or exited unexpectedly (exit code: $LASTEXITCODE)." -ForegroundColor Red
-    Write-Host "Check: 1) port 8001 conflicts 2) backend/.env values 3) Python dependencies." -ForegroundColor Yellow
+    Write-Host "Check: 1) port 8011 conflicts 2) backend/.env values 3) Python dependencies." -ForegroundColor Yellow
     exit $LASTEXITCODE
 }

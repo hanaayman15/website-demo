@@ -7,8 +7,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _resolve_database_url() -> str:
+    """Resolve database URL with PostgreSQL-first behavior and SQLite local fallback."""
+    raw_url = (settings.DATABASE_URL or "").strip()
+    if not raw_url:
+        # Local development fallback
+        return "sqlite:///./nutrition.db"
+
+    # Render/Heroku compatibility shorthand
+    if raw_url.startswith("postgres://"):
+        return raw_url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+    if raw_url.startswith("postgresql://"):
+        return raw_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    return raw_url
+
+
+DATABASE_URL = _resolve_database_url()
+
+
 def _ensure_client_profile_columns():
     """Add newly introduced client profile columns if they don't exist yet."""
+    is_postgresql_dialect = engine.dialect.name == "postgresql"
+    datetime_type = "TIMESTAMP" if is_postgresql_dialect else "DATETIME"
+    false_default = "FALSE" if is_postgresql_dialect else "0"
+
     required_columns = {
         "training_details": "TEXT",
         "injuries": "TEXT",
@@ -23,7 +47,7 @@ def _ensure_client_profile_columns():
         "client_notes": "TEXT",
         "mental_observation": "TEXT",
         "supplements": "TEXT",
-        "competition_enabled": "BOOLEAN DEFAULT 0",
+        "competition_enabled": f"BOOLEAN DEFAULT {false_default}",
         "competition_status": "VARCHAR(100)",
         "progression_type": "VARCHAR(50)",
         "calories": "FLOAT",
@@ -32,10 +56,10 @@ def _ensure_client_profile_columns():
         "fats_target": "FLOAT",
         "water_intake": "FLOAT",
         "days_left": "INTEGER",
-        "mental_obs_date": "DATETIME",
+        "mental_obs_date": datetime_type,
         "wake_up_time": "VARCHAR(20)",
         "sleep_time": "VARCHAR(20)",
-        "injury_status": "BOOLEAN DEFAULT 0",
+        "injury_status": f"BOOLEAN DEFAULT {false_default}",
         "injury_description": "TEXT",
         "original_protein": "FLOAT",
         "original_carbs": "FLOAT",
@@ -43,7 +67,7 @@ def _ensure_client_profile_columns():
         "training_time": "VARCHAR(50)",
         "training_end_time": "VARCHAR(50)",
         "consultation_type": "VARCHAR(100)",
-        "consultation_selected_at": "DATETIME",
+        "consultation_selected_at": datetime_type,
         "subscription_plan": "VARCHAR(100)",
         "anti_doping_focus": "TEXT",
         "meal_swaps": "TEXT",
@@ -203,14 +227,14 @@ def _ensure_nutrition_profile_columns():
             logger.info(f"Added missing column nutrition_profiles.{name}")
 
 # Determine if using PostgreSQL or SQLite
-is_postgresql = settings.DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://"))
-is_sqlite = "sqlite" in settings.DATABASE_URL
+is_postgresql = DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://"))
+is_sqlite = DATABASE_URL.startswith("sqlite:///")
 
 # Configure engine based on database type
 if is_postgresql:
     # PostgreSQL production configuration with connection pooling
     engine = create_engine(
-        settings.DATABASE_URL,
+        DATABASE_URL,
         poolclass=pool.QueuePool,
         pool_size=settings.DB_POOL_SIZE,
         max_overflow=settings.DB_MAX_OVERFLOW,
@@ -223,7 +247,7 @@ if is_postgresql:
 elif is_sqlite:
     # SQLite development configuration
     engine = create_engine(
-        settings.DATABASE_URL,
+        DATABASE_URL,
         connect_args={"check_same_thread": False},
         echo=settings.DEBUG,
     )
@@ -231,10 +255,10 @@ elif is_sqlite:
 else:
     # Fallback for other database types
     engine = create_engine(
-        settings.DATABASE_URL,
+        DATABASE_URL,
         echo=settings.DEBUG,
     )
-    logger.info(f"Database engine configured for: {settings.DATABASE_URL.split(':')[0]}")
+    logger.info(f"Database engine configured for: {DATABASE_URL.split(':')[0]}")
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

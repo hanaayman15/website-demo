@@ -1,96 +1,102 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMentalCoaching } from '../hooks/useMentalCoaching';
+import ClientPortalNav from '../components/layout/ClientPortalNav';
 import '../assets/styles/react-pages.css';
 
 function MentalCoaching() {
   const navigate = useNavigate();
-  const { state, progress, setWeeklyGoal, markExerciseComplete, completeChallenge } = useMentalCoaching();
-
-  const exercises = [
-    { key: 'breathing', title: 'Breathing Routine', details: '4-7-8 technique for 10 minutes daily.' },
-    { key: 'visualization', title: 'Visualization Exercise', details: 'Picture perfect performance before sleep.' },
-    { key: 'focus', title: 'Focus Drill', details: 'Single-point concentration for 5-10 minutes.' },
-  ];
-
-  const editGoal = () => {
-    const next = window.prompt('Enter your new weekly focus goal:', state.weeklyGoal);
-    if (!next) return;
-    setWeeklyGoal(next);
-  };
+  const { state, progress, markExerciseComplete, completeChallenge } = useMentalCoaching();
 
   const goToUpgrade = () => {
     navigate('/subscription-plan?upgrade=mental-performance');
   };
 
   return (
-    <main className="react-page-wrap react-grid" style={{ maxWidth: 1100, gap: '1rem' }}>
-      <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Mental Performance Program</h1>
-          <p className="react-muted" style={{ margin: 0 }}>Strengthen your mindset and daily focus routines.</p>
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <div className="container mx-auto px-6 pt-6">
+        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-2xl mb-1">😴</p>
+            <p className="text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+          </div>
+          <button
+            type="button"
+            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            onClick={() => navigate('/progress-tracking')}
+          >
+            📝 Log Sleep
+          </button>
         </div>
-        <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/anti-doping">Anti-Doping</Link>
-          <button className="react-btn" type="button" onClick={goToUpgrade}>Upgrade</button>
+
+        <div className="mt-4 bg-white border border-purple-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-2xl mb-1">🧠</p>
+            <p className="text-gray-700 font-medium">🧠 Unlock your full potential! Upgrade to the Mental Performance Program for advanced mindset training.</p>
+          </div>
+          <button
+            type="button"
+            className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700"
+            onClick={goToUpgrade}
+          >
+            🚀 Upgrade Now
+          </button>
+        </div>
+      </div>
+
+      <ClientPortalNav activePath="/mental-coaching" isLoggedIn />
+
+      <section className="py-8 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center gap-4">
+            <div className="text-5xl">🧠</div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Mental Performance Program</h1>
+              <p className="text-gray-600 mt-2">Strengthen your mind to unlock your athletic potential</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="react-panel">
-        <p style={{ margin: 0, fontWeight: 700, textAlign: 'center' }}>
-          "Your results are not limited by your body, they are limited by your mindset."
-        </p>
-      </section>
-
-      <section className="react-panel react-grid" style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 2 }}>
-          <div className="react-panel react-grid" style={{ maxWidth: 430, borderColor: '#c4b5fd' }}>
-            <h2 style={{ margin: 0 }}>Premium Feature</h2>
-            <p className="react-muted" style={{ margin: 0 }}>
-              Mental performance drills are premium and require upgrade.
+      <section className="py-6">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="bg-gradient-to-r from-purple-100 via-blue-100 to-pink-100 p-8 rounded-3xl border-2 border-purple-200 shadow-sm">
+            <p className="text-2xl font-bold text-gray-900 text-center leading-relaxed italic">
+              "Your results are not limited by your body — they&apos;re limited by your mindset. Upgrade the mind, and everything else follows."
             </p>
-            <button className="react-btn" type="button" onClick={goToUpgrade}>Upgrade Now</button>
           </div>
-        </div>
-
-        <div style={{ filter: 'blur(4px)', pointerEvents: 'none' }}>
-          <article className="stat-item react-grid" style={{ marginBottom: '0.75rem', gap: '0.4rem' }}>
-            <div className="react-row-between" style={{ flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0 }}>Weekly Focus Goal</h2>
-              <button className="react-btn react-btn-ghost" type="button" onClick={editGoal}>Edit Goal</button>
-            </div>
-            <p style={{ margin: 0 }}>{state.weeklyGoal}</p>
-          </article>
-
-          <div className="react-grid react-grid-2">
-            {exercises.map((exercise) => {
-              const isDone = state.completedExercises.includes(exercise.key);
-              return (
-                <article key={exercise.key} className="stat-item react-grid" style={{ gap: '0.45rem' }}>
-                  <h3 style={{ margin: 0 }}>{exercise.title}</h3>
-                  <p className="react-muted" style={{ margin: 0 }}>{exercise.details}</p>
-                  <button className="react-btn" type="button" onClick={() => markExerciseComplete(exercise.key)}>
-                    {isDone ? 'Completed Today' : 'Mark Complete'}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-
-          <article className="stat-item react-grid" style={{ marginTop: '0.75rem', gap: '0.4rem' }}>
-            <div className="react-row-between">
-              <span>Today&apos;s Progress</span>
-              <strong>{progress.label}</strong>
-            </div>
-            <div className="react-progress-track">
-              <div className="react-progress-fill" style={{ width: `${progress.percentage}%` }} />
-            </div>
-            <button className="react-btn react-btn-ghost" type="button" onClick={completeChallenge}>
-              Complete Weekly Challenge
-            </button>
-          </article>
         </div>
       </section>
-    </main>
+
+      <section className="pb-12">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border-2 border-purple-200 text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Premium Feature</h2>
+            <p className="text-gray-700 mb-5 text-lg">The Mental Performance Program is a premium add-on that requires an additional payment to unlock.</p>
+            <button type="button" className="px-7 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold hover:opacity-95" onClick={goToUpgrade}>
+              🚀 Upgrade Now
+            </button>
+
+            <div className="mt-8 text-left border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <p className="font-semibold text-gray-700">Today&apos;s Exercise Progress</p>
+                <p className="font-bold text-purple-700">{progress.label}</p>
+              </div>
+              <div className="w-full h-3 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-purple-500 to-blue-500" style={{ width: `${progress.percentage}%` }} />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50" onClick={() => markExerciseComplete('breathing')}>🌬️ Mark Breathing</button>
+                <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50" onClick={() => markExerciseComplete('visualization')}>👁️ Mark Visualization</button>
+                <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50" onClick={() => markExerciseComplete('focus')}>🎯 Mark Focus</button>
+                <button type="button" className="px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black" onClick={completeChallenge}>✅ Complete Challenge</button>
+              </div>
+              <p className="text-sm text-gray-500 mt-3 mb-0">Current weekly focus: {state.weeklyGoal}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 

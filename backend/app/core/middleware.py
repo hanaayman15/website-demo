@@ -34,6 +34,8 @@ def register_middleware(app: FastAPI, settings: Settings, logger: logging.Logger
     # Always include common local development origins to support desktop/local HTML workflows.
     dev_origins = [
         "null",  # file:// pages
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5500",
@@ -48,12 +50,19 @@ def register_middleware(app: FastAPI, settings: Settings, logger: logging.Logger
 
     logger.info("CORS origins configured", extra={"origins": cors_origins})
 
+    # Allow local-network phone testing origins.
+    cors_origin_regex = (
+        r"^https?://(localhost|127\\.0\\.0\\.1|192\\.168\\.\\d{1,3}\\.\\d{1,3}|"
+        r"10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2\\d|3[0-1])\\.\\d{1,3}\\.\\d{1,3})(:\\d+)?$"
+    )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
+        allow_origin_regex=cors_origin_regex,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["*"],
     )
 
     if settings.TRUSTED_HOSTS == "*":

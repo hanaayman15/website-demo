@@ -10,20 +10,12 @@
     <script src="config.js"></script>
     <style>
         body {
-            background-image: url("images/pexels-jplenio-1103970.jpg");
+            background-image: url("images/back.jpg");
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             min-height: 100vh;
             font-family: "Source Sans Pro", sans-serif;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background: rgba(234, 243, 245, 0.66);
-            z-index: -1;
         }
 
         .page {
@@ -62,6 +54,10 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+        }
+
+        .mobile-menu-btn {
+            display: none;
         }
 
         .top-nav-left {
@@ -200,7 +196,32 @@
             font-weight: 700;
         }
 
-        @media (max-width: 780px) {
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .top-nav-links {
+                width: 100%;
+                display: none;
+                flex-direction: column;
+                gap: 6px;
+                border-top: 1px solid #edf2f8;
+                padding-top: 10px;
+                margin-top: 2px;
+            }
+
+            .top-nav-links.mobile-open {
+                display: flex;
+            }
+
+            .link-btn {
+                width: 100%;
+                text-align: center;
+            }
+
             table {
                 font-size: 13px;
             }
@@ -208,6 +229,25 @@
             th,
             td {
                 padding: 10px 7px;
+            }
+
+            .hide-mobile {
+                display: none;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .page {
+                margin: 14px auto 24px;
+                padding: 0 8px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .top-nav-title {
+                font-size: 16px;
             }
         }
     </style>
@@ -266,11 +306,11 @@
                     <tr>
                         <th>Client ID</th>
                         <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Gender</th>
+                        <th class="hide-mobile">Email</th>
+                        <th class="hide-mobile">Phone</th>
+                        <th class="hide-mobile">Gender</th>
                         <th>Sport</th>
-                        <th>Source</th>
+                        <th class="hide-mobile">Source</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -287,11 +327,11 @@
                     <tr>
                         <th>Client ID</th>
                         <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Gender</th>
+                        <th class="hide-mobile">Email</th>
+                        <th class="hide-mobile">Phone</th>
+                        <th class="hide-mobile">Gender</th>
                         <th>Sport</th>
-                        <th>Source</th>
+                        <th class="hide-mobile">Source</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -436,11 +476,11 @@
                 <tr>
                     <td>${client.display_id || client.id || '-'}</td>
                     <td>${client.full_name || '-'}</td>
-                    <td>${client.email || '-'}</td>
-                    <td>${client.phone || '-'}</td>
-                    <td>${client.gender || '-'}</td>
+                    <td class="hide-mobile">${client.email || '-'}</td>
+                    <td class="hide-mobile">${client.phone || '-'}</td>
+                    <td class="hide-mobile">${client.gender || '-'}</td>
                     <td>${client.sport || '-'}</td>
-                    <td><span class="source-pill">${sourceLabel(client.created_source)}</span></td>
+                    <td class="hide-mobile"><span class="source-pill">${sourceLabel(client.created_source)}</span></td>
                     <td>
                         <div class="actions">
                             <a class="btn-view" href="client-detail.html?id=${encodeURIComponent(client.id)}">View Details</a>
@@ -456,7 +496,10 @@
             const role = getCurrentRole();
             const adminView = role === 'admin';
             if (!filteredTeams.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty">No teams found.</td></tr>';
+                const emptyText = adminView
+                    ? 'No teams found.'
+                    : 'No teams found. Create one from Add Team or ask admin to assign teams to your account.';
+                tbody.innerHTML = `<tr><td colspan="5" class="empty">${emptyText}</td></tr>`;
                 updateCount();
                 return;
             }

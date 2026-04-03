@@ -10,6 +10,23 @@ function toMacroNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function parseDateValue(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function computeDaysUntilCompetition(competitionDateRaw) {
+  const competitionDate = parseDateValue(competitionDateRaw);
+  if (!competitionDate) return null;
+
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const end = new Date(competitionDate.getFullYear(), competitionDate.getMonth(), competitionDate.getDate());
+  const diffMs = end.getTime() - start.getTime();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
 export function normalizeMealStatus(rawStatus) {
   const value = String(rawStatus || 'not-completed').toLowerCase().trim();
   return value === 'completed' ? 'completed' : 'not-completed';
@@ -34,10 +51,14 @@ export function buildTodayMeals(profile) {
     : [];
 
   return dayMeals.map((meal, index) => ({
+    dayName,
+    mealIndex: index,
     mealId: buildMealId(dayName, meal, index),
     mealKey: String(meal?.type || '').toLowerCase(),
     mealLabel: meal?.type || `Meal ${index + 1}`,
     scheduledTime: meal?.time || 'N/A',
+    en: meal?.en || meal?.description_en || meal?.description || meal?.name || meal?.meal || '',
+    ar: meal?.ar || meal?.description_ar || '',
     protein: toNumber(meal?.protein),
     carbs: toNumber(meal?.carbs),
     fats: toNumber(meal?.fats),
@@ -53,6 +74,8 @@ export function buildSummary(profile) {
   const fats = toNumber(profile?.fats_target) || 0;
   const tdee = toNumber(profile?.tdee);
   const targetCalories = tdee || (protein * 4 + carbs * 4 + fats * 9);
+  const competitionDate = profile?.competition_date || null;
+  const daysUntilCompetition = computeDaysUntilCompetition(competitionDate);
 
   return {
     weight,
@@ -61,6 +84,8 @@ export function buildSummary(profile) {
     protein,
     carbs,
     fats,
+    competitionDate,
+    daysUntilCompetition,
   };
 }
 
@@ -221,6 +246,13 @@ export function dashboardDataReducer(state, action) {
           completeMeals: action.payload.complete_meals ?? state.macro.completeMeals,
           totalMeals: action.payload.total_meals ?? state.macro.totalMeals,
         },
+      };
+    case 'UPDATE_PROFILE':
+      return {
+        ...state,
+        profile: action.payload.profile,
+        todayMeals: action.payload.todayMeals ?? state.todayMeals,
+        macro: action.payload.macro ?? state.macro,
       };
     default:
       return state;

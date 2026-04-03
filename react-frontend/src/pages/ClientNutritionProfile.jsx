@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useClientNutritionProfile } from '../hooks/useClientNutritionProfile';
+import { WORLD_SPORTS } from '../constants/globalOptions';
 import '../assets/styles/react-pages.css';
 
 const TRAINING_TYPES = ['low', 'moderate', 'high'];
@@ -41,6 +42,10 @@ function ClientNutritionProfile() {
     await saveProfile();
   };
 
+  const backPath = state.clientId && state.clientId !== 'self'
+    ? `/client-services?client_id=${encodeURIComponent(state.clientId)}`
+    : '/client-dashboard';
+
   if (state.loading) {
     return <main className="react-page-wrap">Loading nutrition profile...</main>;
   }
@@ -54,8 +59,8 @@ function ClientNutritionProfile() {
             Client: {state.clientId || 'Missing'}
           </p>
         </div>
-        <Link className="react-btn react-btn-ghost" to={`/client-services?client_id=${encodeURIComponent(state.clientId || '')}`}>
-          Back to Services
+        <Link className="react-btn react-btn-ghost" to={backPath}>
+          Back
         </Link>
       </section>
 
@@ -77,7 +82,7 @@ function ClientNutritionProfile() {
           <div className="react-grid react-grid-2">
             <Field label="Height (cm)"><input className="react-input" value={state.fields.height} onChange={(e) => updateField('height', e.target.value)} /></Field>
             <Field label="Weight (kg)"><input className="react-input" value={state.fields.weight} onChange={(e) => updateField('weight', e.target.value)} /></Field>
-            <Field label="BMI (Auto)"><input className="react-input" value={state.fields.bmi} readOnly /></Field>
+            <Field label="BMI (Calc / Auto)"><input className="react-input" value={state.fields.bmi} readOnly /></Field>
             <Field label="Body Fat %"><input className="react-input" value={state.fields.bodyFat} onChange={(e) => updateField('bodyFat', e.target.value)} /></Field>
             <Field label="Skeletal Muscle (kg)"><input className="react-input" value={state.fields.skeletalMuscle} onChange={(e) => updateField('skeletalMuscle', e.target.value)} /></Field>
             <Field label="Body Fat Mass (Auto)"><input className="react-input" value={state.fields.bodyFatMass} readOnly /></Field>
@@ -86,9 +91,9 @@ function ClientNutritionProfile() {
         </section>
 
         <section className="react-panel react-grid">
-          <h2 style={{ margin: 0 }}>Metabolism & Nutrition Plan</h2>
+          <h2 style={{ margin: 0 }}>Metabolism & Activity</h2>
           <div className="react-grid react-grid-2">
-            <Field label="BMR (Auto)"><input className="react-input" value={state.fields.bmr} readOnly /></Field>
+            <Field label="BMR (Calc)"><input className="react-input" value={state.fields.bmr} readOnly /></Field>
             <Field label="Activity Level">
               <select className="react-input" value={state.fields.activityLevel} onChange={(e) => updateField('activityLevel', e.target.value)}>
                 {constants.activityOptions.map((option) => (
@@ -96,9 +101,20 @@ function ClientNutritionProfile() {
                 ))}
               </select>
             </Field>
-            <Field label="Sport"><input className="react-input" value={state.fields.sport} onChange={(e) => updateField('sport', e.target.value)} /></Field>
+            <Field label="Sports">
+              <select className="react-input" value={state.fields.sport} onChange={(e) => updateField('sport', e.target.value)}>
+                <option value="">Select sport</option>
+                {WORLD_SPORTS.map((sport) => <option key={`nutrition-sport-${sport}`} value={sport}>{sport}</option>)}
+              </select>
+            </Field>
             <Field label="Position"><input className="react-input" value={state.fields.position} onChange={(e) => updateField('position', e.target.value)} /></Field>
-            <Field label="TDEE (Auto)"><input className="react-input" value={state.fields.tdee} readOnly /></Field>
+            <Field label="TDEE (Calc)"><input className="react-input" value={state.fields.tdee} readOnly /></Field>
+          </div>
+        </section>
+
+        <section className="react-panel react-grid">
+          <h2 style={{ margin: 0 }}>Nutrition Plan</h2>
+          <div className="react-grid react-grid-2">
             <Field label="Progression Type">
               <select className="react-input" value={state.fields.progressionType} onChange={(e) => updateField('progressionType', e.target.value)}>
                 {constants.progressionOptions.map((option) => (
@@ -106,24 +122,36 @@ function ClientNutritionProfile() {
                 ))}
               </select>
             </Field>
-            <Field label={caloriesLabel}><input className="react-input" value={state.fields.calories} readOnly /></Field>
-            <Field label="Protein (g)"><input className="react-input" value={state.fields.protein} readOnly /></Field>
-            <Field label="Carbs (g)"><input className="react-input" value={state.fields.carbs} readOnly /></Field>
-            <Field label="Fats (g)"><input className="react-input" value={state.fields.fats} readOnly /></Field>
+            <Field label={`${caloriesLabel} (Calc)`}><input className="react-input" value={state.fields.calories} readOnly /></Field>
+            <Field label="Protein (g) (Calc)"><input className="react-input" value={state.fields.protein} readOnly /></Field>
+            <Field label="Carbs (g) (Calc)"><input className="react-input" value={state.fields.carbs} readOnly /></Field>
+            <Field label="Fats (g) (Calc)"><input className="react-input" value={state.fields.fats} readOnly /></Field>
           </div>
         </section>
 
         <section className="react-panel react-grid">
-          <h2 style={{ margin: 0 }}>Hydration & Health Notes</h2>
+          <h2 style={{ margin: 0 }}>Hydration</h2>
           <div className="react-grid react-grid-2">
-            <Field label="Water In Body (L)"><input className="react-input" value={state.fields.waterInBody} onChange={(e) => updateField('waterInBody', e.target.value)} /></Field>
-            <Field label="Water Intake (Auto)"><input className="react-input" value={state.fields.waterIntake} readOnly /></Field>
-            <Field label="Minerals"><input className="react-input" value={state.fields.minerals} onChange={(e) => updateField('minerals', e.target.value)} /></Field>
-            <Field label="Food Allergies"><input className="react-input" value={state.fields.foodAllergies} onChange={(e) => updateField('foodAllergies', e.target.value)} /></Field>
+            <Field label="Water (from InBody) (L)"><input className="react-input" value={state.fields.waterInBody} onChange={(e) => updateField('waterInBody', e.target.value)} /></Field>
+            <Field label="Water Intake (daily liters) (Calc)"><input className="react-input" value={state.fields.waterIntake} readOnly /></Field>
+            <Field label="Minerals (from InBody)"><input className="react-input" value={state.fields.minerals} onChange={(e) => updateField('minerals', e.target.value)} /></Field>
+          </div>
+        </section>
+
+        <section className="react-panel react-grid">
+          <h2 style={{ margin: 0 }}>Health & Observations</h2>
+          <div className="react-grid react-grid-2">
             <Field label="Test and Record" full><textarea className="react-textarea" value={state.fields.testRecord} onChange={(e) => updateField('testRecord', e.target.value)} /></Field>
             <Field label="Injuries" full><textarea className="react-textarea" value={state.fields.injuries} onChange={(e) => updateField('injuries', e.target.value)} /></Field>
             <Field label="Mental Notes" full><textarea className="react-textarea" value={state.fields.mentalNotes} onChange={(e) => updateField('mentalNotes', e.target.value)} /></Field>
+            <Field label="Food Allergies" full><textarea className="react-textarea" value={state.fields.foodAllergies} onChange={(e) => updateField('foodAllergies', e.target.value)} /></Field>
             <Field label="Medical Notes" full><textarea className="react-textarea" value={state.fields.medicalNotes} onChange={(e) => updateField('medicalNotes', e.target.value)} /></Field>
+          </div>
+        </section>
+
+        <section className="react-panel react-grid">
+          <h2 style={{ margin: 0 }}>Food Preferences</h2>
+          <div className="react-grid react-grid-2">
             <Field label="Food Likes" full><textarea className="react-textarea" value={state.fields.foodLikes} onChange={(e) => updateField('foodLikes', e.target.value)} /></Field>
             <Field label="Food Dislikes" full><textarea className="react-textarea" value={state.fields.foodDislikes} onChange={(e) => updateField('foodDislikes', e.target.value)} /></Field>
           </div>
@@ -141,7 +169,7 @@ function ClientNutritionProfile() {
             </Field>
             <Field label="Competition Date"><input className="react-input" type="date" value={state.fields.competitionDate} onChange={(e) => updateField('competitionDate', e.target.value)} /></Field>
             <Field label="Days Left (Auto)"><input className="react-input" value={state.fields.daysLeft} readOnly /></Field>
-            <Field label="Goal Weight"><input className="react-input" value={state.fields.goalWeight} onChange={(e) => updateField('goalWeight', e.target.value)} /></Field>
+            <Field label="Goal Weight (kg)"><input className="react-input" value={state.fields.goalWeight} onChange={(e) => updateField('goalWeight', e.target.value)} /></Field>
             <Field label="Additional Notes" full><textarea className="react-textarea" value={state.fields.additionalNotes} onChange={(e) => updateField('additionalNotes', e.target.value)} /></Field>
           </div>
         </section>
@@ -158,8 +186,8 @@ function ClientNutritionProfile() {
                 <button className="react-btn react-btn-ghost" type="button" onClick={() => removeTraining(index)}>Remove</button>
               </div>
               <div className="react-grid react-grid-2">
-                <Field label="Name"><input className="react-input" value={session.name} onChange={(e) => updateTraining(index, 'name', e.target.value)} /></Field>
-                <Field label="Type">
+                <Field label="Training Name"><input className="react-input" value={session.name} onChange={(e) => updateTraining(index, 'name', e.target.value)} /></Field>
+                <Field label="Training Type">
                   <select className="react-input" value={session.type} onChange={(e) => updateTraining(index, 'type', e.target.value)}>
                     {TRAINING_TYPES.map((type) => (
                       <option key={type} value={type}>{type}</option>
@@ -186,17 +214,17 @@ function ClientNutritionProfile() {
 
               <div className="react-grid react-grid-2">
                 <div className="react-grid react-grid-2">
-                  <Field label="Start Hour">
+                  <Field label="Start Time - Hour">
                     <select className="react-input" value={session.startHour} onChange={(e) => updateTraining(index, 'startHour', e.target.value)}>
                       {HOURS.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
                     </select>
                   </Field>
-                  <Field label="Start Minute">
+                    <Field label="Start Time - Minute">
                     <select className="react-input" value={session.startMin} onChange={(e) => updateTraining(index, 'startMin', e.target.value)}>
                       {MINUTES.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
                     </select>
                   </Field>
-                  <Field label="Start AM/PM">
+                    <Field label="Start Time - AM/PM">
                     <select className="react-input" value={session.startAmPm} onChange={(e) => updateTraining(index, 'startAmPm', e.target.value)}>
                       {AM_PM.map((entry) => <option key={entry} value={entry}>{entry}</option>)}
                     </select>
@@ -204,17 +232,17 @@ function ClientNutritionProfile() {
                 </div>
 
                 <div className="react-grid react-grid-2">
-                  <Field label="End Hour">
+                    <Field label="End Time - Hour">
                     <select className="react-input" value={session.endHour} onChange={(e) => updateTraining(index, 'endHour', e.target.value)}>
                       {HOURS.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
                     </select>
                   </Field>
-                  <Field label="End Minute">
+                    <Field label="End Time - Minute">
                     <select className="react-input" value={session.endMin} onChange={(e) => updateTraining(index, 'endMin', e.target.value)}>
                       {MINUTES.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
                     </select>
                   </Field>
-                  <Field label="End AM/PM">
+                    <Field label="End Time - AM/PM">
                     <select className="react-input" value={session.endAmPm} onChange={(e) => updateTraining(index, 'endAmPm', e.target.value)}>
                       {AM_PM.map((entry) => <option key={entry} value={entry}>{entry}</option>)}
                     </select>

@@ -25,7 +25,7 @@ function ProfileSetup() {
   useEffect(() => {
     if (!redirectClientId) return;
     const timer = setTimeout(() => {
-      navigate(`/client-services?client_id=${encodeURIComponent(redirectClientId)}`);
+      navigate(`/subscription-plan?flow=profile-setup&client_id=${encodeURIComponent(redirectClientId)}`);
     }, 600);
     return () => clearTimeout(timer);
   }, [navigate, redirectClientId]);

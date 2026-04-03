@@ -1,15 +1,12 @@
 import { useReducer } from 'react';
 import { apiClient, setAuthToken } from '../services/api';
+import { COUNTRY_PHONE_CODES, WORLD_COUNTRIES, WORLD_SPORTS } from '../constants/globalOptions';
+import { createNewClient, addOrUpdateClient, setCurrentClient } from '../utils/clientDataManager';
 
-export const SIGNUP_COUNTRY_OPTIONS = [
-  { country: 'Egypt', dialCode: '+20' },
-  { country: 'Saudi Arabia', dialCode: '+966' },
-  { country: 'United Arab Emirates', dialCode: '+971' },
-  { country: 'Kuwait', dialCode: '+965' },
-  { country: 'Qatar', dialCode: '+974' },
-  { country: 'United States', dialCode: '+1' },
-  { country: 'United Kingdom', dialCode: '+44' },
-];
+export const SIGNUP_COUNTRY_OPTIONS = WORLD_COUNTRIES.map((country) => ({
+  country,
+  dialCode: COUNTRY_PHONE_CODES[country],
+}));
 
 function safeStorageSet(key, value) {
   try {
@@ -207,7 +204,7 @@ export function useClientSignup() {
 
       try {
         const profileResponse = await apiClient.get('/api/client/profile');
-        const profileId = profileResponse?.data?.display_id || profileResponse?.data?.id;
+        const profileId = profileResponse?.data?.user_id || profileResponse?.data?.id || profileResponse?.data?.display_id;
         if (profileId) {
           safeStorageSet('currentClientId', String(profileId));
         }
@@ -217,6 +214,29 @@ export function useClientSignup() {
           safeStorageSet('currentClientId', String(fallbackClientId));
         }
       }
+
+      // ========== NEW: Save full client data to localStorage ==========
+      const newClient = createNewClient({
+        firstName: state.form.firstName,
+        lastName: state.form.lastName,
+        fullName: `${state.form.firstName} ${state.form.lastName}`,
+        email: registerPayload.email,
+        password: registerPayload.password,
+        phone: profilePayload.phone,
+        country: profilePayload.country,
+        sport: profilePayload.sport,
+      });
+
+      // Merge with API response data if available
+      if (registerData || loginData) {
+        newClient.apiId = registerData?.user_id || loginData?.user_id || newClient.id;
+      }
+
+      // Save to clients array
+      addOrUpdateClient(newClient);
+
+      // Set as current client
+      setCurrentClient(newClient);
 
       dispatch({ type: 'SUBMIT_SUCCESS', payload: 'Account created successfully. Redirecting...' });
       return { ok: true };
@@ -232,6 +252,7 @@ export function useClientSignup() {
   return {
     state,
     countryOptions: SIGNUP_COUNTRY_OPTIONS,
+    sportOptions: WORLD_SPORTS,
     updateField,
     submitSignup,
   };

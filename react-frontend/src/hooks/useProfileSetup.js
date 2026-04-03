@@ -2,45 +2,12 @@ import { useMemo, useState } from 'react';
 import { apiClient } from '../services/api';
 import { usePersistentDraft } from './usePersistentDraft';
 import { getStorage, safeJsonSet } from '../utils/storageSafe';
+import { WORLD_COUNTRIES, WORLD_PHONE_OPTIONS } from '../constants/globalOptions';
 
 const AUTOFILL_KEY = 'profileSetupBasicAutofillV1';
 const LAST_CLIENT_CONTEXT_KEY = 'lastClientContextV1';
 
-export const WORLD_COUNTRIES = [
-  'Egypt',
-  'Saudi Arabia',
-  'United Arab Emirates',
-  'Jordan',
-  'Qatar',
-  'Kuwait',
-  'Bahrain',
-  'Oman',
-  'Morocco',
-  'Tunisia',
-  'Algeria',
-  'Libya',
-  'Sudan',
-  'United States',
-  'United Kingdom',
-  'Germany',
-  'France',
-  'Italy',
-  'Spain',
-  'Canada',
-  'Australia',
-  'Turkey',
-  'India',
-  'Pakistan',
-];
-
-export const PHONE_OPTIONS = [
-  { country: 'Egypt', dial: '+20', display: 'Egypt +20' },
-  { country: 'Saudi Arabia', dial: '+966', display: 'Saudi Arabia +966' },
-  { country: 'United Arab Emirates', dial: '+971', display: 'UAE +971' },
-  { country: 'Jordan', dial: '+962', display: 'Jordan +962' },
-  { country: 'Qatar', dial: '+974', display: 'Qatar +974' },
-  { country: 'Kuwait', dial: '+965', display: 'Kuwait +965' },
-];
+export const PHONE_OPTIONS = WORLD_PHONE_OPTIONS;
 
 const INITIAL_FORM = {
   clientId: 'Auto',
@@ -237,8 +204,13 @@ export function useProfileSetup() {
         email: payload.email,
         source: 'profile_setup',
       });
+      if (nextClientId) {
+        localStorage.setItem('currentClientId', String(nextClientId));
+      }
+      localStorage.setItem('onboardingSource', 'profile-setup');
+      localStorage.setItem('onboardingClientId', String(nextClientId || ''));
       clearDraft();
-      setMessage('Basic profile saved successfully. Redirecting to services...');
+      setMessage('Basic profile saved successfully. Redirecting to subscription...');
       setRedirectClientId(nextClientId);
     } catch (err) {
       setError(parseApiError(err, 'Failed to save profile.'));

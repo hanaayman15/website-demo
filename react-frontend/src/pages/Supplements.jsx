@@ -1,5 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useSupplements } from '../hooks/useSupplements';
+import PageLayout from '../components/layout/PageLayout';
+import SectionCard from '../components/ui/SectionCard';
+import LockedOverlay from '../components/ui/LockedOverlay';
 import '../assets/styles/react-pages.css';
 
 function Supplements() {
@@ -25,20 +28,17 @@ function Supplements() {
   }
 
   return (
-    <main className="react-page-wrap react-grid" style={{ maxWidth: 1100, gap: '1rem' }}>
-      <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Recommended Supplements</h1>
-          <p className="react-muted" style={{ margin: 0 }}>Track your prescribed supplement protocol and logging status.</p>
-        </div>
-        <button className="react-btn" type="button" onClick={goToUpgrade}>Upgrade Full Program</button>
-      </section>
+    <PageLayout
+      title="Recommended Supplements"
+      subtitle="Track your prescribed supplement protocol and logging status."
+      actions={<button className="react-btn" type="button" onClick={goToUpgrade}>Upgrade Full Program</button>}
+    >
 
       {error ? <div className="react-alert react-alert-error">{error}</div> : null}
       {message ? <div className="react-alert react-alert-success">{message}</div> : null}
 
       {customSupplements.length ? (
-        <section className="react-panel react-grid">
+        <SectionCard as="section">
           <h2 style={{ marginTop: 0, marginBottom: 0 }}>Your Prescribed Supplements</h2>
           <div className="react-grid react-grid-2">
             {customSupplements.map((supplement, index) => (
@@ -49,21 +49,17 @@ function Supplements() {
               </article>
             ))}
           </div>
-        </section>
+        </SectionCard>
       ) : null}
 
-      <section className="react-panel react-grid" style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 2 }}>
-          <div className="react-panel react-grid" style={{ maxWidth: 430, borderColor: '#86efac' }}>
-            <h2 style={{ margin: 0 }}>Premium Supplement Program</h2>
-            <p className="react-muted" style={{ margin: 0 }}>
-              Full supplement protocol access is locked until upgrade.
-            </p>
-            <button className="react-btn" type="button" onClick={goToUpgrade}>Unlock Premium</button>
-          </div>
-        </div>
-
-        <div style={{ filter: 'blur(4px)', pointerEvents: 'none' }}>
+      <LockedOverlay
+        title="Premium Supplement Program"
+        description="Full supplement protocol access is locked until upgrade."
+        ctaLabel="Unlock Premium"
+        onCta={goToUpgrade}
+        borderColor="#86efac"
+      >
+        <div className="react-grid">
           <div className="react-grid react-grid-2">
             {baseSupplements.map((supplement) => (
               <article key={supplement.key} className="stat-item react-grid" style={{ gap: '0.4rem' }}>
@@ -85,12 +81,12 @@ function Supplements() {
             ))}
           </div>
         </div>
-      </section>
+      </LockedOverlay>
 
       <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0 }}>Currently Taking: {takingCount} supplements</h2>
       </section>
-    </main>
+    </PageLayout>
   );
 }
 

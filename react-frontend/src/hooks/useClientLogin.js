@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
-import { persistSessionAuth } from '../utils/authSession';
+import { clearSessionAuth, persistSessionAuth } from '../utils/authSession';
 import { getStorage, safeGet, safeRemove, safeSet } from '../utils/storageSafe';
+import { findClientByEmailAndPassword, setCurrentClient } from '../utils/clientDataManager';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail';
 const LOCAL = getStorage('local');
@@ -19,6 +20,7 @@ function normalizeError(error) {
 
 export function useClientLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -52,6 +54,7 @@ export function useClientLogin() {
     setSuccess('');
 
     try {
+      clearSessionAuth();
       const email = form.email.trim().toLowerCase();
       const password = form.password;
 
@@ -73,12 +76,23 @@ export function useClientLogin() {
         const profile = profileResponse?.data || {};
         const fullName = profile.full_name || email.split('@')[0] || 'Client';
         safeSet(LOCAL, 'clientFullName', fullName);
+        const resolvedCurrentId = String(profile.user_id || profile.id || profile.display_id || '').trim();
+        if (resolvedCurrentId) {
+          safeSet(LOCAL, 'currentClientId', resolvedCurrentId);
+        }
       } catch {
         safeSet(LOCAL, 'clientFullName', email.split('@')[0] || 'Client');
       }
 
+      // ========== NEW: Find and set current client from localStorage ==========
+      const localClient = findClientByEmailAndPassword(email, password);
+      if (localClient) {
+        setCurrentClient(localClient);
+      }
+
       setSuccess('Login successful. Redirecting...');
-      window.setTimeout(() => navigate('/dashboard'), 400);
+      const nextPath = searchParams.get('next') || '/client-dashboard';
+      window.setTimeout(() => navigate(nextPath), 400);
     } catch (err) {
       setError(normalizeError(err));
     } finally {

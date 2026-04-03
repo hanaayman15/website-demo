@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
     
     # ==================== DATABASE ====================
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./nutrition_management.db")
+    # Read from environment first; fallback to SQLite is applied in app.database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "").strip()
     
     # PostgreSQL Connection Pool Settings (only used with PostgreSQL)
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "5"))  # Number of persistent connections
@@ -57,8 +58,8 @@ class Settings(BaseSettings):
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
     
     # ==================== CORS ====================
-    # Frontend URL for production (e.g., Vercel deployment)
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+    # Frontend URL for production (GitHub Pages frontend)
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://hanaayman15.github.io")
     # Fallback CORS origins (development only)
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "")
     
@@ -85,25 +86,31 @@ def validate_settings() -> Settings:
         errors.append("[ERROR] SECRET_KEY is missing or less than 32 characters!")
         errors.append("   Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\"")
     
-    # Check DATABASE_URL (production requirement)
-    if not settings.DATABASE_URL or settings.DATABASE_URL == "sqlite:///./nutrition_management.db":
-        errors.append("[ERROR] DATABASE_URL is missing or using SQLite (not allowed in production)!")
+    database_url = settings.DATABASE_URL
+    is_sqlite = not database_url or database_url.startswith("sqlite:///")
+    is_postgresql = database_url.startswith(("postgresql://", "postgresql+psycopg2://", "postgres://"))
+    is_render_env = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+
+    # Allow local development fallback to SQLite when DATABASE_URL is unset.
+    # Require PostgreSQL only for deployed environments (e.g., Render).
+    if is_render_env and not is_postgresql:
+        errors.append("[ERROR] Render deployment requires PostgreSQL DATABASE_URL!")
         errors.append("   Set DATABASE_URL to PostgreSQL connection string")
         errors.append("   Example: postgresql://user:pass@host:5432/dbname?sslmode=require")
-    
-    # Validate DATABASE_URL format for PostgreSQL
-    if settings.DATABASE_URL and not settings.DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://")):
-        errors.append("[ERROR] DATABASE_URL must be PostgreSQL connection string!")
-        errors.append(f"   Current: {settings.DATABASE_URL[:30]}...")
-    
+
+    if database_url and not is_sqlite and not is_postgresql:
+        errors.append("[ERROR] DATABASE_URL must be PostgreSQL, postgres://, or sqlite:/// format")
+        errors.append(f"   Current: {database_url[:40]}...")
+
     # Validate SSL mode for production PostgreSQL (remote databases)
-    if settings.DATABASE_URL and settings.DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://")):
-        is_remote_db = "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL
-        if is_remote_db and "sslmode=" not in settings.DATABASE_URL:
+    if is_postgresql:
+        normalized_db_url = database_url.replace("postgres://", "postgresql://", 1)
+        is_remote_db = "localhost" not in normalized_db_url and "127.0.0.1" not in normalized_db_url
+        if is_remote_db and "sslmode=" not in normalized_db_url:
             errors.append("[ERROR] Production PostgreSQL must use SSL!")
             errors.append("   Add ?sslmode=require to DATABASE_URL")
             errors.append("   Example: postgresql://user:pass@host:5432/db?sslmode=require")
-        
+
         # Enforce DEBUG=False for remote PostgreSQL
         if is_remote_db and settings.DEBUG:
             errors.append("[ERROR] DEBUG=True is not allowed with remote PostgreSQL!")
@@ -136,8 +143,12 @@ def validate_settings() -> Settings:
     
     # Success message
     print("[SUCCESS] Production configuration validated successfully")
-    db_type = "PostgreSQL" if settings.DATABASE_URL.startswith("postgresql") else "Other"
-    ssl_status = "with SSL" if "sslmode=" in settings.DATABASE_URL else "no SSL"
+    if is_postgresql:
+        db_type = "PostgreSQL"
+        ssl_status = "with SSL" if "sslmode=" in settings.DATABASE_URL else "no SSL"
+    else:
+        db_type = "SQLite (local fallback)"
+        ssl_status = "n/a"
     print(f"   Database: {db_type} ({ssl_status})")
     print(f"   Debug mode: {settings.DEBUG}")
     print(f"   CORS: {settings.FRONTEND_URL or settings.CORS_ORIGINS[:50]}...")

@@ -35,17 +35,22 @@ function getCurrentRole() {
 }
 
 export function buildTeamViewRow(player, teamId, canOpenPlayerDetails) {
+  const numericClientId = Number(player?.client_id);
+  const hasNumericClientId = Number.isFinite(numericClientId) && numericClientId > 0;
+  const resolvedPlayerId = player?.id || player?.player_number;
+  const detailHref = hasNumericClientId
+    ? `/client-detail?id=${encodeURIComponent(numericClientId)}&team_id=${encodeURIComponent(teamId)}&player_id=${encodeURIComponent(resolvedPlayerId)}&tab=programs`
+    : `/client-detail?team_id=${encodeURIComponent(teamId)}&player_id=${encodeURIComponent(resolvedPlayerId)}&tab=programs`;
+
   return {
     number: player?.player_number || '-',
-    clientId: player?.client_id || '-',
+    clientId: player?.client_id || `P-${player?.player_number || '-'}`,
     fullName: player?.full_name || '-',
     email: player?.email || '-',
     phone: player?.phone || '-',
     gender: player?.gender || '-',
     heightWeight: `${player?.height || '-'} / ${player?.weight || '-'}`,
-    detailHref: canOpenPlayerDetails
-      ? `/client-detail?team_id=${encodeURIComponent(teamId)}&player_id=${encodeURIComponent(player?.id || player?.player_number)}&tab=programs`
-      : '',
+    detailHref: canOpenPlayerDetails ? detailHref : '',
   };
 }
 

@@ -1,4 +1,4 @@
-import { useSubscriptionPlans, CONSULTATION_PLAN_OPTIONS } from '../hooks/useSubscriptionPlans';
+import { useSubscriptionPlans, SUBSCRIPTION_PLAN_OPTIONS } from '../hooks/useSubscriptionPlans';
 import '../assets/styles/react-pages.css';
 
 function SubscriptionPlan() {
@@ -7,15 +7,15 @@ function SubscriptionPlan() {
   return (
     <main className="react-page-wrap react-grid" style={{ maxWidth: 1100, gap: '1rem' }}>
       <section className="react-panel react-grid" style={{ textAlign: 'center' }}>
-        <h1 style={{ margin: 0 }}>Choose Your Consultation Plan</h1>
-        <p className="react-muted" style={{ margin: 0 }}>Pick how often you want consultation support.</p>
+        <h1 style={{ margin: 0 }}>Choose Your Subscription Plan</h1>
+        <p className="react-muted" style={{ margin: 0 }}>Pick the level of coaching and support that fits your goals.</p>
       </section>
 
       {state.error ? <div className="react-alert react-alert-error">{state.error}</div> : null}
       {state.message ? <div className="react-alert react-alert-success">{state.message}</div> : null}
 
       <section className="react-grid react-grid-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-        {CONSULTATION_PLAN_OPTIONS.map((plan) => {
+        {SUBSCRIPTION_PLAN_OPTIONS.map((plan) => {
           const selected = state.selectedPlan === plan.key;
           return (
             <article

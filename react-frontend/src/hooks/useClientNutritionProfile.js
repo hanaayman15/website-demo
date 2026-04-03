@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useReducer } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import { usePersistentDraft } from './usePersistentDraft';
 import { getStorage, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
+import { clearSessionAuth, hasDoctorAdminSession, resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 
 const DEFAULT_ACTIVITY = 'extremely_active';
 const DEFAULT_COMPETITION = 'none';
-const DEFAULT_PROGRESSION = '';
+const DEFAULT_PROGRESSION = 'maintain';
 const DAYS = ['Mo', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function buildNutritionDraftKey(clientId) {
@@ -211,7 +212,35 @@ export function buildNutritionFields(seed = {}) {
   return calculateNutritionDerived(merged);
 }
 
+function buildEmptyDraftSnapshot() {
+  return {
+    fields: buildNutritionFields(),
+    trainingSessions: [],
+    supplements: [],
+  };
+}
+
 function mapApiNutritionToState(data = {}) {
+  const trainingSource = Array.isArray(data.training_sessions)
+    ? data.training_sessions
+    : (Array.isArray(data.training_details) ? data.training_details : []);
+
+  let supplementsSource = [];
+  if (Array.isArray(data.supplements)) {
+    supplementsSource = data.supplements;
+  } else if (typeof data.supplements === 'string' && data.supplements.trim()) {
+    try {
+      const parsed = JSON.parse(data.supplements);
+      if (Array.isArray(parsed)) {
+        supplementsSource = parsed;
+      } else {
+        supplementsSource = [{ name: '', amount: '', notes: data.supplements }];
+      }
+    } catch {
+      supplementsSource = [{ name: '', amount: '', notes: data.supplements }];
+    }
+  }
+
   return {
     fields: buildNutritionFields({
       height: data.height,
@@ -231,14 +260,14 @@ function mapApiNutritionToState(data = {}) {
       protein: data.protein_target,
       carbs: data.carbs_target,
       fats: data.fats_target,
-      waterInBody: data.water_in_body,
+      waterInBody: data.water_in_body ?? data.water_percentage,
       waterIntake: data.water_intake,
       minerals: data.minerals,
       testRecord: data.test_record_notes,
       injuries: data.injuries,
-      mentalNotes: data.mental_notes,
+      mentalNotes: data.mental_notes ?? data.mental_observation,
       foodAllergies: data.food_allergies,
-      medicalNotes: data.medical_notes,
+      medicalNotes: data.medical_notes ?? data.medical,
       foodLikes: data.food_likes,
       foodDislikes: data.food_dislikes,
       competition: data.competition_status || DEFAULT_COMPETITION,
@@ -247,18 +276,14 @@ function mapApiNutritionToState(data = {}) {
       goalWeight: data.goal_weight,
       additionalNotes: data.additional_notes,
     }),
-    trainingSessions: Array.isArray(data.training_sessions)
-      ? data.training_sessions.map((item) => buildTrainingSession(item))
-      : [],
-    supplements: Array.isArray(data.supplements)
-      ? data.supplements.map((item) => buildSupplement(item))
-      : [],
+    trainingSessions: trainingSource.map((item) => buildTrainingSession(item)),
+    supplements: supplementsSource.map((item) => buildSupplement(item)),
   };
 }
 
 function normalizeDraftSnapshot(rawDraft) {
   if (!rawDraft || typeof rawDraft !== 'object') {
-    return buildNutritionFallbackDraft();
+    return buildEmptyDraftSnapshot();
   }
 
   if (rawDraft.fields) {
@@ -282,6 +307,30 @@ function normalizeDraftSnapshot(rawDraft) {
       ? rawDraft.supplements.map((item) => buildSupplement(item))
       : [],
   };
+}
+
+function hasMeaningfulServerNutritionData(data = {}) {
+  const keys = [
+    'height',
+    'weight',
+    'tdee',
+    'goal_weight',
+    'protein_target',
+    'carbs_target',
+    'fats_target',
+    'competition_date',
+    'activity_level',
+    'sport',
+    'position',
+  ];
+
+  return keys.some((key) => {
+    const value = data?.[key];
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
+    return true;
+  });
 }
 
 export function buildNutritionPayload({ fields, trainingSessions, supplements }) {
@@ -339,6 +388,65 @@ export function buildNutritionPayload({ fields, trainingSessions, supplements })
         notes: String(item.notes || '').trim(),
       }))
       .filter((item) => item.name || item.notes || item.amount !== null),
+  };
+}
+
+function buildClientProfileNutritionPayload({ fields, trainingSessions, supplements }) {
+  const normalizedSupplements = supplements
+    .map((item) => ({
+      name: String(item.name || '').trim(),
+      amount: toNumberOrNull(item.amount),
+      notes: String(item.notes || '').trim(),
+    }))
+    .filter((item) => item.name || item.notes || item.amount !== null);
+
+  return {
+    height: toNumberOrNull(fields.height),
+    weight: toNumberOrNull(fields.weight),
+    bmi: toNumberOrNull(fields.bmi),
+    body_fat_percentage: toNumberOrNull(fields.bodyFat),
+    skeletal_muscle: toNumberOrNull(fields.skeletalMuscle),
+    body_fat_mass: toNumberOrNull(fields.bodyFatMass),
+    muscle_percentage: toNumberOrNull(fields.musclePercent),
+    bmr: toNumberOrNull(fields.bmr),
+    activity_level: fields.activityLevel || null,
+    sport: fields.sport || null,
+    position: fields.position || null,
+    tdee: toNumberOrNull(fields.tdee),
+    progression_type: fields.progressionType || null,
+    protein_target: toNumberOrNull(fields.protein),
+    carbs_target: toNumberOrNull(fields.carbs),
+    fats_target: toNumberOrNull(fields.fats),
+    water_percentage: toNumberOrNull(fields.waterInBody),
+    water_intake: toNumberOrNull(fields.waterIntake),
+    minerals: toNumberOrNull(fields.minerals),
+    test_record_notes: fields.testRecord || null,
+    injuries: fields.injuries || null,
+    mental_observation: fields.mentalNotes || null,
+    medical: fields.medicalNotes || null,
+    food_allergies: fields.foodAllergies || null,
+    food_likes: fields.foodLikes || null,
+    food_dislikes: fields.foodDislikes || null,
+    competition_status: fields.competition || DEFAULT_COMPETITION,
+    competition_date: fields.competitionDate || null,
+    days_left: toNumberOrNull(fields.daysLeft),
+    goal_weight: toNumberOrNull(fields.goalWeight),
+    additional_notes: fields.additionalNotes || null,
+    training_details: trainingSessions
+      .map((item) => ({
+        name: String(item.name || '').trim(),
+        session: String(item.name || '').trim(),
+        type: item.type,
+        days: Array.isArray(item.days) ? item.days : [],
+        start_hour: item.startHour,
+        start_min: item.startMin,
+        start_ampm: item.startAmPm,
+        end_hour: item.endHour,
+        end_min: item.endMin,
+        end_ampm: item.endAmPm,
+      }))
+      .filter((item) => item.name || item.days.length > 0),
+    supplements: normalizedSupplements.length ? JSON.stringify(normalizedSupplements) : null,
   };
 }
 
@@ -481,6 +589,7 @@ function extractApiError(error, fallback) {
 }
 
 export function useClientNutritionProfile() {
+  const navigate = useNavigate();
   const local = getStorage('local');
   const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(
@@ -490,21 +599,43 @@ export function useClientNutritionProfile() {
   );
 
   const clientId = searchParams.get('client_id') || '';
-  const draftKey = useMemo(() => buildNutritionDraftKey(clientId), [clientId]);
+  const flow = String(searchParams.get('flow') || localStorage.getItem('onboardingSource') || '').toLowerCase();
+  const authToken = resolveAuthToken();
+  const authRole = String(resolveAuthRole() || '').toLowerCase();
+  const hasDoctorSession = hasDoctorAdminSession();
+  const isClientSession = Boolean(authToken && authRole === 'client');
+  const canUseNutritionApi = Boolean(
+    authToken && (
+      authRole === 'admin' ||
+      (authRole === 'doctor' && hasDoctorSession) ||
+      authRole === 'client'
+    )
+  );
+  const requiresClientId = authRole === 'admin' || authRole === 'doctor';
+  const clientIdForState = clientId || (isClientSession ? 'self' : '');
+  const draftKey = useMemo(() => buildNutritionDraftKey(clientIdForState), [clientIdForState]);
   const {
     draft,
     setDraft,
     clearDraft,
     hasDraft,
-  } = usePersistentDraft({ key: draftKey, initialValue: buildNutritionFallbackDraft(), enabled: Boolean(clientId) });
+  } = usePersistentDraft({ key: draftKey, initialValue: null, enabled: Boolean(clientIdForState) });
 
   useEffect(() => {
-    dispatch({ type: 'SET_CLIENT', payload: clientId });
-  }, [clientId]);
+    dispatch({ type: 'SET_CLIENT', payload: clientIdForState });
+  }, [clientIdForState]);
 
   useEffect(() => {
-    if (!clientId) {
+    if (requiresClientId && !clientId) {
       dispatch({ type: 'LOAD_ERROR', payload: 'Missing client id.' });
+      return;
+    }
+
+    if (!canUseNutritionApi) {
+      dispatch({
+        type: 'LOAD_ERROR',
+        payload: 'Client, Doctor, or Admin login is required to open and save Nutrition Profile. Please sign in and try again.',
+      });
       return;
     }
 
@@ -512,22 +643,43 @@ export function useClientNutritionProfile() {
 
     const load = async () => {
       dispatch({ type: 'LOAD_START' });
-      const fallbackDraft = buildNutritionFallbackDraft();
-      const localDraft = normalizeDraftSnapshot(draft || fallbackDraft);
+      const localDraft = normalizeDraftSnapshot(draft);
+      const endpoint = isClientSession
+        ? '/api/client/profile'
+        : `/api/admin/clients/${encodeURIComponent(clientId)}/nutrition`;
 
       try {
-        const response = await apiClient.get(`/api/admin/clients/${encodeURIComponent(clientId)}/nutrition`);
+        const response = await apiClient.get(endpoint);
         if (!mounted) return;
 
-        const mapped = mapApiNutritionToState(response?.data || {});
+        const serverData = response?.data || {};
+        const mapped = mapApiNutritionToState(serverData);
+        const useServerFields = hasMeaningfulServerNutritionData(serverData);
         const normalized = {
-          fields: { ...mapped.fields, ...localDraft.fields },
+          fields: useServerFields ? mapped.fields : buildNutritionFields(localDraft.fields),
           trainingSessions: mapped.trainingSessions.length ? mapped.trainingSessions : localDraft.trainingSessions,
           supplements: mapped.supplements.length ? mapped.supplements : localDraft.supplements,
         };
         dispatch({ type: 'LOAD_SUCCESS', payload: normalized });
-      } catch {
+      } catch (error) {
         if (!mounted) return;
+
+        if (error?.response?.status === 401) {
+          clearSessionAuth();
+          const next = clientId
+            ? `/client-nutrition-profile?client_id=${encodeURIComponent(clientId)}`
+            : '/client-nutrition-profile';
+          const loginPath = authRole === 'client' ? '/client-login' : '/doctor-auth';
+          dispatch({
+            type: 'LOAD_ERROR',
+            payload: 'Session expired or unauthorized. Please login again to continue.',
+          });
+          if (typeof window !== 'undefined') {
+            window.location.assign(`${loginPath}?next=${encodeURIComponent(next)}`);
+          }
+          return;
+        }
+
         dispatch({
           type: 'LOAD_SUCCESS',
           payload: {
@@ -544,7 +696,7 @@ export function useClientNutritionProfile() {
     return () => {
       mounted = false;
     };
-  }, [clientId]);
+  }, [authRole, canUseNutritionApi, clientId, isClientSession, requiresClientId]);
 
   useEffect(() => {
     if (!state.clientId || state.loading) return;
@@ -556,23 +708,42 @@ export function useClientNutritionProfile() {
   }, [setDraft, state.clientId, state.fields, state.loading, state.supplements, state.trainingSessions]);
 
   const saveProfile = async () => {
-    if (!state.clientId) {
+    if (requiresClientId && !clientId) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Missing client id.' });
       return { ok: false };
     }
 
+    if (!canUseNutritionApi) {
+      const next = clientId
+        ? `/client-nutrition-profile?client_id=${encodeURIComponent(clientId)}`
+        : '/client-nutrition-profile';
+      const loginPath = authRole === 'client' ? '/client-login' : '/doctor-auth';
+      dispatch({
+        type: 'SAVE_ERROR',
+        payload: 'Unauthorized. Please login again, then save Nutrition Profile.',
+      });
+      if (typeof window !== 'undefined') {
+        window.location.assign(`${loginPath}?next=${encodeURIComponent(next)}`);
+      }
+      return { ok: false };
+    }
+
     dispatch({ type: 'SAVE_START' });
-    const payload = buildNutritionPayload(state);
+    const payload = isClientSession
+      ? buildClientProfileNutritionPayload(state)
+      : buildNutritionPayload(state);
+    const endpoint = isClientSession
+      ? '/api/client/profile'
+      : `/api/admin/clients/${encodeURIComponent(clientId)}/nutrition`;
 
     try {
-      await apiClient.put(
-        `/api/admin/clients/${encodeURIComponent(state.clientId)}/nutrition`,
-        payload
-      );
+      await apiClient.put(endpoint, payload);
 
       try {
-        const cacheKey = `clientData_${state.clientId}`;
-        const existing = safeJsonGet(local, cacheKey, {});
+        const resolvedId = String(clientId || state.clientId || localStorage.getItem('currentClientId') || '').trim();
+        const displayId = String(safeJsonGet(local, 'lastClientContextV1', {})?.display_id || '').trim();
+        const cacheIds = Array.from(new Set([resolvedId, displayId].filter(Boolean)));
+        const existing = safeJsonGet(local, `clientData_${resolvedId || 'self'}`, {});
         const merged = {
           ...existing,
           height: payload.height,
@@ -597,15 +768,70 @@ export function useClientNutritionProfile() {
           minerals: payload.minerals,
           trainingDetails: payload.training_sessions,
         };
-        safeJsonSet(local, cacheKey, merged);
+        cacheIds.forEach((id) => {
+          safeJsonSet(local, `clientData_${id}`, { ...(safeJsonGet(local, `clientData_${id}`, {}) || {}), ...merged });
+          safeJsonSet(local, `clientDashboardCache_${id}`, { ...(safeJsonGet(local, `clientDashboardCache_${id}`, {}) || {}), ...merged });
+          safeJsonSet(local, `clientFullProfile_${id}`, { ...(safeJsonGet(local, `clientFullProfile_${id}`, {}) || {}), ...merged });
+        });
+
+        const clients = safeJsonGet(local, 'clients', []);
+        if (Array.isArray(clients) && cacheIds.length) {
+          const updated = clients.map((row) => {
+            const rowId = String(row?.id || '');
+            const rowDisplayId = String(row?.display_id || '');
+            if (!cacheIds.includes(rowId) && !cacheIds.includes(rowDisplayId)) return row;
+            return {
+              ...row,
+              height: payload.height,
+              weight: payload.weight,
+              bmi: payload.bmi,
+              body_fat_percentage: payload.body_fat_percentage,
+              skeletal_muscle: payload.skeletal_muscle,
+              tdee: payload.tdee,
+              goal_weight: payload.goal_weight,
+              protein_target: payload.protein_target,
+              carbs_target: payload.carbs_target,
+              fats_target: payload.fats_target,
+              competition_date: payload.competition_date,
+              activity_level: payload.activity_level,
+              sport: payload.sport || row.sport,
+              position: payload.position || row.position,
+            };
+          });
+          safeJsonSet(local, 'clients', updated);
+        }
       } catch {
         // Cache updates are best effort only.
       }
 
       clearDraft();
       dispatch({ type: 'SAVE_SUCCESS', payload: 'Nutrition profile saved successfully.' });
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      await wait(550);
+      if (flow === 'add-client') {
+        navigate('/clients');
+      } else if (flow === 'profile-setup' || flow === 'signup') {
+        navigate('/client-dashboard');
+      }
+
       return { ok: true };
     } catch (error) {
+      if (error?.response?.status === 401) {
+        clearSessionAuth();
+        const next = clientId
+          ? `/client-nutrition-profile?client_id=${encodeURIComponent(clientId)}`
+          : '/client-nutrition-profile';
+        const loginPath = authRole === 'client' ? '/client-login' : '/doctor-auth';
+        dispatch({
+          type: 'SAVE_ERROR',
+          payload: 'Session expired or unauthorized. Please login again to continue.',
+        });
+        if (typeof window !== 'undefined') {
+          window.location.assign(`${loginPath}?next=${encodeURIComponent(next)}`);
+        }
+        return { ok: false };
+      }
       dispatch({ type: 'SAVE_ERROR', payload: extractApiError(error, 'Failed to save nutrition profile.') });
       return { ok: false };
     }
@@ -641,7 +867,7 @@ export function useClientNutritionProfile() {
     caloriesLabel,
     hasDraft,
     restoreDraft: () => {
-      const normalized = normalizeDraftSnapshot(draft || buildNutritionFallbackDraft());
+      const normalized = normalizeDraftSnapshot(draft);
       dispatch({ type: 'RESTORE_DRAFT', payload: normalized });
     },
     discardDraft: () => {

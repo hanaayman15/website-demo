@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
-import { PHONE_OPTIONS, WORLD_COUNTRIES, fullNameIsValid } from './useProfileSetup';
+import { fullNameIsValid } from './useProfileSetup';
 import { usePersistentDraft } from './usePersistentDraft';
 import { getStorage, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
+import { WORLD_COUNTRIES, WORLD_PHONE_OPTIONS } from '../constants/globalOptions';
+
+const PHONE_OPTIONS = WORLD_PHONE_OPTIONS;
 
 const AUTOFILL_KEY = 'addClientBasicAutofillV1';
 const LAST_CLIENT_CONTEXT_KEY = 'lastClientContextV1';
@@ -61,6 +64,36 @@ function parseApiError(error, fallback) {
   return fallback;
 }
 
+function isAccessDeniedError(error) {
+  const status = Number(error?.response?.status || 0);
+  if (status === 401 || status === 403) return true;
+  const detail = String(error?.response?.data?.detail || '').toLowerCase();
+  return detail.includes('only admin or doctor users can access this resource');
+}
+
+function splitPhoneE164(phoneValue) {
+  const raw = String(phoneValue || '').trim();
+  if (!raw) {
+    return { phoneCountryCode: '+20', phoneNumber: '' };
+  }
+
+  const normalized = raw.startsWith('+') ? raw : `+${raw.replace(/\D/g, '')}`;
+  const knownDials = [...new Set(PHONE_OPTIONS.map((option) => option.dial))].sort((a, b) => b.length - a.length);
+  const matchedDial = knownDials.find((dial) => normalized.startsWith(dial));
+
+  if (matchedDial) {
+    return {
+      phoneCountryCode: matchedDial,
+      phoneNumber: normalized.slice(matchedDial.length).replace(/\D/g, ''),
+    };
+  }
+
+  return {
+    phoneCountryCode: '+20',
+    phoneNumber: normalized.replace(/\D/g, ''),
+  };
+}
+
 function getFallbackAutofill() {
   const now = Date.now();
   return {
@@ -103,11 +136,27 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
     .filter(Boolean)
     .forEach((key) => {
       const storageKey = `clientData_${key}`;
+      const dashboardStorageKey = `clientDashboardCache_${key}`;
+      const fullProfileStorageKey = `clientFullProfile_${key}`;
       try {
         const existing = safeJsonGet(local, storageKey, {}) || {};
         safeJsonSet(local, storageKey, { ...existing, ...snapshot });
       } catch {
         safeJsonSet(local, storageKey, snapshot);
+      }
+
+      try {
+        const existingDashboard = safeJsonGet(local, dashboardStorageKey, {}) || {};
+        safeJsonSet(local, dashboardStorageKey, { ...existingDashboard, ...snapshot });
+      } catch {
+        safeJsonSet(local, dashboardStorageKey, snapshot);
+      }
+
+      try {
+        const existingFullProfile = safeJsonGet(local, fullProfileStorageKey, {}) || {};
+        safeJsonSet(local, fullProfileStorageKey, { ...existingFullProfile, ...snapshot });
+      } catch {
+        safeJsonSet(local, fullProfileStorageKey, snapshot);
       }
     });
 
@@ -143,6 +192,7 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
 export function useNewClient() {
   const local = getStorage('local');
   const [searchParams] = useSearchParams();
+  const saveInFlightRef = useRef(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -151,6 +201,7 @@ export function useNewClient() {
   const [redirectClientId, setRedirectClientId] = useState(null);
 
   const editClientId = useMemo(() => searchParams.get('client_id') || null, [searchParams]);
+  const flow = useMemo(() => String(searchParams.get('flow') || '').toLowerCase(), [searchParams]);
   const isEditMode = Boolean(editClientId);
   const {
     draft,
@@ -171,6 +222,49 @@ export function useNewClient() {
       Boolean(form.country)
     );
   }, [form, isEditMode]);
+
+  const mapClientProfileToForm = (data) => {
+    const hasSplitPhone = Boolean(data?.phone_country_code) || Boolean(data?.phone_number);
+    const parsedPhone = hasSplitPhone
+      ? {
+        phoneCountryCode: data?.phone_country_code || '+20',
+        phoneNumber: data?.phone_number || '',
+      }
+      : splitPhoneE164(data?.phone);
+
+    return {
+      clientId: String(data?.display_id || data?.client_id || data?.user_id || 'Auto'),
+      fullName: data?.full_name || '',
+      phoneCountryCode: parsedPhone.phoneCountryCode,
+      phoneNumber: parsedPhone.phoneNumber,
+      email: data?.email || '',
+      password: '',
+      gender: String(data?.gender || '').toLowerCase(),
+      birthday: data?.birthday || '',
+      country: data?.country || 'Egypt',
+      club: data?.club || '',
+      religion: data?.religion || '',
+    };
+  };
+
+  const loadCurrentClientProfile = async () => {
+    const response = await apiClient.get('/api/client/profile');
+    return response?.data || {};
+  };
+
+  const saveCurrentClientProfile = async (payload) => {
+    const response = await apiClient.put('/api/client/profile', {
+      full_name: payload.full_name,
+      email: payload.email,
+      phone: `${payload.phone_country_code || ''}${payload.phone_number || ''}`,
+      gender: payload.gender,
+      birthday: payload.birthday,
+      country: payload.country,
+      club: payload.club,
+      religion: payload.religion,
+    });
+    return response?.data || {};
+  };
 
   const persistAutofillDraft = (nextForm) => {
     const draft = {
@@ -251,24 +345,23 @@ export function useNewClient() {
       setLoading(true);
       setError('');
       try {
-        const response = await apiClient.get(`/api/admin/clients/${encodeURIComponent(editClientId)}/basic`);
-        const data = response?.data || {};
+        let data = {};
+        if (flow === 'signup') {
+          data = await loadCurrentClientProfile();
+        } else {
+          try {
+            const response = await apiClient.get(`/api/admin/clients/${encodeURIComponent(editClientId)}/basic`);
+            data = response?.data || {};
+          } catch (adminLoadError) {
+            if (!isAccessDeniedError(adminLoadError)) {
+              throw adminLoadError;
+            }
+            data = await loadCurrentClientProfile();
+          }
+        }
         if (!mounted) return;
 
-        setForm((prev) => ({
-          ...prev,
-          clientId: String(data.display_id || data.client_id || data.user_id || 'Auto'),
-          fullName: data.full_name || '',
-          phoneCountryCode: data.phone_country_code || '+20',
-          phoneNumber: data.phone_number || '',
-          email: data.email || '',
-          password: '',
-          gender: data.gender || '',
-          birthday: data.birthday || '',
-          country: data.country || 'Egypt',
-          club: data.club || '',
-          religion: data.religion || '',
-        }));
+        setForm((prev) => ({ ...prev, ...mapClientProfileToForm(data) }));
       } catch (err) {
         if (!mounted) return;
         setError(parseApiError(err, 'Failed to load client basic info.'));
@@ -281,10 +374,13 @@ export function useNewClient() {
     return () => {
       mounted = false;
     };
-  }, [editClientId, isEditMode]);
+  }, [editClientId, flow, isEditMode]);
 
   const saveBasicInfo = async (event) => {
     event.preventDefault();
+    if (saveInFlightRef.current) {
+      return;
+    }
     setError('');
     setMessage('');
 
@@ -299,6 +395,7 @@ export function useNewClient() {
       return;
     }
 
+    saveInFlightRef.current = true;
     setSaving(true);
 
     const payload = {
@@ -319,10 +416,25 @@ export function useNewClient() {
     }
 
     try {
-      const response = isEditMode
-        ? await apiClient.put(`/api/admin/clients/${encodeURIComponent(editClientId)}/basic`, payload)
-        : await apiClient.post('/api/client', payload);
-      const data = response?.data || {};
+      let data = {};
+      if (isEditMode) {
+        if (flow === 'signup') {
+          data = await saveCurrentClientProfile(payload);
+        } else {
+          try {
+            const response = await apiClient.put(`/api/admin/clients/${encodeURIComponent(editClientId)}/basic`, payload);
+            data = response?.data || {};
+          } catch (adminSaveError) {
+            if (!isAccessDeniedError(adminSaveError)) {
+              throw adminSaveError;
+            }
+            data = await saveCurrentClientProfile(payload);
+          }
+        }
+      } else {
+        const response = await apiClient.post('/api/client', payload);
+        data = response?.data || {};
+      }
       const targetClientId = editClientId || data.user_id || null;
 
       setForm((prev) => ({
@@ -338,22 +450,32 @@ export function useNewClient() {
         email: payload.email,
         source: 'add_client',
       });
+      if (targetClientId) {
+        localStorage.setItem('currentClientId', String(targetClientId));
+      }
+      localStorage.setItem('onboardingSource', flow === 'signup' ? 'signup' : 'add-client');
+      localStorage.setItem('onboardingClientId', String(targetClientId || ''));
 
       if (!isEditMode) {
         clearDraft();
       }
 
-      setMessage(isEditMode ? 'Basic information updated successfully.' : 'Client basic information saved successfully. Redirecting to services...');
+      setMessage(isEditMode ? 'Basic information updated successfully.' : 'Client basic information saved successfully. Redirecting to subscription...');
       setRedirectClientId(targetClientId);
     } catch (err) {
-      setError(parseApiError(err, 'Failed to save client.'));
+      const fallback = err?.response?.status === 409
+        ? 'A client with this email or phone already exists. Open that client from Clients page instead of creating a duplicate.'
+        : 'Failed to save client.';
+      setError(parseApiError(err, fallback));
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
     }
   };
 
   return {
     isEditMode,
+    flow,
     editClientId,
     form,
     loading,

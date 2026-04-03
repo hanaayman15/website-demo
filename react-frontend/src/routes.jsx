@@ -19,6 +19,7 @@ import Clients from './pages/Clients';
 import Contact from './pages/Contact';
 import DashboardTemplate from './pages/DashboardTemplate';
 import DietManagement from './pages/DietManagement';
+import DiagnosticsPage from './pages/DiagnosticsPage';
 import DoctorDashboard from './pages/DoctorDashboard';
 import DoctorAuth from './pages/DoctorAuth';
 import Features from './pages/Features';
@@ -33,6 +34,7 @@ import ProfileSetup from './pages/ProfileSetup';
 import ProgressTracking from './pages/ProgressTracking';
 import Progress from './pages/Progress';
 import Resources from './pages/Resources';
+import RouteError from './pages/RouteError';
 import Settings from './pages/Settings';
 import SubscriptionPlan from './pages/SubscriptionPlan';
 import SuccessStories from './pages/SuccessStories';
@@ -41,10 +43,13 @@ import TeamView from './pages/TeamView';
 import TestApi from './pages/TestApi';
 import TestConnection from './pages/TestConnection';
 import TestInput from './pages/TestInput';
+import NotFound from './pages/NotFound';
+//import ClientDashboardEnhanced from './pages/ClientDashboardEnhanced';
 
-export const router = createBrowserRouter([
+const routes = [
   { path: '/login', element: <ClientLogin /> },
   { path: '/dashboard', element: <ClientDashboard /> },
+  { path: '/diagnostics', element: <DiagnosticsPage /> },
   { path: '/about', element: <About /> },
   { path: '/account-recovery', element: <AccountRecovery /> },
   { path: '/ad-client-test', element: <AdClientTest /> },
@@ -87,4 +92,13 @@ export const router = createBrowserRouter([
   { path: '/test-api', element: <TestApi /> },
   { path: '/test-connection', element: <TestConnection /> },
   { path: '/test-input', element: <TestInput /> },
-]);
+  { path: '*', element: <NotFound /> },
+  //{ path: '/client-dashboard-enhanced', element: <ClientDashboardEnhanced /> },
+];
+
+export const router = createBrowserRouter(
+  routes.map((route) => ({
+    ...route,
+    errorElement: <RouteError />,
+  }))
+);

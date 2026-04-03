@@ -91,6 +91,9 @@ export function authReducer(state, action) {
 }
 
 function normalizeError(error, fallback) {
+  if (!error?.response) {
+    return 'Cannot connect to backend. Ensure backend is running on port 8001 and keep Vite dev proxy active.';
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
   return fallback;
@@ -132,7 +135,15 @@ function persistAuth(data, email, roleHint) {
   });
 }
 
-export function useAuth(nextPath = '/doctor-dashboard') {
+function resolveNextPathByRole(mode, configuredNextPath, role) {
+  const normalizedRole = String(role || '').toLowerCase();
+  if (normalizedRole === 'admin' || mode === 'admin') return '/';
+  if (normalizedRole === 'doctor') return '/doctor-dashboard';
+  if (mode === 'admin') return '/';
+  return configuredNextPath || '/';
+}
+
+export function useAuth(nextPath = '/') {
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(authReducer, undefined, buildInitialAuthState);
 
@@ -184,9 +195,11 @@ export function useAuth(nextPath = '/doctor-dashboard') {
           continue;
         }
 
-        persistAuth(data, payload.email, expectedRole(mode));
+        const role = String(data?.role || expectedRole(mode)).toLowerCase();
+        persistAuth(data, payload.email, role);
+        const destination = resolveNextPathByRole(mode, nextPath, role);
         dispatch({ type: 'SUBMIT_SUCCESS', payload: successMessageForMode(mode) });
-        window.setTimeout(() => navigate(nextPath), 350);
+        window.setTimeout(() => navigate(destination), 350);
         return;
       } catch (error) {
         if (error?.response?.status === 404) {

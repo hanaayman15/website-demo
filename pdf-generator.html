@@ -409,16 +409,37 @@
 			const token =
 				localStorage.getItem('authToken') ||
 				sessionStorage.getItem('authToken') ||
+				localStorage.getItem('clientToken') ||
+				sessionStorage.getItem('clientToken') ||
 				localStorage.getItem('access_token') ||
 				sessionStorage.getItem('access_token');
 			if (!token) return null;
-			const tokenType =
-				localStorage.getItem('authTokenType') ||
-				sessionStorage.getItem('authTokenType') ||
-				localStorage.getItem('token_type') ||
-				sessionStorage.getItem('token_type') ||
-				'bearer';
-			return `${tokenType.charAt(0).toUpperCase() + tokenType.slice(1)} ${token}`;
+			return `Bearer ${token}`;
+		}
+
+		async function fetchWithAuthFallback(url, options = {}) {
+			const authHeader = getAuthHeader();
+			const baseHeaders = options.headers ? { ...options.headers } : {};
+			const withAuthHeaders = authHeader
+				? { ...baseHeaders, Authorization: authHeader }
+				: baseHeaders;
+
+			let response = await fetch(url, {
+				...options,
+				credentials: 'include',
+				headers: withAuthHeaders,
+			});
+
+			// If stored token is stale, retry without Authorization header so cookie auth can work.
+			if (response.status === 401 && authHeader) {
+				response = await fetch(url, {
+					...options,
+					credentials: 'include',
+					headers: baseHeaders,
+				});
+			}
+
+			return response;
 		}
 
 		function getCurrentRole() {
@@ -484,13 +505,8 @@
 		}
 
 		async function loadPdfOptions() {
-			const authHeader = getAuthHeader();
-			if (!authHeader) throw new Error('Missing admin auth token');
-
-			const response = await fetch(`${API_BASE_URL}/api/pdf-options`, {
+			const response = await fetchWithAuthFallback(`${API_BASE_URL}/api/pdf-options`, {
 				cache: 'no-cache',
-				credentials: 'include',
-				headers: { Authorization: authHeader },
 			});
 
 			const data = await response.json().catch(() => ({}));
@@ -523,6 +539,47 @@
 			return `clients-report-${langCode}-${y}${m}${d}.pdf`;
 		}
 
+		function toNullableInt(value) {
+			const n = Number(value);
+			return Number.isInteger(n) ? n : null;
+		}
+
+		function normalizePdfClient(item) {
+			return {
+				id: toNullableInt(item?.id),
+				displayId: item?.displayId == null ? null : String(item.displayId),
+				name: item?.name == null ? null : String(item.name),
+				age: toNullableInt(item?.age),
+				gender: item?.gender == null ? null : String(item.gender),
+				phone: item?.phone == null ? null : String(item.phone),
+				source: item?.source == null ? null : String(item.source),
+				teamName: item?.teamName == null ? null : String(item.teamName),
+			};
+		}
+
+		function formatApiErrorDetail(detail, fallbackMessage) {
+			if (!detail) return fallbackMessage;
+			if (typeof detail === 'string') return detail;
+			if (Array.isArray(detail)) {
+				const lines = detail.map((entry) => {
+					if (!entry) return '';
+					const path = Array.isArray(entry.loc) ? entry.loc.join('.') : '';
+					const msg = entry.msg || JSON.stringify(entry);
+					return path ? `${path}: ${msg}` : msg;
+				}).filter(Boolean);
+				return lines.length ? lines.join(' | ') : fallbackMessage;
+			}
+			if (typeof detail === 'object') {
+				if (detail.msg) return String(detail.msg);
+				try {
+					return JSON.stringify(detail);
+				} catch (_) {
+					return fallbackMessage;
+				}
+			}
+			return String(detail);
+		}
+
 		document.getElementById('generate-btn').addEventListener('click', async () => {
 			const role = getCurrentRole();
 			if (role !== 'admin') {
@@ -536,6 +593,18 @@
 
 			if (!teamId && !clientId) {
 				alert('Select a team or a client first.');
+				return;
+			}
+
+			// Match the exact PDF style/logic used by client-detail page.
+			if (clientId) {
+				const langParam = language === 'arabic' ? 'ar' : 'en';
+				window.location.href = `client-detail.html?id=${encodeURIComponent(clientId)}&auto_pdf=1&pdf_lang=${encodeURIComponent(langParam)}`;
+				return;
+			}
+
+			if (teamId) {
+				alert('To use the same PDF format as Client Details, please select a single client. Team export uses a different report flow.');
 				return;
 			}
 
@@ -575,34 +644,28 @@
 				return;
 			}
 
+			const payloadClients = selectedEntries.map(normalizePdfClient);
+
 			const button = document.getElementById('generate-btn');
 			const originalText = button.textContent;
 			button.disabled = true;
 			button.textContent = 'Generating...';
 
 			try {
-				const authHeader = getAuthHeader();
-				if (!authHeader) {
-					alert('Admin login required to generate server PDF.');
-					return;
-				}
-
-				const response = await fetch(`${API_BASE_URL}/api/reports/clients-pdf`, {
+				const response = await fetchWithAuthFallback(`${API_BASE_URL}/api/reports/clients-pdf`, {
 					method: 'POST',
-					credentials: 'include',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: authHeader,
 					},
 					body: JSON.stringify({
 						language,
-						clients: selectedEntries,
+						clients: payloadClients,
 					}),
 				});
 
 				if (!response.ok) {
 					const errData = await response.json().catch(() => ({}));
-					throw new Error(errData.detail || 'Failed to generate PDF on server');
+					throw new Error(formatApiErrorDetail(errData.detail, 'Failed to generate PDF on server'));
 				}
 
 				const blob = await response.blob();

@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
+import ClientPortalNav from '../components/layout/ClientPortalNav';
 import { useSettings } from '../hooks/useSettings';
+import { WORLD_COUNTRIES } from '../constants/globalOptions';
 import '../assets/styles/react-pages.css';
 
 function Settings() {
@@ -40,207 +42,213 @@ function Settings() {
     updateNotificationPref(field, !notificationPrefs[field]);
   };
 
+  const logout = () => {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('authRole');
+    sessionStorage.removeItem('role');
+    navigate('/client-login');
+  };
+
   return (
-    <main className="react-page-wrap react-grid" style={{ gap: '1rem', maxWidth: 1100 }}>
-      <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Settings</h1>
-          <p className="react-muted" style={{ margin: 0 }}>Manage your profile, security, and account preferences.</p>
-        </div>
-        <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/client-dashboard">Dashboard</Link>
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <div className="container mx-auto px-6 pt-6">
+        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-2xl mb-1">😴</p>
+            <p className="text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+          </div>
           <button
-            className="react-btn react-btn-ghost"
             type="button"
-            onClick={() => {
-              localStorage.removeItem('authToken');
-              navigate('/client-home');
-            }}
+            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            onClick={() => navigate('/progress-tracking')}
           >
-            Logout
+            📝 Log Sleep
           </button>
         </div>
-      </section>
 
-      {error ? <div className="react-alert react-alert-error">{error}</div> : null}
-      {message ? <div className="react-alert react-alert-success">{message}</div> : null}
-
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Update Personal Info</h2>
-        <form className="react-grid" onSubmit={savePersonalInfo}>
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">Full Name</span>
-              <input
-                className="react-input"
-                value={personalForm.fullName}
-                onChange={(event) => updatePersonalField('fullName', event.target.value)}
-                placeholder="At least 4 names"
-              />
-            </label>
-            <label>
-              <span className="react-label">Email</span>
-              <input className="react-input" value={personalForm.email} readOnly />
-            </label>
-            <label>
-              <span className="react-label">Phone Number</span>
-              <input
-                className="react-input"
-                value={personalForm.phone}
-                onChange={(event) => updatePersonalField('phone', event.target.value)}
-              />
-            </label>
-            <label>
-              <span className="react-label">Country</span>
-              <input
-                className="react-input"
-                value={personalForm.country}
-                onChange={(event) => updatePersonalField('country', event.target.value)}
-              />
-            </label>
-          </div>
-          <button className="react-btn" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
-        </form>
-      </section>
-
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Edit Full Profile</h2>
-        <form className="react-grid" onSubmit={saveFullProfile}>
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">Full Name</span>
-              <input className="react-input" value={fullProfileForm.fullName} onChange={(event) => updateFullProfileField('fullName', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Phone</span>
-              <input className="react-input" value={fullProfileForm.phone} onChange={(event) => updateFullProfileField('phone', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Birthday</span>
-              <input className="react-input" type="date" value={fullProfileForm.birthday} onChange={(event) => updateFullProfileField('birthday', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Gender</span>
-              <select className="react-input" value={fullProfileForm.gender} onChange={(event) => updateFullProfileField('gender', event.target.value)}>
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </label>
-            <label>
-              <span className="react-label">Country</span>
-              <input className="react-input" value={fullProfileForm.country} onChange={(event) => updateFullProfileField('country', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Club</span>
-              <input className="react-input" value={fullProfileForm.club} onChange={(event) => updateFullProfileField('club', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Sport</span>
-              <input className="react-input" value={fullProfileForm.sport} onChange={(event) => updateFullProfileField('sport', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Activity Level</span>
-              <input className="react-input" value={fullProfileForm.activityLevel} onChange={(event) => updateFullProfileField('activityLevel', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Height (cm)</span>
-              <input className="react-input" type="number" step="0.1" value={fullProfileForm.height} onChange={(event) => updateFullProfileField('height', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Weight (kg)</span>
-              <input className="react-input" type="number" step="0.1" value={fullProfileForm.weight} onChange={(event) => updateFullProfileField('weight', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Body Fat %</span>
-              <input className="react-input" type="number" step="0.1" value={fullProfileForm.bodyFat} onChange={(event) => updateFullProfileField('bodyFat', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Skeletal Muscle</span>
-              <input className="react-input" type="number" step="0.1" value={fullProfileForm.skeletalMuscle} onChange={(event) => updateFullProfileField('skeletalMuscle', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Goal Weight</span>
-              <input className="react-input" type="number" step="0.1" value={fullProfileForm.goalWeight} onChange={(event) => updateFullProfileField('goalWeight', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Food Allergies</span>
-              <input className="react-input" value={fullProfileForm.foodAllergies} onChange={(event) => updateFullProfileField('foodAllergies', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Injuries</span>
-              <input className="react-input" value={fullProfileForm.injuries} onChange={(event) => updateFullProfileField('injuries', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Food Likes</span>
-              <textarea className="react-textarea" rows={2} value={fullProfileForm.foodLikes} onChange={(event) => updateFullProfileField('foodLikes', event.target.value)} />
-            </label>
-            <label>
-              <span className="react-label">Food Dislikes</span>
-              <textarea className="react-textarea" rows={2} value={fullProfileForm.foodDislikes} onChange={(event) => updateFullProfileField('foodDislikes', event.target.value)} />
-            </label>
-          </div>
-          <label>
-            <span className="react-label">Additional Notes</span>
-            <textarea className="react-textarea" rows={3} value={fullProfileForm.additionalNotes} onChange={(event) => updateFullProfileField('additionalNotes', event.target.value)} />
-          </label>
-          <button className="react-btn" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Full Profile'}</button>
-        </form>
-      </section>
-
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Change Password</h2>
-        <form className="react-grid react-grid-2" onSubmit={changePassword}>
-          <label>
-            <span className="react-label">Current Password</span>
-            <input className="react-input" type="password" value={passwordForm.currentPassword} onChange={(event) => updatePasswordField('currentPassword', event.target.value)} />
-          </label>
-          <label>
-            <span className="react-label">New Password</span>
-            <input className="react-input" type="password" value={passwordForm.newPassword} onChange={(event) => updatePasswordField('newPassword', event.target.value)} />
-          </label>
-          <label>
-            <span className="react-label">Confirm New Password</span>
-            <input className="react-input" type="password" value={passwordForm.confirmPassword} onChange={(event) => updatePasswordField('confirmPassword', event.target.value)} />
-          </label>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="react-btn" type="submit" disabled={saving}>{saving ? 'Updating...' : 'Update Password'}</button>
-          </div>
-        </form>
-      </section>
-
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Manage Subscription</h2>
-        <div className="react-row-between" style={{ flexWrap: 'wrap' }}>
+        <div className="mt-4 bg-white border border-amber-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="react-label" style={{ marginBottom: 0 }}>Current Plan</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{currentPlan}</div>
+            <p className="text-2xl mb-1">⚙️</p>
+            <p className="text-gray-700 font-medium">✨ Keep your profile up to date! Update your information to get the most accurate nutrition plan.</p>
           </div>
-          <Link className="react-btn react-btn-ghost" to="/plans">Change Plan</Link>
+          <button
+            type="button"
+            className="px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600"
+            onClick={() => navigate('/profile-setup?edit=1')}
+          >
+            ✏️ Edit Profile
+          </button>
+        </div>
+      </div>
+
+      <ClientPortalNav activePath="/settings" isLoggedIn />
+
+      <section className="py-8 bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center gap-4">
+            <div className="text-5xl">⚙️</div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Settings</h1>
+              <p className="text-gray-600 mt-2">Manage your account and preferences</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Notification Preferences</h2>
-        <label className="react-inline-toggle">
-          <input type="checkbox" checked={notificationPrefs.emailNotifications} onChange={() => togglePref('emailNotifications')} />
-          <span>Email Notifications</span>
-        </label>
-        <label className="react-inline-toggle">
-          <input type="checkbox" checked={notificationPrefs.smsReminders} onChange={() => togglePref('smsReminders')} />
-          <span>SMS Reminders</span>
-        </label>
-        <label className="react-inline-toggle">
-          <input type="checkbox" checked={notificationPrefs.progressReports} onChange={() => togglePref('progressReports')} />
-          <span>Progress Reports</span>
-        </label>
-      </section>
+      <section className="py-8">
+        <div className="container mx-auto px-6 max-w-5xl">
+          {error ? <div className="react-alert react-alert-error">{error}</div> : null}
+          {message ? <div className="react-alert react-alert-success">{message}</div> : null}
 
-      <section className="react-panel react-grid" style={{ borderColor: '#fecaca', background: '#fff7f7' }}>
-        <h2 style={{ marginTop: 0, marginBottom: 0, color: '#991b1b' }}>Danger Zone</h2>
-        <button className="react-btn react-btn-danger" type="button" onClick={confirmDeleteAccount}>Delete Account Permanently</button>
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">👤</div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Update Personal Info</h2>
+                <p className="text-gray-600">Edit your profile information</p>
+              </div>
+            </div>
+            <form className="space-y-4" onSubmit={savePersonalInfo}>
+              <div className="grid md:grid-cols-2 gap-4">
+                <label>
+                  <span className="react-label">Full Name (At least 4 names)</span>
+                  <input className="react-input" value={personalForm.fullName} onChange={(event) => updatePersonalField('fullName', event.target.value)} />
+                </label>
+                <label>
+                  <span className="react-label">Email</span>
+                  <input className="react-input" value={personalForm.email} readOnly />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                </label>
+                <label>
+                  <span className="react-label">Phone Number</span>
+                  <input className="react-input" value={personalForm.phone} onChange={(event) => updatePersonalField('phone', event.target.value)} />
+                </label>
+                <label>
+                  <span className="react-label">Country</span>
+                  <select className="react-input" value={personalForm.country} onChange={(event) => updatePersonalField('country', event.target.value)}>
+                    <option value="">Select country</option>
+                    {WORLD_COUNTRIES.map((country) => <option key={`settings-country-${country}`} value={country}>{country}</option>)}
+                  </select>
+                </label>
+              </div>
+              <button className="px-7 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700" type="submit" disabled={saving}>💾 {saving ? 'Saving...' : 'Save Changes'}</button>
+            </form>
+          </section>
+
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">📋</div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Edit Full Profile</h2>
+                <p className="text-gray-600">Update your complete profile including physical measurements, nutrition plan, and health information</p>
+              </div>
+            </div>
+            <Link to="/profile-setup?edit=1" className="inline-flex items-center px-7 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:opacity-95">✏️ Edit Full Profile</Link>
+            <form className="hidden" onSubmit={saveFullProfile}>
+              <input value={fullProfileForm.fullName} onChange={(event) => updateFullProfileField('fullName', event.target.value)} />
+            </form>
+          </section>
+
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">🔒</div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Change Password</h2>
+                <p className="text-gray-600">Update your password to keep your account secure</p>
+              </div>
+            </div>
+            <form className="space-y-4" onSubmit={changePassword}>
+              <label>
+                <span className="react-label">Current Password</span>
+                <input className="react-input" type="password" placeholder="Enter current password" value={passwordForm.currentPassword} onChange={(event) => updatePasswordField('currentPassword', event.target.value)} />
+              </label>
+              <label>
+                <span className="react-label">New Password</span>
+                <input className="react-input" type="password" placeholder="Enter new password" value={passwordForm.newPassword} onChange={(event) => updatePasswordField('newPassword', event.target.value)} />
+              </label>
+              <label>
+                <span className="react-label">Confirm New Password</span>
+                <input className="react-input" type="password" placeholder="Confirm new password" value={passwordForm.confirmPassword} onChange={(event) => updatePasswordField('confirmPassword', event.target.value)} />
+              </label>
+              <button className="px-7 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700" type="submit" disabled={saving}>🔐 {saving ? 'Updating...' : 'Update Password'}</button>
+            </form>
+          </section>
+
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">💳</div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Manage Subscription</h2>
+                <p className="text-gray-600">View and update your subscription plan</p>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl mb-4">
+              <p className="text-sm text-gray-600 mb-1">Current Plan</p>
+              <p className="text-2xl font-bold text-gray-900">{currentPlan || 'Basic (Free)'}</p>
+              <p className="text-sm text-gray-600 mt-2">$9.99/month • Renews on March 15, 2026</p>
+              <span className="inline-block mt-3 px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">Active</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link className="px-6 py-3 rounded-xl border-2 border-blue-300 text-blue-700 font-semibold hover:bg-blue-50" to="/plans">🔄 Change Plan</Link>
+              <button type="button" className="px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100">⏸️ Cancel Subscription</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-4">💡 You&apos;ll retain access to all features until the end of your billing period</p>
+          </section>
+
+          <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">🔔</div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Notification Preferences</h2>
+                <p className="text-gray-600">Choose what updates you want to receive</p>
+              </div>
+            </div>
+
+            <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition mb-3">
+              <div>
+                <p className="font-semibold text-gray-900">📧 Email Notifications</p>
+                <p className="text-sm text-gray-600">Receive meal reminders and updates</p>
+              </div>
+              <input type="checkbox" checked={notificationPrefs.emailNotifications} onChange={() => togglePref('emailNotifications')} />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition mb-3">
+              <div>
+                <p className="font-semibold text-gray-900">📱 SMS Reminders</p>
+                <p className="text-sm text-gray-600">Get text reminders for check-ins</p>
+              </div>
+              <input type="checkbox" checked={notificationPrefs.smsReminders} onChange={() => togglePref('smsReminders')} />
+            </label>
+
+            <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+              <div>
+                <p className="font-semibold text-gray-900">🎯 Progress Reports</p>
+                <p className="text-sm text-gray-600">Weekly performance summaries</p>
+              </div>
+              <input type="checkbox" checked={notificationPrefs.progressReports} onChange={() => togglePref('progressReports')} />
+            </label>
+          </section>
+
+          <section className="bg-red-50 p-8 rounded-3xl border-2 border-red-200 mb-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-4xl">⚠️</div>
+              <div>
+                <h2 className="text-2xl font-bold text-red-900 mb-1">Danger Zone</h2>
+                <p className="text-red-700">Irreversible actions that affect your account</p>
+              </div>
+            </div>
+            <button className="w-full px-6 py-4 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition" type="button" onClick={confirmDeleteAccount}>🗑️ Delete Account Permanently</button>
+            <p className="text-xs text-red-600 mt-3">⚠️ Warning: This action cannot be undone. All your data will be permanently deleted.</p>
+          </section>
+
+          <div className="text-center pb-10">
+            <button type="button" className="px-12 py-4 bg-gray-800 text-white rounded-xl font-semibold hover:bg-gray-900" onClick={logout}>🚪 Logout</button>
+          </div>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }
 

@@ -18,21 +18,46 @@ const CONFIG = {
         const protocol = window.location.protocol;
         const isFileProtocol = protocol === 'file:';
         const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '';
+        const isPrivateLanIp = /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
+        const isGithubPagesHost = host === 'hanaayman15.github.io' || host.endsWith('.github.io');
+
+        // Optional explicit override (helpful for testing ngrok/Render quickly).
+        const explicitOverride =
+            (window.__API_BASE_URL__ && String(window.__API_BASE_URL__).trim()) ||
+            (localStorage.getItem('apiBaseUrlOverride') || '').trim();
+        if (explicitOverride) {
+            return explicitOverride.replace(/\/$/, '');
+        }
 
         // Local development (including opening HTML files directly from disk)
         if (isFileProtocol || isLocalhost) {
-            return 'http://127.0.0.1:8011';
+            return host === 'localhost' ? 'http://localhost:8001' : 'http://127.0.0.1:8001';
         }
 
-        // Production / hosted frontend
-        return `${protocol}//${host}:8001`;
+        // Same-LAN phone access to laptop-hosted frontend (http://192.168.x.x:3000)
+        if (isPrivateLanIp) {
+            return `${protocol}//${host}:8001`;
+        }
+
+        // GitHub Pages or hosted static frontend should call deployed API.
+        if (isGithubPagesHost) {
+            return 'https://nutrition-backend.onrender.com';
+        }
+
+        // Fallback: use deployed backend for any other hosted frontend.
+        return 'https://nutrition-backend.onrender.com';
     })(),
 
     /**
      * Known local API URLs ordered by preference.
      * Used as a fallback list when one local backend port is unavailable.
      */
-    LOCAL_API_BASE_URLS: ['http://127.0.0.1:8011', 'http://127.0.0.1:8001', 'http://127.0.0.1:8000'],
+    LOCAL_API_BASE_URLS: [
+        'http://localhost:8001',
+        'http://127.0.0.1:8001',
+        'http://localhost:8011',
+        'http://127.0.0.1:8011'
+    ],
     
     /**
      * Request Timeout (milliseconds)

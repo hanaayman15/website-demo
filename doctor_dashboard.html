@@ -20,7 +20,7 @@
 						<h1><a href="doctor_dashboard.html" id="logo">Doctor Team Dashboard</a></h1>
 					</header>
 					<footer>
-						<a href="#banner" class="button circled scrolly">Start</a>
+						<a href="#quick-actions" class="button circled scrolly" id="start-button">Start</a>
 					</footer>
 				</div>
 
@@ -31,7 +31,8 @@
 				</nav>
 			</div>
 
-			<section id="banner">
+			<section id="banner" data-scroll-target="quick-actions">
+				<a id="quick-actions" aria-hidden="true"></a>
 				<header>
 					<h2 id="dashboardQuickActionsTitle">Quick Actions.</h2>
 					<p id="dashboardQuickActionsDescription">Manage teams and doctor-access pages.</p>
@@ -52,7 +53,7 @@
 						</p>
 					</header>
 					<p>
-						Use this dashboard to access the teams list, open team details, and build or edit team rosters with the same backend and authentication system as the main application. Admin-only modules such as Add Client, PDF Generator, and Diet Management are intentionally excluded here so doctors see only the tools relevant to team management.
+						Use this dashboard to access the teams list, open team details, build or edit team rosters, and add new clients using the same backend and authentication system as the main application.
 					</p>
 				</article>
 			</div>
@@ -79,11 +80,11 @@
 							<p>Create and maintain dynamic team rosters with player calculations and profiles.</p>
 						</article>
 						<article class="col-4 col-12-mobile special">
-							<a href="clients.html" class="image featured"><img src="images/pexels-pavel-danilyuk-7653093.jpg" alt="" /></a>
+							<a href="add-client.html" class="image featured"><img src="images/pexels-beyzahzah-89810429-15319038.jpg" alt="" /></a>
 							<header>
-								<h3><a href="clients.html">Team View</a></h3>
+								<h3><a href="add-client.html">Add Client</a></h3>
 							</header>
-							<p>Select any team from the Teams page to open its detailed team view and player roster.</p>
+							<p>Start with basic information, save, then continue to Client Services and Open Nutrition.</p>
 						</article>
 					</div>
 				</section>
@@ -122,5 +123,18 @@
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
 	    <script src="assets/js/responsive-ui.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				var startBtn = document.getElementById('start-button');
+				var target = document.getElementById('quick-actions');
+				if (!startBtn || !target) return;
+
+				startBtn.addEventListener('click', function (event) {
+					event.preventDefault();
+					var targetTop = target.getBoundingClientRect().top + window.pageYOffset;
+					window.scrollTo({ top: targetTop - 10, behavior: 'smooth' });
+				});
+			});
+		</script>
 </body>
 </html>

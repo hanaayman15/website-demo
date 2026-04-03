@@ -1,4 +1,5 @@
 import { useAddClientDetails } from '../hooks/useAddClientDetails';
+import { WORLD_COUNTRIES, WORLD_SPORTS } from '../constants/globalOptions';
 import '../assets/styles/react-pages.css';
 
 function AddClientDetails() {
@@ -24,9 +25,9 @@ function AddClientDetails() {
           <label><span className="react-label">Phone</span><input className="react-input" value={state.phone} onChange={(e) => updateField('phone', e.target.value)} /></label>
           <label><span className="react-label">Birthday</span><input className="react-input" type="date" value={state.birthday} onChange={(e) => updateField('birthday', e.target.value)} /></label>
           <label><span className="react-label">Gender</span><select className="react-input" value={state.gender} onChange={(e) => updateField('gender', e.target.value)}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></label>
-          <label><span className="react-label">Country</span><input className="react-input" value={state.country} onChange={(e) => updateField('country', e.target.value)} /></label>
+          <label><span className="react-label">Country</span><select className="react-input" value={state.country} onChange={(e) => updateField('country', e.target.value)}><option value="">Select country</option>{WORLD_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</select></label>
           <label><span className="react-label">Club</span><input className="react-input" value={state.club} onChange={(e) => updateField('club', e.target.value)} /></label>
-          <label><span className="react-label">Sport</span><input className="react-input" value={state.sport} onChange={(e) => updateField('sport', e.target.value)} /></label>
+          <label><span className="react-label">Sport</span><select className="react-input" value={state.sport} onChange={(e) => updateField('sport', e.target.value)}><option value="">Select sport</option>{WORLD_SPORTS.map((sport) => <option key={sport} value={sport}>{sport}</option>)}</select></label>
           <label><span className="react-label">Position</span><input className="react-input" value={state.position} onChange={(e) => updateField('position', e.target.value)} /></label>
           <label><span className="react-label">Activity Level</span><select className="react-input" value={state.activityLevel} onChange={(e) => updateField('activityLevel', e.target.value)}><option value="">Select</option><option value="sedentary">Sedentary</option><option value="light">Light</option><option value="moderate">Moderate</option><option value="very">Very</option><option value="extremely">Extremely</option></select></label>
         </section>

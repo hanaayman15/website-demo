@@ -11,6 +11,7 @@ export function getFallbackConfig() {
       { label: 'Home', href: '/doctor-dashboard' },
       { label: 'Teams', href: '/clients' },
       { label: 'Add Team', href: '/add-team' },
+      { label: 'Add Client', href: '/add-client' },
       { label: 'Team View', href: '/team-view' },
     ],
     modules: [
@@ -28,6 +29,11 @@ export function getFallbackConfig() {
         label: 'Add Team',
         href: '/add-team',
         description: 'Create and manage team rosters.',
+      },
+      {
+        label: 'Add Client',
+        href: '/add-client',
+        description: 'Start with basic information, then continue to Client Services and Open Nutrition.',
       },
       {
         label: 'Team View',
@@ -66,6 +72,23 @@ export function normalizeDoctorDashboardConfig(config) {
         return module;
       })
     : fallback.modules;
+
+  const hasAddClientNav = normalized.navigation.some((item) => String(item?.label || '').trim().toLowerCase() === 'add client');
+  if (!hasAddClientNav) {
+    normalized.navigation = [...normalized.navigation, { label: 'Add Client', href: '/add-client' }];
+  }
+
+  const hasAddClientModule = normalized.modules.some((item) => String(item?.label || '').trim().toLowerCase() === 'add client');
+  if (!hasAddClientModule) {
+    normalized.modules = [
+      ...normalized.modules,
+      {
+        label: 'Add Client',
+        href: '/add-client',
+        description: 'Start with basic information, then continue to Client Services and Open Nutrition.',
+      },
+    ];
+  }
 
   return normalized;
 }
@@ -131,7 +154,13 @@ export function useDoctorDashboard() {
   const refresh = useCallback(async () => {
     const role = currentAuthRole();
     const token = resolveAuthToken();
-    const canAccess = (role === 'doctor' || role === 'admin') && !!token && hasDoctorAdminSession();
+    const hasSession = hasDoctorAdminSession();
+    const canAccess = Boolean(
+      token && (
+        role === 'admin' ||
+        (role === 'doctor' && hasSession)
+      )
+    );
 
     if (!canAccess) {
       navigate('/doctor-auth?next=%2Fdoctor-dashboard', { replace: true });

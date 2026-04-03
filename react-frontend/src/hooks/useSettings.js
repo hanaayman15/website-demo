@@ -10,6 +10,30 @@ const DEFAULT_PREFS = {
   progressReports: true,
 };
 
+function syncProfileCaches(profile) {
+  if (!profile) return;
+  const id = profile?.display_id || profile?.id;
+  if (!id) return;
+
+  try {
+    const key = `clientData_${id}`;
+    const raw = localStorage.getItem(key);
+    const existing = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+  } catch {
+    // Ignore cache sync issues.
+  }
+
+  try {
+    const key = `clientDashboardCache_${id}`;
+    const raw = localStorage.getItem(key);
+    const existing = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+  } catch {
+    // Ignore cache sync issues.
+  }
+}
+
 export function buildPersonalInfoPayload(personalForm) {
   return {
     full_name: String(personalForm.fullName || '').trim(),
@@ -75,7 +99,7 @@ export function useSettings() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState('Basic (Free)');
+  const [currentPlan, setCurrentPlan] = useState('Starter');
 
   const [personalForm, setPersonalForm] = useState({
     fullName: '',
@@ -120,14 +144,15 @@ export function useSettings() {
       const response = await apiClient.get('/api/client/profile');
       const data = response?.data || null;
       setProfile(data);
+      syncProfileCaches(data);
 
       const planNames = {
-        basic: 'Basic (Free)',
-        pro: 'Pro Athlete',
-        elite: 'Elite Performance',
+        starter: 'Starter',
+        pro: 'Pro',
+        elite: 'Elite',
       };
-      const selectedPlan = localStorage.getItem('selectedPlan') || 'basic';
-      setCurrentPlan(planNames[selectedPlan] || 'Basic (Free)');
+      const selectedPlan = localStorage.getItem('subscriptionPlan') || localStorage.getItem('selectedPlan') || 'starter';
+      setCurrentPlan(planNames[selectedPlan] || 'Starter');
 
       setPersonalForm({
         fullName: data?.full_name || '',

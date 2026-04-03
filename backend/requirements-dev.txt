@@ -10,6 +10,7 @@ python-jose==3.3.0
 passlib==1.7.4
 bcrypt==4.1.1
 python-multipart==0.0.6
+reportlab>=4.2.0
 httpx==0.25.1
 anyio>=3.7.1,<4.0.0
 starlette>=0.27.0,<0.28.0

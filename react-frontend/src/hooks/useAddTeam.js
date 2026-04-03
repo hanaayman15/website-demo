@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
+import { hasDoctorAdminSession, resolveAuthRole, resolveAuthToken } from '../utils/authSession';
 
 const ACTIVITY_FACTORS = {
   sedentary: 1.2,
   light: 1.375,
   moderate: 1.55,
   active: 1.725,
-  'very-active': 1.725,
-  'extremely-active': 1.9,
+  athlete: 1.9,
 };
 
 function toNum(value) {
@@ -16,9 +16,34 @@ function toNum(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+function toIsoDate(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [dd, mm, yyyy] = raw.split('/').map((part) => Number(part));
+    if (!dd || !mm || !yyyy) return null;
+    const parsed = new Date(yyyy, mm - 1, dd);
+    if (Number.isNaN(parsed.getTime())) return null;
+    const check = `${String(parsed.getDate()).padStart(2, '0')}/${String(parsed.getMonth() + 1).padStart(2, '0')}/${parsed.getFullYear()}`;
+    if (check !== raw) return null;
+    return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
 function calculateAge(birthday) {
   if (!birthday) return null;
-  const birth = new Date(birthday);
+  const value = String(birthday).trim();
+  let birth = new Date(value);
+  if (Number.isNaN(birth.getTime()) && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    const [dd, mm, yyyy] = value.split('/').map((part) => Number(part));
+    birth = new Date(yyyy, mm - 1, dd);
+  }
   if (Number.isNaN(birth.getTime())) return null;
   const now = new Date();
   let age = now.getFullYear() - birth.getFullYear();
@@ -27,9 +52,72 @@ function calculateAge(birthday) {
   return age;
 }
 
+function defaultTrainingSession(name = 'Training Session 1') {
+  return {
+    name,
+    type: 'low',
+    days: ['Mo', 'Wed', 'Fri'],
+    start_hour: '06',
+    start_min: '00',
+    start_ampm: 'PM',
+    end_hour: '08',
+    end_min: '00',
+    end_ampm: 'PM',
+  };
+}
+
+function defaultSupplement(name = 'Supplement 1') {
+  return {
+    name,
+    amount: '20',
+    notes: 'Post workout',
+  };
+}
+
+function parseSessionInfo(item) {
+  try {
+    const parsed = JSON.parse(item?.session_info || '{}');
+    return {
+      name: String(parsed.name || parsed.session || 'Training Session'),
+      type: String(parsed.type || 'low'),
+      days: Array.isArray(parsed.days) ? parsed.days : [],
+      start_hour: String(parsed.start_hour || '12'),
+      start_min: String(parsed.start_min || '00'),
+      start_ampm: String(parsed.start_ampm || 'AM'),
+      end_hour: String(parsed.end_hour || '12'),
+      end_min: String(parsed.end_min || '00'),
+      end_ampm: String(parsed.end_ampm || 'PM'),
+    };
+  } catch {
+    return defaultTrainingSession();
+  }
+}
+
+function toSessionItem(session) {
+  return { session_info: JSON.stringify(session) };
+}
+
+function parseSupplementInfo(item) {
+  try {
+    const parsed = JSON.parse(item?.supplement_info || '{}');
+    return {
+      name: String(parsed.name || 'Supplement'),
+      amount: parsed.amount === null || parsed.amount === undefined ? '' : String(parsed.amount),
+      notes: String(parsed.notes || ''),
+    };
+  } catch {
+    return defaultSupplement('Supplement');
+  }
+}
+
+function toSupplementItem(supplement) {
+  return { supplement_info: JSON.stringify(supplement) };
+}
+
 export function createTeamPlayer(playerNumber) {
   return {
     player_number: playerNumber,
+    client_id: 'Auto',
     full_name: '',
     phone_country_code: '+20',
     phone_number: '',
@@ -38,8 +126,8 @@ export function createTeamPlayer(playerNumber) {
     gender: '',
     birthday: '',
     country: 'Egypt',
-    club: '',
-    religion: '',
+    club: 'Auto Club',
+    religion: 'Other',
     height: '',
     weight: '',
     bmi: '',
@@ -49,11 +137,12 @@ export function createTeamPlayer(playerNumber) {
     muscle_percentage: '',
     age: '',
     bmr: '',
-    activity_level: 'moderate',
-    sport: '',
-    position: '',
+    activity_level: 'active',
+    sport: 'Football',
+    position: 'Midfielder',
     tdee: '',
     progression_type: 'maintain',
+    competition_status: 'none',
     calories: '',
     protein_target: '',
     carbs_target: '',
@@ -72,8 +161,8 @@ export function createTeamPlayer(playerNumber) {
     days_left: '',
     goal_weight: '',
     additional_notes: '',
-    training_sessions: [],
-    supplements_list: [],
+    training_sessions: [toSessionItem(defaultTrainingSession())],
+    supplements_list: [toSupplementItem(defaultSupplement())],
   };
 }
 
@@ -96,31 +185,31 @@ export function recalcTeamPlayer(player) {
     next.muscle_percentage = ((skeletal / weight) * 100).toFixed(1);
   }
 
-  if (height && weight && age && gender) {
+  if (height && weight && age) {
     let bmr = 10 * weight + 6.25 * height - 5 * age;
     bmr += gender === 'female' ? -161 : 5;
     next.bmr = bmr.toFixed(1);
   }
 
   const bmrVal = toNum(next.bmr);
-  const factor = ACTIVITY_FACTORS[next.activity_level] || ACTIVITY_FACTORS.sedentary;
+  const factor = ACTIVITY_FACTORS[next.activity_level] || ACTIVITY_FACTORS.active;
   if (bmrVal) {
     const tdee = bmrVal * factor;
     next.tdee = tdee.toFixed(1);
 
     let calories = tdee;
-    if (next.progression_type === 'cut') calories = tdee * 0.8;
-    if (next.progression_type === 'bulk') calories = tdee * 1.15;
+    if (next.progression_type === 'cut') calories = tdee - 500;
+    if (next.progression_type === 'bulk') calories = tdee + 500;
     next.calories = calories.toFixed(1);
 
     if (weight) {
-      const protein = weight * 2;
-      const fats = weight * 0.8;
+      const protein = weight * 2.2;
+      const fats = (calories * 0.25) / 9;
       const carbs = Math.max((calories - (protein * 4 + fats * 9)) / 4, 0);
       next.protein_target = protein.toFixed(1);
       next.fats_target = fats.toFixed(1);
       next.carbs_target = carbs.toFixed(1);
-      next.water_intake = (weight * 0.035).toFixed(1);
+      next.water_intake = (weight * 0.033).toFixed(1);
     }
   }
 
@@ -139,11 +228,13 @@ export function buildTeamPayload(state) {
     team_name: state.teamName.trim(),
     sport_type: state.sportType.trim(),
     coach_name: state.coachName.trim(),
-    start_date: state.startDate,
+    start_date: toIsoDate(state.startDate),
     package_size: state.packageSize,
     players: state.players.map((player, index) => ({
       ...player,
       player_number: index + 1,
+      birthday: toIsoDate(player.birthday),
+      competition_date: toIsoDate(player.competition_date),
       height: toNum(player.height),
       weight: toNum(player.weight),
       bmi: toNum(player.bmi),
@@ -160,10 +251,12 @@ export function buildTeamPayload(state) {
       fats_target: toNum(player.fats_target),
       water_in_body: toNum(player.water_in_body),
       water_intake: toNum(player.water_intake),
+      minerals: toNum(player.minerals),
       goal_weight: toNum(player.goal_weight),
       days_left: toNum(player.days_left),
-      training_sessions: (player.training_sessions || []).map((item) => ({ session_info: JSON.stringify(item) })),
-      supplements_list: (player.supplements_list || []).map((item) => ({ supplement_info: JSON.stringify(item) })),
+      competition_status: player.competition_status || null,
+      training_sessions: player.training_sessions || [],
+      supplements_list: player.supplements_list || [],
     })),
   };
 }
@@ -189,17 +282,54 @@ function createPlayers(size) {
 }
 
 function parseError(error, fallback) {
+  const status = Number(error?.response?.status || 0);
+  if (status === 401) {
+    return buildMissingAuthMessage() || 'Invalid authentication credentials. Please login via Doctor/Admin Access.';
+  }
+  if (status === 502) {
+    return 'Backend unavailable (502 Bad Gateway). Start/restart backend API server and retry.';
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((item) => {
+        if (!item) return '';
+        const path = Array.isArray(item.loc) ? item.loc.join('.') : '';
+        const msg = item.msg || item.message || '';
+        return [path, msg].filter(Boolean).join(': ');
+      })
+      .filter(Boolean);
+    if (msgs.length) return msgs.join(' | ');
+  }
   return fallback;
+}
+
+function buildMissingAuthMessage() {
+  const token = resolveAuthToken();
+  const role = String(resolveAuthRole() || '').toLowerCase();
+  const doctorSession = hasDoctorAdminSession();
+  const missing = [];
+
+  if (!token) missing.push('token');
+  if (!(role === 'doctor' || role === 'admin')) missing.push('doctor/admin role');
+  if (role === 'doctor' && !doctorSession) missing.push('doctor session flag');
+
+  if (!missing.length) return '';
+  return `Invalid authentication credentials. Missing requirement: ${missing.join(', ')}.`;
 }
 
 function validatePlayers(players) {
   for (const player of players) {
     const words = String(player.full_name || '').trim().split(/\s+/).filter(Boolean);
     if (words.length < 4) return `Player ${player.player_number}: full name must include at least 4 names.`;
+    const phoneDigits = String(player.phone_number || '').replace(/\D/g, '');
+    if (phoneDigits.length < 6) return `Player ${player.player_number}: valid phone number is required.`;
+    if (!String(player.phone_country_code || '').trim()) return `Player ${player.player_number}: phone country code is required.`;
     if (!player.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(player.email))) return `Player ${player.player_number}: valid email is required.`;
     if (!player.gender) return `Player ${player.player_number}: gender is required.`;
+    if (!player.birthday) return `Player ${player.player_number}: birthday is required.`;
+    if (!String(player.country || '').trim()) return `Player ${player.player_number}: country is required.`;
   }
   return '';
 }
@@ -211,6 +341,13 @@ export function addTeamReducer(state, action) {
     case 'UPDATE_FIELD':
       return { ...state, [action.payload.field]: action.payload.value };
     case 'SET_PACKAGE_SIZE':
+      if (!action.payload || action.payload < 1) {
+        return {
+          ...state,
+          packageSize: 0,
+          players: [],
+        };
+      }
       return {
         ...state,
         packageSize: action.payload,
@@ -226,23 +363,156 @@ export function addTeamReducer(state, action) {
         }),
       };
     }
+    case 'RECALC_PLAYER': {
+      const idx = action.payload;
+      return {
+        ...state,
+        players: state.players.map((item, index) => (index === idx ? recalcTeamPlayer(item) : item)),
+      };
+    }
+    case 'ADD_TRAINING_SESSION': {
+      const { playerIndex } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          const sessionCount = (player.training_sessions || []).length + 1;
+          return {
+            ...player,
+            training_sessions: [...(player.training_sessions || []), toSessionItem(defaultTrainingSession(`Training Session ${sessionCount}`))],
+          };
+        }),
+      };
+    }
+    case 'REMOVE_TRAINING_SESSION': {
+      const { playerIndex, sessionIndex } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          return {
+            ...player,
+            training_sessions: (player.training_sessions || []).filter((_, i) => i !== sessionIndex),
+          };
+        }),
+      };
+    }
+    case 'UPDATE_TRAINING_SESSION': {
+      const { playerIndex, sessionIndex, field, value } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          return {
+            ...player,
+            training_sessions: (player.training_sessions || []).map((item, i) => {
+              if (i !== sessionIndex) return item;
+              const parsed = parseSessionInfo(item);
+              return toSessionItem({ ...parsed, [field]: value });
+            }),
+          };
+        }),
+      };
+    }
+    case 'TOGGLE_TRAINING_DAY': {
+      const { playerIndex, sessionIndex, day } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          return {
+            ...player,
+            training_sessions: (player.training_sessions || []).map((item, i) => {
+              if (i !== sessionIndex) return item;
+              const parsed = parseSessionInfo(item);
+              const exists = parsed.days.includes(day);
+              const nextDays = exists ? parsed.days.filter((d) => d !== day) : [...parsed.days, day];
+              return toSessionItem({ ...parsed, days: nextDays });
+            }),
+          };
+        }),
+      };
+    }
+    case 'ADD_SUPPLEMENT': {
+      const { playerIndex } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          const suppCount = (player.supplements_list || []).length + 1;
+          return {
+            ...player,
+            supplements_list: [...(player.supplements_list || []), toSupplementItem(defaultSupplement(`Supplement ${suppCount}`))],
+          };
+        }),
+      };
+    }
+    case 'REMOVE_SUPPLEMENT': {
+      const { playerIndex, supplementIndex } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          return {
+            ...player,
+            supplements_list: (player.supplements_list || []).filter((_, i) => i !== supplementIndex),
+          };
+        }),
+      };
+    }
+    case 'UPDATE_SUPPLEMENT': {
+      const { playerIndex, supplementIndex, field, value } = action.payload;
+      return {
+        ...state,
+        players: state.players.map((player, idx) => {
+          if (idx !== playerIndex) return player;
+          return {
+            ...player,
+            supplements_list: (player.supplements_list || []).map((item, i) => {
+              if (i !== supplementIndex) return item;
+              const parsed = parseSupplementInfo(item);
+              return toSupplementItem({ ...parsed, [field]: value });
+            }),
+          };
+        }),
+      };
+    }
     case 'AUTOFILL_PLAYERS':
       return {
         ...state,
         players: state.players.map((player, index) => recalcTeamPlayer({
           ...player,
-          full_name: player.full_name || `Player ${index + 1} Team Sample User`,
-          email: player.email || `player${index + 1}@team.local`,
-          phone_number: player.phone_number || `100000${String(index + 1).padStart(4, '0')}`,
+          client_id: player.client_id || 'Auto',
+          full_name: player.full_name || 'Auto Filled Client Profile Name Team User',
+          email: player.email || `autofill_team_${index + 1}@example.com`,
+          phone_country_code: player.phone_country_code || '+93',
+          phone_number: player.phone_number || '1000000000',
           password: player.password || 'Player@123',
-          gender: player.gender || (index % 2 ? 'male' : 'female'),
-          birthday: player.birthday || '2001-01-15',
+          gender: player.gender || 'male',
+          birthday: player.birthday || '2000-01-01',
+          country: player.country || 'Egypt',
+          club: player.club || 'Auto Club',
+          religion: player.religion || 'Other',
+          sport: player.sport || 'Football',
+          position: player.position || 'Midfielder',
           height: player.height || '178',
-          weight: player.weight || '74',
-          body_fat_percentage: player.body_fat_percentage || '15',
-          skeletal_muscle: player.skeletal_muscle || '34',
+          weight: player.weight || '78',
+          body_fat_percentage: player.body_fat_percentage || '14',
+          skeletal_muscle: player.skeletal_muscle || '35',
           progression_type: player.progression_type || 'maintain',
-          activity_level: player.activity_level || 'moderate',
+          activity_level: player.activity_level || 'active',
+          water_in_body: player.water_in_body || '41',
+          minerals: player.minerals || '3.6',
+          test_and_record: player.test_and_record || 'Initial assessment completed.',
+          injuries: player.injuries || 'No current injuries.',
+          mental_notes: player.mental_notes || 'Focused and motivated.',
+          food_allergies: player.food_allergies || 'None',
+          medical_notes: player.medical_notes || 'No chronic conditions reported.',
+          food_likes: player.food_likes || 'Rice, chicken, vegetables',
+          food_dislikes: player.food_dislikes || 'Deep fried foods',
+          competition_status: player.competition_status || 'none',
+          goal_weight: player.goal_weight || '76',
+          additional_notes: player.additional_notes || 'Follow-up in 2 weeks.',
         })),
       };
     case 'LOAD_START':
@@ -288,19 +558,16 @@ export function useAddTeam() {
           ? data.players.map((player, index) => {
               const mapped = createTeamPlayer(index + 1);
               Object.keys(mapped).forEach((key) => {
+                if (key === 'training_sessions' || key === 'supplements_list') return;
                 if (player[key] !== undefined && player[key] !== null) {
                   mapped[key] = String(player[key]);
                 }
               });
               mapped.training_sessions = Array.isArray(player.training_sessions)
-                ? player.training_sessions.map((item) => {
-                    try { return JSON.parse(item.session_info || '{}'); } catch { return { notes: item.session_info || '' }; }
-                  })
+                ? player.training_sessions.map((item) => ({ session_info: item.session_info || '{}' }))
                 : [];
               mapped.supplements_list = Array.isArray(player.supplements_list)
-                ? player.supplements_list.map((item) => {
-                    try { return JSON.parse(item.supplement_info || '{}'); } catch { return { notes: item.supplement_info || '' }; }
-                  })
+                ? player.supplements_list.map((item) => ({ supplement_info: item.supplement_info || '{}' }))
                 : [];
               return recalcTeamPlayer(mapped);
             })
@@ -333,6 +600,14 @@ export function useAddTeam() {
   const setField = (field, value) => dispatch({ type: 'UPDATE_FIELD', payload: { field, value } });
   const setPackageSize = (size) => dispatch({ type: 'SET_PACKAGE_SIZE', payload: size });
   const updatePlayerField = (index, field, value) => dispatch({ type: 'UPDATE_PLAYER', payload: { index, field, value } });
+  const recalcPlayer = (index) => dispatch({ type: 'RECALC_PLAYER', payload: index });
+  const addTrainingSession = (playerIndex) => dispatch({ type: 'ADD_TRAINING_SESSION', payload: { playerIndex } });
+  const removeTrainingSession = (playerIndex, sessionIndex) => dispatch({ type: 'REMOVE_TRAINING_SESSION', payload: { playerIndex, sessionIndex } });
+  const updateTrainingSession = (playerIndex, sessionIndex, field, value) => dispatch({ type: 'UPDATE_TRAINING_SESSION', payload: { playerIndex, sessionIndex, field, value } });
+  const toggleTrainingDay = (playerIndex, sessionIndex, day) => dispatch({ type: 'TOGGLE_TRAINING_DAY', payload: { playerIndex, sessionIndex, day } });
+  const addSupplement = (playerIndex) => dispatch({ type: 'ADD_SUPPLEMENT', payload: { playerIndex } });
+  const removeSupplement = (playerIndex, supplementIndex) => dispatch({ type: 'REMOVE_SUPPLEMENT', payload: { playerIndex, supplementIndex } });
+  const updateSupplement = (playerIndex, supplementIndex, field, value) => dispatch({ type: 'UPDATE_SUPPLEMENT', payload: { playerIndex, supplementIndex, field, value } });
   const autofillPlayers = () => dispatch({ type: 'AUTOFILL_PLAYERS' });
 
   const canSave = useMemo(() => {
@@ -341,6 +616,13 @@ export function useAddTeam() {
 
   const save = async (event) => {
     if (event) event.preventDefault();
+
+    const missingAuthMessage = buildMissingAuthMessage();
+    if (missingAuthMessage) {
+      dispatch({ type: 'SAVE_ERROR', payload: missingAuthMessage });
+      return;
+    }
+
     const validationError = validatePlayers(state.players);
     if (validationError) {
       dispatch({ type: 'SAVE_ERROR', payload: validationError });
@@ -370,7 +652,17 @@ export function useAddTeam() {
     setField,
     setPackageSize,
     updatePlayerField,
+    recalcPlayer,
+    addTrainingSession,
+    removeTrainingSession,
+    updateTrainingSession,
+    toggleTrainingDay,
+    addSupplement,
+    removeSupplement,
+    updateSupplement,
     autofillPlayers,
     save,
+    parseSessionInfo,
+    parseSupplementInfo,
   };
 }

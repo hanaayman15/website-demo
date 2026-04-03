@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
 
-const DEFAULT_PLAN = 'once';
+const DEFAULT_PLAN = 'starter';
+const SUBSCRIPTION_STORAGE_KEY = 'subscriptionPlan';
+
+const PLAN_TO_BACKEND = {
+  starter: 'once',
+  pro: 'monthly',
+  elite: 'annually',
+};
+
+const BACKEND_TO_PLAN = {
+  once: 'starter',
+  monthly: 'pro',
+  annually: 'elite',
+};
 
 function safeStorageGet(key, fallback = '') {
   try {
@@ -26,53 +40,56 @@ function safeStorageSet(key, value) {
   }
 }
 
-export const CONSULTATION_PLAN_OPTIONS = [
+export const SUBSCRIPTION_PLAN_OPTIONS = [
   {
-    key: 'once',
-    name: 'Once',
-    price: '$29',
-    subtitle: 'Single consultation session',
-    features: ['One detailed consultation', 'Personalized action points', '7-day follow-up notes'],
+    key: 'starter',
+    name: 'Starter',
+    price: '$29/month',
+    subtitle: 'Strong foundation for daily consistency',
+    features: ['Weekly check-in', 'Core nutrition plan', 'Basic progress tracking'],
   },
   {
-    key: 'monthly',
-    name: 'Monthly',
-    price: '$49/month',
-    subtitle: 'Ongoing monthly consultation',
+    key: 'pro',
+    name: 'Pro',
+    price: '$69/month',
+    subtitle: 'Performance-focused guidance and adjustments',
     popular: true,
-    features: ['2 consultations per month', 'Weekly check-ins', 'Continuous plan adjustments', 'Priority support'],
+    features: ['Twice-weekly check-ins', 'Macro and meal optimization', 'Priority coach support'],
   },
   {
-    key: 'annually',
-    name: 'Annually',
-    price: '$499/year',
-    subtitle: 'Full-year consultation support',
-    features: ['Everything in Monthly', 'Annual strategy roadmap', 'Priority rescheduling', 'Competition cycle planning'],
+    key: 'elite',
+    name: 'Elite',
+    price: '$119/month',
+    subtitle: 'Full high-performance package for athletes',
+    features: ['Daily support cadence', 'Competition phase nutrition', 'Advanced recovery and supplement strategy'],
   },
 ];
 
 export function buildConsultationPayload({ clientId, plan }) {
   return {
     client_id: clientId,
-    consultation_type: plan,
+    consultation_type: PLAN_TO_BACKEND[plan] || PLAN_TO_BACKEND[DEFAULT_PLAN],
     timestamp: new Date().toISOString(),
   };
 }
 
-export function resolveOnboardingRedirect() {
-  const source = String(safeStorageGet('onboardingSource', 'signup')).toLowerCase();
-  const currentClientId = safeStorageGet('currentClientId', '');
-  if (source === 'add-client') {
-    return currentClientId ? `/client-dashboard?id=${encodeURIComponent(currentClientId)}` : '/client-dashboard';
-  }
-  return '/profile-setup';
+export function resolveOnboardingRedirect({ source, clientId }) {
+  const normalizedSource = String(source || safeStorageGet('onboardingSource', 'profile-setup')).toLowerCase();
+  const resolvedClientId = String(clientId || safeStorageGet('onboardingClientId', '') || safeStorageGet('currentClientId', '')).trim();
+  const params = new URLSearchParams();
+  if (resolvedClientId) params.set('client_id', resolvedClientId);
+  if (normalizedSource) params.set('flow', normalizedSource);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return `/client-services${suffix}`;
 }
 
 export function buildInitialSubscriptionState() {
+  const nextPlan = safeStorageGet(SUBSCRIPTION_STORAGE_KEY, '') || safeStorageGet('selectedPlan', DEFAULT_PLAN) || DEFAULT_PLAN;
+  const normalized = BACKEND_TO_PLAN[nextPlan] || nextPlan;
   return {
     loading: true,
     saving: false,
-    selectedPlan: safeStorageGet('selectedPlan', DEFAULT_PLAN) || DEFAULT_PLAN,
+    selectedPlan: normalized,
     error: '',
     message: '',
   };
@@ -110,6 +127,7 @@ async function fetchClientProfileId() {
 
 export function useSubscriptionPlans({ saveToBackend = true } = {}) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(
     subscriptionPlansReducer,
     undefined,
@@ -127,9 +145,11 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
 
       try {
         const response = await apiClient.get('/api/client/consultation');
-        const plan = response?.data?.consultation_type;
+        const backendPlan = response?.data?.consultation_type;
+        const plan = BACKEND_TO_PLAN[backendPlan] || backendPlan;
         if (mounted && plan) {
           dispatch({ type: 'SELECT_PLAN', payload: plan });
+          safeStorageSet(SUBSCRIPTION_STORAGE_KEY, plan);
           safeStorageSet('selectedPlan', plan);
         }
       } catch {
@@ -152,6 +172,7 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
   };
 
   const persistSelection = async () => {
+    safeStorageSet(SUBSCRIPTION_STORAGE_KEY, state.selectedPlan);
     safeStorageSet('selectedPlan', state.selectedPlan);
     if (!saveToBackend) {
       dispatch({ type: 'SAVE_SUCCESS', payload: 'Plan selected locally.' });
@@ -170,10 +191,10 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
         plan: state.selectedPlan,
       });
       await apiClient.post('/api/client/consultation', payload);
-      dispatch({ type: 'SAVE_SUCCESS', payload: `Consultation plan saved: ${state.selectedPlan}.` });
+      dispatch({ type: 'SAVE_SUCCESS', payload: `Subscription plan saved: ${state.selectedPlan}.` });
       return true;
     } catch (error) {
-      dispatch({ type: 'SAVE_ERROR', payload: parseApiError(error, 'Could not save consultation plan. Please retry.') });
+      dispatch({ type: 'SAVE_ERROR', payload: parseApiError(error, 'Could not save subscription plan. Please retry.') });
       return false;
     }
   };
@@ -181,16 +202,21 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
   const continueFlow = async () => {
     const saved = await persistSelection();
     if (!saved) return;
-    navigate(resolveOnboardingRedirect());
+    const source = searchParams.get('flow') || safeStorageGet('onboardingSource', 'profile-setup');
+    const clientId = searchParams.get('client_id') || safeStorageGet('onboardingClientId', '') || safeStorageGet('currentClientId', '');
+    navigate(resolveOnboardingRedirect({ source, clientId }));
   };
 
   const skipFlow = () => {
+    safeStorageSet(SUBSCRIPTION_STORAGE_KEY, DEFAULT_PLAN);
     safeStorageSet('selectedPlan', DEFAULT_PLAN);
-    navigate(resolveOnboardingRedirect());
+    const source = searchParams.get('flow') || safeStorageGet('onboardingSource', 'profile-setup');
+    const clientId = searchParams.get('client_id') || safeStorageGet('onboardingClientId', '') || safeStorageGet('currentClientId', '');
+    navigate(resolveOnboardingRedirect({ source, clientId }));
   };
 
   const selectedPlanMeta = useMemo(
-    () => CONSULTATION_PLAN_OPTIONS.find((plan) => plan.key === state.selectedPlan) || CONSULTATION_PLAN_OPTIONS[0],
+    () => SUBSCRIPTION_PLAN_OPTIONS.find((plan) => plan.key === state.selectedPlan) || SUBSCRIPTION_PLAN_OPTIONS[0],
     [state.selectedPlan]
   );
 

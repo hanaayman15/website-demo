@@ -14,10 +14,7 @@ function decodeRoleFromToken(token) {
 
 export function resolveAuthToken() {
   return (
-    safeGet(LOCAL, 'authToken') ||
-    safeGet(LOCAL, 'token') ||
     safeGet(SESSION, 'token') ||
-    safeGet(LOCAL, 'access_token') ||
     safeGet(SESSION, 'access_token') ||
     ''
   );
@@ -27,7 +24,6 @@ export function resolveAuthRole() {
   const role = String(
     safeGet(SESSION, 'role') ||
       safeGet(SESSION, 'authRole') ||
-      safeGet(LOCAL, 'authRole') ||
       ''
   ).toLowerCase();
   if (role) return role;
@@ -42,15 +38,20 @@ export function persistSessionAuth({ token, tokenType = 'bearer', role = '', ema
   if (!token) return;
   const normalizedRole = String(role || decodeRoleFromToken(token) || '').toLowerCase();
 
-  safeSet(LOCAL, 'authToken', token);
   safeSet(SESSION, 'token', token);
-  safeSet(LOCAL, 'authTokenType', tokenType);
+  safeSet(SESSION, 'authTokenType', tokenType);
 
   if (normalizedRole) {
-    safeSet(LOCAL, 'authRole', normalizedRole);
     safeSet(SESSION, 'authRole', normalizedRole);
     safeSet(SESSION, 'role', normalizedRole);
   }
+
+  // Clean legacy local auth keys to avoid reusing stale credentials on next browser reopen.
+  safeRemove(LOCAL, 'authToken');
+  safeRemove(LOCAL, 'token');
+  safeRemove(LOCAL, 'access_token');
+  safeRemove(LOCAL, 'authRole');
+  safeRemove(LOCAL, 'authTokenType');
 
   if (email) {
     safeSet(LOCAL, 'clientEmail', String(email).trim().toLowerCase());

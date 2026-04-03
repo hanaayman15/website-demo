@@ -1,21 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getStorage, safeJsonGet, safeJsonSet, safeRemove } from '../utils/storageSafe';
 
 export function usePersistentDraft({ key, initialValue = null, enabled = true, debounceMs = 220 }) {
   const local = useMemo(() => getStorage('local'), []);
+  const initialValueRef = useRef(initialValue);
+
+  useEffect(() => {
+    initialValueRef.current = initialValue;
+  }, [initialValue]);
 
   const [draft, setDraftState] = useState(() => {
-    if (!enabled || !key) return initialValue;
-    return safeJsonGet(local, key, initialValue);
+    if (!enabled || !key) return initialValueRef.current;
+    return safeJsonGet(local, key, initialValueRef.current);
   });
 
   useEffect(() => {
     if (!enabled || !key) {
-      setDraftState(initialValue);
+      setDraftState(initialValueRef.current);
       return;
     }
-    setDraftState(safeJsonGet(local, key, initialValue));
-  }, [enabled, initialValue, key, local]);
+    setDraftState(safeJsonGet(local, key, initialValueRef.current));
+  }, [enabled, key, local]);
 
   useEffect(() => {
     if (!enabled || !key) return;
@@ -33,8 +38,8 @@ export function usePersistentDraft({ key, initialValue = null, enabled = true, d
     if (enabled && key) {
       safeRemove(local, key);
     }
-    setDraftState(initialValue);
-  }, [enabled, initialValue, key, local]);
+    setDraftState(initialValueRef.current);
+  }, [enabled, key, local]);
 
   return {
     draft,

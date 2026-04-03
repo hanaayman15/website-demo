@@ -1,25 +1,13 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useClientSignup } from '../hooks/useClientSignup';
-import '../assets/styles/react-pages.css';
+import SiteNav from '../components/layout/SiteNav';
 
-const SPORTS = [
-  'Football',
-  'Basketball',
-  'Tennis',
-  'Swimming',
-  'Running',
-  'Cycling',
-  'Weightlifting',
-  'CrossFit',
-  'Volleyball',
-  'General Exercise',
-  'Other',
-];
+const ACCENT = '#6eabf2';
 
 function ClientSignup() {
   const navigate = useNavigate();
-  const { state, countryOptions, updateField, submitSignup } = useClientSignup();
+  const { state, countryOptions, sportOptions, updateField, submitSignup } = useClientSignup();
 
   useEffect(() => {
     sessionStorage.setItem('portalType', 'client');
@@ -27,7 +15,10 @@ function ClientSignup() {
 
   useEffect(() => {
     if (!state.success) return;
-    const timeout = window.setTimeout(() => navigate('/subscription-plan'), 1200);
+    const currentClientId = String(localStorage.getItem('currentClientId') || '').trim();
+    const params = new URLSearchParams({ flow: 'signup' });
+    if (currentClientId) params.set('client_id', currentClientId);
+    const timeout = window.setTimeout(() => navigate(`/subscription-plan?${params.toString()}`), 1200);
     return () => window.clearTimeout(timeout);
   }, [navigate, state.success]);
 
@@ -37,146 +28,107 @@ function ClientSignup() {
   };
 
   return (
-    <main className="react-page-wrap react-grid" style={{ maxWidth: 1100, gap: '1rem' }}>
-      <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Create Your Client Account</h1>
-          <p className="react-muted" style={{ margin: 0 }}>
-            Start your transformation journey with personalized nutrition support.
-          </p>
-        </div>
-        <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/client-home">Home</Link>
-          <Link className="react-btn react-btn-ghost" to="/client-login">Login</Link>
-        </div>
-      </section>
+    <div className="bg-gray-50 min-h-screen">
+      <SiteNav activePath="/client-signup" />
 
-      <section className="react-grid react-grid-2" style={{ alignItems: 'start' }}>
-        <article className="react-panel react-grid" style={{ gap: '0.75rem' }}>
-          <h2 style={{ margin: 0 }}>Why Join</h2>
-          <p className="react-muted" style={{ margin: 0 }}>
-            Personalized meal plans, progress tracking, and direct nutritionist support.
-          </p>
-          <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
-            <li>Performance-focused nutrition plans</li>
-            <li>Goal tracking and dashboard insights</li>
-            <li>Mental coaching and supplement guidance</li>
-            <li>Athlete-specific recommendations</li>
-          </ul>
-        </article>
+      <div className="min-h-screen flex items-center justify-center py-12 px-4">
+        <div className="max-w-5xl w-full grid md:grid-cols-2 gap-8 items-stretch">
+          {/* Gradient Panel */}
+          <div className="rounded-3xl shadow-xl p-10 text-white flex flex-col justify-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-4 text-center text-white">Start Your Transformation Today 🚀</h2>
+              <p className="text-white/90 leading-relaxed">Join hundreds of athletes who have elevated their performance through personalized nutrition coaching.</p>
+            </div>
 
-        <form className="react-panel react-grid" style={{ gap: '0.75rem' }} onSubmit={onSubmit}>
-          {state.error ? <div className="react-alert react-alert-error">{state.error}</div> : null}
-          {state.success ? <div className="react-alert react-alert-success">{state.success}</div> : null}
-
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">First Name</span>
-              <input
-                className="react-input"
-                value={state.form.firstName}
-                onChange={(event) => updateField('firstName', event.target.value)}
-                placeholder="John"
-              />
-            </label>
-            <label>
-              <span className="react-label">Last Name</span>
-              <input
-                className="react-input"
-                value={state.form.lastName}
-                onChange={(event) => updateField('lastName', event.target.value)}
-                placeholder="Doe"
-              />
-            </label>
-          </div>
-
-          <label>
-            <span className="react-label">Email</span>
-            <input
-              className="react-input"
-              type="email"
-              value={state.form.email}
-              onChange={(event) => updateField('email', event.target.value)}
-              placeholder="your.email@example.com"
-            />
-          </label>
-
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">Country</span>
-              <select
-                className="react-input"
-                value={state.form.country}
-                onChange={(event) => updateField('country', event.target.value)}
-              >
-                {countryOptions.map((item) => (
-                  <option key={item.country} value={item.country}>{item.country} ({item.dialCode})</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className="react-label">Phone</span>
-              <input
-                className="react-input"
-                value={state.form.phone}
-                onChange={(event) => updateField('phone', event.target.value.replace(/\D/g, ''))}
-                placeholder="Local number"
-              />
-            </label>
-          </div>
-
-          <label>
-            <span className="react-label">Sport</span>
-            <select
-              className="react-input"
-              value={state.form.sport}
-              onChange={(event) => updateField('sport', event.target.value)}
-            >
-              <option value="">Select your sport</option>
-              {SPORTS.map((sport) => (
-                <option key={sport} value={sport}>{sport}</option>
+            <div className="space-y-6">
+              {['Personalized meal plans designed for your sport', 'Real-time progress tracking & analytics', 'Direct access to certified nutritionists', 'Mental performance coaching included', 'Science-backed supplement recommendations'].map((item) => (
+                <div key={item} className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">✓</div>
+                  <p className="text-white/90">{item}</p>
+                </div>
               ))}
-            </select>
-          </label>
+            </div>
 
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">Password</span>
-              <input
-                className="react-input"
-                type="password"
-                value={state.form.password}
-                onChange={(event) => updateField('password', event.target.value)}
-                placeholder="Minimum 6 characters"
-              />
-            </label>
-            <label>
-              <span className="react-label">Confirm Password</span>
-              <input
-                className="react-input"
-                type="password"
-                value={state.form.confirmPassword}
-                onChange={(event) => updateField('confirmPassword', event.target.value)}
-                placeholder="Re-enter password"
-              />
-            </label>
+            <div className="mt-8 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <div className="text-4xl mb-2">⭐⭐⭐⭐⭐</div>
+              <p className="text-sm text-white/70 italic">"Best decision I made for my athletic career. The personalized approach really works!"</p>
+              <p className="text-sm font-semibold mt-2">- Sara K., Professional Swimmer</p>
+            </div>
           </div>
 
-          <label className="react-inline-toggle">
-            <input
-              type="checkbox"
-              checked={state.form.termsAccepted}
-              onChange={(event) => updateField('termsAccepted', event.target.checked)}
-            />
-            <span>I agree to the Terms of Service and Privacy Policy.</span>
-          </label>
+          {/* Form Panel */}
+          <div className="bg-white rounded-3xl shadow-xl p-10">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
+              <p className="text-gray-600">Start your journey to peak performance</p>
+            </div>
 
-          <button className="react-btn" type="submit" disabled={state.submitting}>
-            {state.submitting ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
-      </section>
-    </main>
+            <form onSubmit={onSubmit} className="space-y-6">
+              {state.error && <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">{state.error}</div>}
+              {state.success && <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm">✓ {state.success}</div>}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">First Name</label>
+                  <input type="text" value={state.form.firstName} onChange={(e) => updateField('firstName', e.target.value)} placeholder="John" required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Last Name</label>
+                  <input type="text" value={state.form.lastName} onChange={(e) => updateField('lastName', e.target.value)} placeholder="Doe" required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Email Address</label>
+                <input type="email" value={state.form.email} onChange={(e) => updateField('email', e.target.value)} placeholder="your.email@example.com" required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Country</label>
+                  <select value={state.form.country} onChange={(e) => updateField('country', e.target.value)} className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none">
+                    <option value="">Select country</option>
+                    {countryOptions.map((item) => (<option key={item.country} value={item.country}>{item.country}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Phone</label>
+                  <input type="tel" value={state.form.phone} onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, ''))} placeholder="Local number" className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Sport</label>
+                <select value={state.form.sport} onChange={(e) => updateField('sport', e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none">
+                  <option value="">Select your sport</option>
+                  {sportOptions.map((sport) => (<option key={sport} value={sport}>{sport}</option>))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Password</label>
+                  <input type="password" value={state.form.password} onChange={(e) => updateField('password', e.target.value)} placeholder="Minimum 6 characters" required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Confirm</label>
+                  <input type="password" value={state.form.confirmPassword} onChange={(e) => updateField('confirmPassword', e.target.value)} placeholder="Re-enter password" required className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-3 text-sm text-gray-700">
+                <input type="checkbox" checked={state.form.termsAccepted} onChange={(e) => updateField('termsAccepted', e.target.checked)} required className="w-4 h-4" />
+                I agree to the Terms of Service and Privacy Policy.
+              </label>
+
+              <button type="submit" disabled={state.submitting} className="w-full py-4 rounded-xl font-bold text-white transition" style={{ backgroundColor: ACCENT }}>
+                {state.submitting ? 'Creating account...' : 'Create Account'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

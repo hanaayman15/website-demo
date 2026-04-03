@@ -4,6 +4,25 @@ const STORAGE_KEY = 'dietPlans';
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const MEALS = ['breakfast', 'snack1', 'lunch', 'dinner', 'preworkout', 'postworkout'];
 
+function parseCaloriesInput(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+
+  // Support Arabic/Persian numerals and separators users may type in number fields.
+  const normalizedDigits = raw
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0));
+
+  const normalized = normalizedDigits
+    .replace(/[\s,_]/g, '')
+    .replace(/\u066B/g, '.')
+    .replace(/\u066C/g, '');
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
 function safeReadPlans() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -43,9 +62,12 @@ export function buildDietPlanDraft() {
 }
 
 export function buildDietPlanPayload(draft) {
+  const minCalories = parseCaloriesInput(draft.minCalories) || 0;
+  const maxCalories = parseCaloriesInput(draft.maxCalories) || 0;
+
   const payload = {
-    minCalories: Number(draft.minCalories || 0),
-    maxCalories: Number(draft.maxCalories || 0),
+    minCalories,
+    maxCalories,
     dietType: String(draft.dietType || '').trim(),
   };
 
@@ -65,8 +87,8 @@ export function buildDietPlanPayload(draft) {
 }
 
 export function buildDietPlanSummary(plan) {
-  const min = Number(plan?.minCalories || 0);
-  const max = Number(plan?.maxCalories || 0);
+  const min = parseCaloriesInput(plan?.minCalories) || 0;
+  const max = parseCaloriesInput(plan?.maxCalories) || 0;
   const type = String(plan?.dietType || 'No type specified');
   return {
     caloriesLabel: `${min}-${max} kcal`,
@@ -182,11 +204,16 @@ export function useDietManagement() {
   const updateMeal = (day, meal, field, value) => dispatch({ type: 'UPDATE_MEAL', payload: { day, meal, field, value } });
 
   const savePlan = () => {
-    const minCalories = Number(state.draft.minCalories || 0);
-    const maxCalories = Number(state.draft.maxCalories || 0);
+    const minCalories = parseCaloriesInput(state.draft.minCalories);
+    const maxCalories = parseCaloriesInput(state.draft.maxCalories);
 
-    if (!minCalories || !maxCalories) {
+    if (minCalories === null || maxCalories === null) {
       dispatch({ type: 'SET_ERROR', payload: 'Please enter both min and max calories.' });
+      return false;
+    }
+
+    if (maxCalories < minCalories) {
+      dispatch({ type: 'SET_ERROR', payload: 'Max calories must be greater than or equal to min calories.' });
       return false;
     }
 

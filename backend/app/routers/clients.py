@@ -263,9 +263,13 @@ async def update_profile(
     db: Session = Depends(get_db)
 ):
     """Update the authenticated client's profile."""
+    import sys
     profile = _ensure_client_profile(current_user, db)
 
     update_data = profile_data.model_dump(exclude_unset=True)
+    print(f"[PUT /api/client/profile] Received update_data keys: {list(update_data.keys())}", file=sys.stderr)
+    print(f"[PUT /api/client/profile] protein_target={update_data.get('protein_target')}, carbs_target={update_data.get('carbs_target')}, fats_target={update_data.get('fats_target')}", file=sys.stderr)
+    print(f"[PUT /api/client/profile] goal_weight={update_data.get('goal_weight')}, competition_date={update_data.get('competition_date')}, tdee={update_data.get('tdee')}", file=sys.stderr)
 
     # Accept training_start_time as an alias for persisted training_time.
     training_start_alias = update_data.pop("training_start_time", None)
@@ -306,8 +310,15 @@ async def update_profile(
     if "meal_swaps" in update_data:
         update_data["meal_swaps"] = _serialize_json_object(update_data.get("meal_swaps"))
 
+    import sys
+    print(f"[PUT /api/client/profile] After measurement extraction, remaining update_data keys: {list(update_data.keys())}", file=sys.stderr)
+    print(f"[PUT /api/client/profile] After extraction: protein_target={update_data.get('protein_target')}, carbs_target={update_data.get('carbs_target')}, fats_target={update_data.get('fats_target')}", file=sys.stderr)
+
     for key, value in update_data.items():
         setattr(profile, key, value)
+
+    print(f"[PUT /api/client/profile] After setattr: protein_target={profile.protein_target}, carbs_target={profile.carbs_target}, fats_target={profile.fats_target}", file=sys.stderr)
+
 
     if any(value is not None for value in measurement_payload.values()):
         measurement = BodyMeasurement(
@@ -321,6 +332,10 @@ async def update_profile(
     db.commit()
     db.refresh(profile)
     latest_measurement = _get_latest_measurement(profile.id, db)
+
+    import sys
+    print(f"[PUT /api/client/profile] After DB commit/refresh: protein_target={profile.protein_target}, carbs_target={profile.carbs_target}, fats_target={profile.fats_target}", file=sys.stderr)
+    print(f"[PUT /api/client/profile] After DB commit/refresh: goal_weight={profile.goal_weight}, competition_date={profile.competition_date}, activity_level={profile.activity_level}", file=sys.stderr)
 
     return ClientProfileResponse(
         id=profile.id,

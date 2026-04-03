@@ -5,13 +5,17 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="assets/css/main.css" />
-    <link rel="stylesheet" href="assets/css/responsive.css" />
+	<link rel="stylesheet" href="assets/css/responsive.css" />
 	<link rel="stylesheet" href="assets/css/dashboard-template.css" />
 	<script src="config.js"></script>
 	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+	<script src="assets/js/arabic-reshaper-fallback.js"></script>
+	<script src="assets/js/pdf-assets.js?v=20260319c"></script>
+	<script src="assets/js/client-detail-pdf-template.js?v=20260319g"></script>
 	<style>
 		body {
-			background-image: url("images/pexels-jplenio-1103970.jpg");
+			background-image: url("images/back.jpg");
 			background-size: cover;
 			background-position: center;
 			background-attachment: fixed;
@@ -747,6 +751,26 @@
 		}
 
 		@media (max-width: 768px) {
+			.detail-container {
+				margin: 16px auto;
+				padding: 0 10px;
+			}
+
+			.detail-nav {
+				flex-wrap: wrap;
+				gap: 10px;
+			}
+
+			.nav-right {
+				width: 100%;
+			}
+
+			.nav-right .nav-btn,
+			.nav-right .btn,
+			.nav-right button {
+				width: 100%;
+			}
+
 			.profile-top {
 				flex-direction: column;
 				text-align: center;
@@ -758,6 +782,27 @@
 
 			.info-grid {
 				grid-template-columns: 1fr;
+			}
+		}
+
+		@media (max-width: 390px) {
+			.profile-header,
+			.tabs-container {
+				padding: 12px;
+				border-radius: 12px;
+			}
+
+			.profile-name {
+				font-size: 22px;
+			}
+
+			.tab {
+				padding: 10px 14px;
+				font-size: 14px;
+			}
+
+			.info-value {
+				font-size: 15px;
 			}
 		}
 
@@ -1877,9 +1922,10 @@
 				foodLikes: backendClient.food_likes || localSnapshot.food_likes || 'N/A',
 				foodDislikes: backendClient.food_dislikes || localSnapshot.food_dislikes || 'N/A',
 				testRecordNotes: backendClient.test_record_notes || localSnapshot.test_record_notes || 'N/A',
-				additionalNotes: backendClient.additional_notes || localSnapshot.additional_notes || 'N/A',
+				additionalNotes: backendClient.additional_notes || localSnapshot.additional_notes || localSnapshot.additionalNotes || 'N/A',
+				notes: backendClient.additional_notes || localSnapshot.notes || localSnapshot.additional_notes || localSnapshot.additionalNotes || 'No notes added',
 				clientNotes: backendClient.client_notes || 'N/A',
-				mentalObservation: backendClient.mental_notes || backendClient.mental_observation || localSnapshot.mental_observation || 'No mental observations',
+				mentalObservation: backendClient.mental_notes || backendClient.mental_observation || localSnapshot.mental_observation || localSnapshot.mentalObservation || 'No mental observations',
 				mentalObsDate: backendClient.mental_obs_date || localSnapshot.mental_obs_date || null,
 				progressionType: backendClient.progression_type || localSnapshot.progression_type || 'N/A',
 				calories: backendClient.calories ?? localSnapshot.calories ?? null,
@@ -2190,22 +2236,27 @@
 			// Try to fetch from backend first
 			const authHeader = getAuthHeader();
 			const tokenUsable = !!authHeader && isAuthTokenUsable();
+			const currentRole = getCurrentRole();
+			const canUseAdminEndpoints = tokenUsable && (currentRole === 'admin' || currentRole === 'doctor' || currentRole === '');
 			console.log('Auth header present:', !!authHeader, 'usable:', tokenUsable);
 			let backendClient = null;
 
-			// Always try admin composite first because it includes nutrition fields.
-			// Use auth when available and valid; otherwise try without auth for permissive local setups.
-			try {
-				backendClient = await fetchAdminClientComposite(clientId, tokenUsable ? authHeader : null);
-				console.log('Loaded admin composite client:', backendClient.full_name, 'ID:', backendClient.id);
-			} catch (error) {
-				if (String(error?.message || '').includes('401') || String(error?.message || '').includes('403')) {
-					localStorage.removeItem(AUTH_TOKEN_KEY);
-					localStorage.removeItem(AUTH_TOKEN_TYPE_KEY);
-					console.info('Admin auth not valid. Falling back to public endpoint.');
-				} else {
-					console.warn('Admin composite fetch failed, using public endpoint:', error?.message || error);
+			// Try admin composite only when a usable token is available.
+			if (canUseAdminEndpoints) {
+				try {
+					backendClient = await fetchAdminClientComposite(clientId, authHeader);
+					console.log('Loaded admin composite client:', backendClient.full_name, 'ID:', backendClient.id);
+				} catch (error) {
+					if (String(error?.message || '').includes('401') || String(error?.message || '').includes('403')) {
+						localStorage.removeItem(AUTH_TOKEN_KEY);
+						localStorage.removeItem(AUTH_TOKEN_TYPE_KEY);
+						console.info('Admin auth not valid. Falling back to public endpoint.');
+					} else {
+						console.warn('Admin composite fetch failed, using public endpoint:', error?.message || error);
+					}
 				}
+			} else {
+				console.info('Skipping admin composite fetch: no usable admin auth token found.');
 			}
 
 			// Try public endpoint (primary data source)
@@ -2225,6 +2276,7 @@
 
 			if (backendClient) {
 				activeClient = mapBackendClientToActiveClient(backendClient);
+				syncClientSupplementsFromBackend(backendClient.supplements_list);
 
 				if (activeClient.gender) {
 					activeClient.gender = String(activeClient.gender).charAt(0).toUpperCase() + String(activeClient.gender).slice(1).toLowerCase();
@@ -2319,6 +2371,13 @@
 		async function saveClient() {
 			// Save to localStorage for frontend-only fields
 			localStorage.setItem(storageKey, JSON.stringify(activeClient));
+			const sanitizeProgramText = (value, placeholder) => {
+				const text = String(value ?? '').trim();
+				if (!text) return null;
+				if (placeholder && text === placeholder) return null;
+				if (text === 'N/A') return null;
+				return text;
+			};
 			const resolvedClientId = Number(activeClient?.id);
 			const targetClientId = Number.isFinite(resolvedClientId) && resolvedClientId > 0
 				? resolvedClientId
@@ -2352,13 +2411,37 @@
 				const parsed = parseFloat(text.replace(/,/g, ''));
 				return Number.isFinite(parsed) ? parsed : null;
 			};
+
+			const programNotes = sanitizeProgramText(activeClient.notes, 'No notes added') || sanitizeProgramText(activeClient.additionalNotes, 'N/A');
+			const programMentalObservation = sanitizeProgramText(activeClient.mentalObservation, 'No mental observations');
+			const programSupplementsList = (typeof getClientSupplements === 'function' ? getClientSupplements() : [])
+				.map((item) => ({
+					name: String(item?.name || '').trim(),
+					amount: item?.amount != null && String(item.amount).trim() !== '' && Number.isFinite(Number(item.amount)) ? Number(item.amount) : null,
+					notes: String(item?.notes || '').trim() || null
+				}))
+				.filter((item) => item.name);
+			if (programNotes) {
+				activeClient.notes = programNotes;
+				activeClient.additionalNotes = programNotes;
+			}
+			if (programMentalObservation) {
+				activeClient.mentalObservation = programMentalObservation;
+			}
+			if (programSupplementsList.length) {
+				activeClient.supplements = programSupplementsList
+					.map((item) => `${item.name}${item.amount != null ? ` (${item.amount}g)` : ''}${item.notes ? ` - ${item.notes}` : ''}`)
+					.join(', ');
+			}
 			
 			// Also sync to the clients array for other pages
 			const clients = JSON.parse(localStorage.getItem('clients') || '[]');
 			const clientIndex = clients.findIndex(c => c.id == targetClientId);
 			if (clientIndex !== -1) {
 				clients[clientIndex].notes = activeClient.notes;
+				clients[clientIndex].additionalNotes = activeClient.additionalNotes;
 				clients[clientIndex].mentalObservation = activeClient.mentalObservation;
+				clients[clientIndex].supplements = activeClient.supplements;
 				localStorage.setItem('clients', JSON.stringify(clients));
 			}
 
@@ -2387,9 +2470,9 @@
 					food_likes: activeClient.foodLikes !== 'N/A' ? activeClient.foodLikes : null,
 					food_dislikes: activeClient.foodDislikes !== 'N/A' ? activeClient.foodDislikes : null,
 					test_record_notes: activeClient.testRecordNotes !== 'N/A' ? activeClient.testRecordNotes : null,
-					additional_notes: activeClient.additionalNotes !== 'N/A' ? activeClient.additionalNotes : null,
+					additional_notes: programNotes,
 					client_notes: activeClient.clientNotes !== 'N/A' ? activeClient.clientNotes : null,
-					mental_observation: activeClient.mentalObservation || null,
+					mental_observation: programMentalObservation,
 					supplements: activeClient.supplements || null,
 					competition_enabled: Boolean(activeClient.competitionEnabled),
 					competition_status: activeClient.competitionStatus || null
@@ -2425,7 +2508,7 @@
 					goal_weight: parseNullableNumber(activeClient.goalWeight),
 					test_record_notes: activeClient.testRecordNotes !== 'N/A' ? activeClient.testRecordNotes : null,
 					injuries: activeClient.injuries && activeClient.injuries !== 'N/A' ? activeClient.injuries : null,
-					mental_notes: activeClient.mentalObservation && activeClient.mentalObservation !== 'N/A' ? activeClient.mentalObservation : null,
+					mental_notes: programMentalObservation,
 					medical_notes: activeClient.medical !== 'N/A' ? activeClient.medical : null,
 					food_allergies: activeClient.foodAllergies !== 'N/A' ? activeClient.foodAllergies : null,
 					food_likes: activeClient.foodLikes !== 'N/A' ? activeClient.foodLikes : null,
@@ -2433,7 +2516,8 @@
 					competition_status: activeClient.competitionStatus !== 'N/A' ? activeClient.competitionStatus : null,
 					competition_date: normalizeDateForApi(activeClient.competitionDate),
 					days_left: parseNullableNumber(activeClient.daysLeft),
-					additional_notes: activeClient.additionalNotes !== 'N/A' ? activeClient.additionalNotes : null,
+					additional_notes: programNotes,
+					supplements: programSupplementsList,
 					training_sessions: Array.isArray(activeClient.trainingDetails)
 						? activeClient.trainingDetails.map((entry) => ({
 							day: entry?.day || '',
@@ -2542,7 +2626,7 @@
 
 		function displaySupplements() {
 			const supplements = JSON.parse(localStorage.getItem('clientSupplements') || '[]');
-			const clientSupplements = supplements.filter(s => s.clientId === clientId);
+			const clientSupplements = supplements.filter(s => Number(s.clientId) === Number(clientId));
 			const container = document.getElementById('supplements-list');
 			if (!container) return;
 
@@ -2573,7 +2657,30 @@
 
 		function getClientSupplements() {
 			const supplements = JSON.parse(localStorage.getItem('clientSupplements') || '[]');
-			return supplements.filter(s => s.clientId === clientId);
+			return supplements.filter(s => Number(s.clientId) === Number(clientId));
+		}
+
+		function syncClientSupplementsFromBackend(supplementsList) {
+			if (!Array.isArray(supplementsList) || !supplementsList.length || !clientId) return;
+			const existing = JSON.parse(localStorage.getItem('clientSupplements') || '[]');
+			const withoutCurrentClient = existing.filter((item) => Number(item?.clientId) !== Number(clientId));
+			const normalized = supplementsList
+				.map((item, index) => {
+					if (!item) return null;
+					const amount = item.amount ?? item.dose ?? null;
+					const numericAmount = amount != null && String(amount).trim() !== '' && Number.isFinite(Number(amount)) ? Number(amount) : '';
+					return {
+						id: Date.now() + index,
+						clientId: Number(clientId),
+						name: String(item.name || 'Supplement').trim(),
+						amount: numericAmount,
+						notes: String(item.notes || '').trim(),
+						dateAdded: new Date().toISOString()
+					};
+				})
+				.filter((item) => item && item.name);
+
+			localStorage.setItem('clientSupplements', JSON.stringify(withoutCurrentClient.concat(normalized)));
 		}
 
 		function formatBirthdayForDisplay(birthday) {
@@ -3163,10 +3270,177 @@
 				return window.html2canvas;
 			}
 
+			const PDF_DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+			const PDF_DAY_LABELS = {
+				en: {
+					Sunday: 'Sunday',
+					Monday: 'Monday',
+					Tuesday: 'Tuesday',
+					Wednesday: 'Wednesday',
+					Thursday: 'Thursday',
+					Friday: 'Friday',
+					Saturday: 'Saturday'
+				},
+				ar: {
+					Sunday: 'الأحد',
+					Monday: 'الاثنين',
+					Tuesday: 'الثلاثاء',
+					Wednesday: 'الأربعاء',
+					Thursday: 'الخميس',
+					Friday: 'الجمعة',
+					Saturday: 'السبت'
+				}
+			};
+
+			const PDF_MEAL_TYPE_AR = {
+				breakfast: 'الفطور',
+				snack: 'وجبة خفيفة',
+				snack1: 'وجبة خفيفة 1',
+				snack2: 'وجبة خفيفة 2',
+				lunch: 'الغداء',
+				dinner: 'العشاء',
+				'pre-workout snack': 'وجبة قبل التمرين',
+				'post-workout snack': 'وجبة بعد التمرين',
+				preworkout: 'وجبة قبل التمرين',
+				postworkout: 'وجبة بعد التمرين'
+			};
+
+			function getTemplateClientId() {
+				return clientId || new URLSearchParams(window.location.search).get('id') || '101';
+			}
+
+			function getTemplateMealTypeLabel(mealType, language) {
+				if (language !== 'ar') return mealType || 'Meal';
+				const normalized = String(mealType || '').trim().toLowerCase();
+				return PDF_MEAL_TYPE_AR[normalized] || mealType || 'وجبة';
+			}
+
+			function buildTemplateDaySections(language) {
+				saveProgramsState();
+				const savedState = loadProgramsState();
+				const dayMeals = filterDayMealsByRestrictions(savedState?.dayMeals || {});
+
+				return PDF_DAY_ORDER.map((dayName) => {
+					const training = getTrainingForDay(activeClient, dayName);
+					const meals = (Array.isArray(dayMeals[dayName]) ? dayMeals[dayName] : []).map((meal, index) => {
+						const mealType = meal.type || `Meal ${index + 1}`;
+						let displayTime = meal.time || 'N/A';
+						const mealTypeLower = String(mealType).toLowerCase();
+						const isWorkoutMeal = mealTypeLower.includes('pre') || mealTypeLower.includes('post');
+
+						if (training && isWorkoutMeal) {
+							const calculatedTime = calculateMealTime(mealType, training.start, training.end);
+							if (calculatedTime !== 'N/A') {
+								displayTime = calculatedTime;
+							}
+						}
+
+						return {
+							type: getTemplateMealTypeLabel(mealType, language),
+							time: displayTime,
+							description: language === 'ar'
+								? (meal.ar || meal.en || 'غير متوفر')
+								: (meal.en || meal.ar || 'Not available')
+						};
+					});
+
+					return {
+						title: PDF_DAY_LABELS[language][dayName],
+						items: meals
+					};
+				}).filter((section) => section.items.length > 0);
+			}
+
+			function buildTemplateNotes(language) {
+				const normalizeNotesText = (value) => {
+					const text = String(value || '').trim();
+					if (!text || text === 'No notes added' || text === 'N/A') return null;
+					return text;
+				};
+
+				const notesFromProgramsField = normalizeNotesText(document.getElementById('notes-text')?.textContent);
+				const notesFromProgramsState = normalizeNotesText(loadProgramsState()?.programFields?.notesText);
+				const notesFromClient = normalizeNotesText(activeClient?.notes);
+				const notesText = notesFromProgramsField || notesFromProgramsState || notesFromClient;
+
+				if (notesText) {
+					activeClient.notes = notesText;
+					activeClient.additionalNotes = notesText;
+					return [notesText];
+				}
+				return [language === 'ar' ? 'لا توجد ملاحظات' : 'No notes added'];
+			}
+
+			function buildTemplateMentalObservation(language) {
+				if (activeClient?.mentalObservation && activeClient.mentalObservation !== 'No mental observations') {
+					return [activeClient.mentalObservation];
+				}
+				return [language === 'ar' ? 'لا توجد ملاحظات ذهنية إضافية' : 'No mental observation added'];
+			}
+
+			function buildTemplateSupplements(language) {
+				const supplements = getClientSupplements();
+				if (!supplements.length) {
+					return [language === 'ar' ? 'لا توجد مكملات موصى بها' : 'No recommended supplements'];
+				}
+
+				return supplements.map((supplement) => {
+					const name = supplement.name || (language === 'ar' ? 'مكمل غذائي' : 'Supplement');
+					const amount = supplement.amount ? `${supplement.amount}g` : (language === 'ar' ? 'الكمية غير محددة' : 'Amount not set');
+					const notes = supplement.notes ? ` - ${supplement.notes}` : '';
+					return `${name} • ${amount}${notes}`;
+				});
+			}
+
+			function buildFixedTemplatePdfData(language) {
+				const lang = language === 'ar' ? 'ar' : 'en';
+				const clientName = activeClient?.name || document.getElementById('client-name')?.textContent || 'Client';
+				return {
+					language: lang,
+					pageTitle: lang === 'ar' ? 'نظام غذائي' : 'Nutrition Plan',
+					labels: {
+						notes: lang === 'ar' ? 'الملاحظات' : 'Notes',
+						mentalObservation: lang === 'ar' ? 'الملاحظة الذهنية' : 'Mental Observation',
+						supplements: lang === 'ar' ? 'المكملات' : 'Supplements'
+					},
+					client: {
+						name: clientName
+					},
+					daySections: buildTemplateDaySections(lang),
+					notes: buildTemplateNotes(lang),
+					mentalObservation: buildTemplateMentalObservation(lang),
+					supplements: buildTemplateSupplements(lang)
+				};
+			}
+
+			async function generateFixedTemplatePdf(language = 'en') {
+				let html2canvas;
+				let jsPDF;
+
+				try {
+					html2canvas = await ensureHtml2CanvasLoaded();
+					jsPDF = await ensureJsPdfLoaded();
+				} catch (libErr) {
+					console.error('Library loading failed:', libErr);
+					throw new Error('Failed to load PDF libraries: ' + libErr.message);
+				}
+
+				if (!window.ClientDetailPdfTemplate || typeof window.ClientDetailPdfTemplate.generate !== 'function') {
+					throw new Error('Template PDF renderer is not available');
+				}
+
+				await window.ClientDetailPdfTemplate.generate({
+					data: buildFixedTemplatePdfData(language)
+				});
+
+				pdfModal.classList.remove('active');
+			}
+
 
 
 			async function generatePdfFromSavedMeals(language = 'en') {
 				try {
+					return await generateFixedTemplatePdf(language);
 					saveProgramsState();
 					const savedState = loadProgramsState();
 					const dayMeals = filterDayMealsByRestrictions(savedState?.dayMeals || {});
@@ -4137,6 +4411,19 @@
 				setTimeout(() => {
 					restoreProgramsState();
 				}, 200);
+
+				const autoPdfFlag = urlParams.get('auto_pdf');
+				const autoPdfLang = (urlParams.get('pdf_lang') || 'en').toLowerCase();
+				if (autoPdfFlag === '1' || autoPdfFlag === 'true') {
+					const lang = autoPdfLang === 'ar' ? 'ar' : 'en';
+					setTimeout(async () => {
+						try {
+							await generatePdfFromSavedMeals(lang);
+						} catch (error) {
+							console.error('Auto PDF generation failed:', error);
+						}
+					}, 500);
+				}
 			})();
 
 			// Training details are rendered as full weekly template (Monday-Sunday)
@@ -4284,8 +4571,15 @@
 					activeClient.trainingEnd = fridayTraining.end || activeClient.trainingEnd;
 					activeClient.injuries = mergedInjuryText || activeClient.injuries;
 					activeClient.supplements = document.getElementById('supplements-info')?.textContent || document.getElementById('supplements-text')?.textContent || "No supplements added";
-					activeClient.notes = document.getElementById('notes-text')?.textContent || activeClient.notes;
-					activeClient.mentalObservation = document.getElementById('mental-text')?.textContent || activeClient.mentalObservation;
+					const notesText = document.getElementById('notes-text')?.textContent?.trim();
+					if (notesText && notesText !== 'No notes added') {
+						activeClient.notes = notesText;
+						activeClient.additionalNotes = notesText;
+					}
+					const mentalText = document.getElementById('mental-text')?.textContent?.trim();
+					if (mentalText && mentalText !== 'No mental observations') {
+						activeClient.mentalObservation = mentalText;
+					}
 					renderClient(activeClient);
 					const saveResult = await saveClient();
 					if (!saveResult?.ok) {
@@ -5337,7 +5631,20 @@ function saveProgramsState() {
 		dayMeals[dayName] = extractDayMeals(details);
 	});
 
-	const state = { selectedPlanIndex, dayMeals };
+	const notesText = document.getElementById('notes-text')?.textContent?.trim() || null;
+	const mentalText = document.getElementById('mental-text')?.textContent?.trim() || null;
+	const competitionEnabled = Boolean(document.getElementById('competition-toggle')?.checked);
+	const competitionStatus = document.getElementById('competition-status')?.textContent?.trim() || null;
+	const state = {
+		selectedPlanIndex,
+		dayMeals,
+		programFields: {
+			notesText,
+			mentalText,
+			competitionEnabled,
+			competitionStatus
+		}
+	};
 	localStorage.setItem(programsStorageKey, JSON.stringify(state));
 	console.log('✅ Programs state saved to', programsStorageKey, ':', state);
 	console.log('=== END Save ===');
@@ -5405,6 +5712,32 @@ function restoreProgramsState() {
 		console.log('No programs state to restore');
 		autoSelectAndApplyDietPlan();
 		return;
+	}
+
+	if (savedState.programFields) {
+		const notesText = savedState.programFields.notesText;
+		const mentalText = savedState.programFields.mentalText;
+		if (notesText && notesText !== 'No notes added') {
+			activeClient.notes = notesText;
+			activeClient.additionalNotes = notesText;
+			setText('notes-text', notesText, 'No notes added');
+		}
+		if (mentalText && mentalText !== 'No mental observations') {
+			activeClient.mentalObservation = mentalText;
+			setText('mental-text', mentalText, 'No mental observations');
+		}
+		const competitionToggle = document.getElementById('competition-toggle');
+		const competitionStatus = document.getElementById('competition-status');
+		const competitionPlan = document.getElementById('competition-plan');
+		if (competitionToggle) {
+			competitionToggle.checked = Boolean(savedState.programFields.competitionEnabled);
+		}
+		if (competitionStatus && savedState.programFields.competitionStatus) {
+			competitionStatus.textContent = savedState.programFields.competitionStatus;
+		}
+		if (competitionPlan && competitionToggle) {
+			competitionPlan.style.display = competitionToggle.checked ? 'block' : 'none';
+		}
 	}
 
 	if (hasValidSelectedIndex) {

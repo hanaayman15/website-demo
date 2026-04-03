@@ -1,8 +1,656 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { PDFDocument } from 'pdf-lib';
 import { useClientDetail } from '../hooks/useClientDetail';
 import '../assets/styles/react-pages.css';
 
+const PAGE_CSS = `
+.detail-page {
+  background-image: url('/images/pexels-jplenio-1103970.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding: 24px;
+}
+.detail-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.detail-nav {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  border: 1px solid #dbe5ea;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.detail-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.detail-back {
+  border: 1px solid #d8dee6;
+  background: #f7f9fc;
+  color: #1b3b5f;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.detail-nav-title {
+  color: #3b3b3b;
+  font-size: 34px;
+  font-weight: 700;
+}
+.detail-nav-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.detail-nav-link {
+  text-decoration: none;
+  border: 1px solid #d8dee6;
+  background: #f0f2f6;
+  color: #1b3b5f;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-weight: 700;
+}
+.detail-card {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
+  border: 1px solid #d9e5e8;
+  box-shadow: 0 12px 28px rgba(31, 64, 74, 0.15);
+  padding: 28px;
+}
+.detail-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-bottom: 22px;
+}
+.detail-avatar {
+  width: 124px;
+  height: 124px;
+  border-radius: 999px;
+  background: #94c2e7;
+  color: #1c2f44;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+  font-weight: 800;
+}
+.detail-name {
+  margin: 0;
+  color: #224569;
+  font-size: 52px;
+  font-weight: 800;
+}
+.detail-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+.detail-stat {
+  border: 1px solid #d9dee5;
+  border-radius: 16px;
+  background: #f7f8fb;
+  padding: 16px;
+}
+.detail-stat-value {
+  color: #4a97f5;
+  font-weight: 800;
+  font-size: 38px;
+}
+.detail-stat-label {
+  color: #7b7b7b;
+  font-size: 22px;
+  font-weight: 700;
+}
+.detail-tabs-card {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  border: 1px solid #d9e5e8;
+  box-shadow: 0 12px 28px rgba(31, 64, 74, 0.15);
+  padding: 24px;
+}
+.detail-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  gap: 8px;
+  border-bottom: 1px solid #e4e6eb;
+  padding-bottom: 10px;
+  overflow-x: auto;
+}
+.detail-tab-btn {
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 6px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.detail-tab-btn.active {
+  color: #4a9ff5;
+  border-bottom-color: #4a9ff5;
+}
+.detail-section {
+  padding-top: 18px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+}
+.detail-item-label {
+  color: #888;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.detail-item-value {
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+.detail-edit-btn {
+  border: 1px solid #d8dee6;
+  background: #f7f9fc;
+  color: #1b3b5f;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.detail-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 18, 28, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.detail-modal {
+  width: min(520px, 100%);
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 18px;
+  border: 1px solid #d9e5e8;
+  box-shadow: 0 16px 40px rgba(20, 48, 64, 0.24);
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+.detail-modal-title {
+  margin: 0;
+  color: #234d72;
+  font-size: 24px;
+  font-weight: 800;
+}
+.detail-modal-subtitle {
+  margin: 0;
+  color: #5c6f84;
+  font-size: 14px;
+}
+.detail-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 980px) {
+  .detail-name {
+    font-size: 34px;
+  }
+  .detail-stat-value {
+    font-size: 28px;
+  }
+  .detail-stat-label {
+    font-size: 16px;
+  }
+  .detail-tab-btn {
+    font-size: 13px;
+    min-width: 120px;
+  }
+}
+`;
+
+const CLIENT_PDF_BACKGROUND_IMAGE = '/images/client-detail-pdf-background.jpg';
+
+function toPlainText(value, fallback = '-') {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+}
+
+function chunksOfTwo(items) {
+  const list = Array.isArray(items) ? items : [];
+  const chunks = [];
+  for (let i = 0; i < list.length; i += 2) {
+    chunks.push(list.slice(i, i + 2));
+  }
+  return chunks;
+}
+
+const EN_DAY_TO_AR = {
+  Sunday: 'الأحد',
+  Monday: 'الاثنين',
+  Tuesday: 'الثلاثاء',
+  Wednesday: 'الأربعاء',
+  Thursday: 'الخميس',
+  Friday: 'الجمعة',
+  Saturday: 'السبت',
+};
+
+const MEAL_SLOT_CONFIG = [
+  {
+    key: 'breakfast',
+    labelEn: 'Breakfast',
+    labelAr: 'الفطور',
+    aliases: ['breakfast', 'فطور', 'الفطور'],
+  },
+  {
+    key: 'snack1',
+    labelEn: 'Snack 1',
+    labelAr: 'Snack 1',
+    aliases: ['snack 1', 'snack1', 'snack one', 'سناك 1', 'snack'],
+  },
+  {
+    key: 'lunch',
+    labelEn: 'Lunch',
+    labelAr: 'الغداء',
+    aliases: ['lunch', 'غداء', 'الغداء'],
+  },
+  {
+    key: 'dinner',
+    labelEn: 'Dinner',
+    labelAr: 'العشاء',
+    aliases: ['dinner', 'عشاء', 'العشاء'],
+  },
+  {
+    key: 'preWorkoutSnack',
+    labelEn: 'Pre-Workout Snack',
+    labelAr: 'وجبة قبل التمرين',
+    aliases: ['pre-workout snack', 'pre workout snack', 'pre workout', 'pre-workout', 'قبل التمرين'],
+  },
+  {
+    key: 'postWorkoutSnack',
+    labelEn: 'Post-Workout Snack',
+    labelAr: 'وجبة بعد التمرين',
+    aliases: ['post-workout snack', 'post workout snack', 'post workout', 'post-workout', 'بعد التمرين'],
+  },
+];
+
+function normalizeMealType(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return '';
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[()]/g, '')
+    .trim();
+}
+
+function extractMealSlotData(meals) {
+  const result = Object.fromEntries(
+    MEAL_SLOT_CONFIG.map((slot) => [slot.key, { time: 'N/A', descriptionEn: 'N/A', descriptionAr: 'N/A' }])
+  );
+  const usedIndexes = new Set();
+  const list = Array.isArray(meals) ? meals : [];
+
+  for (const slot of MEAL_SLOT_CONFIG) {
+    const index = list.findIndex((meal, idx) => {
+      if (usedIndexes.has(idx)) return false;
+      const type = normalizeMealType(meal?.type);
+      return slot.aliases.some((alias) => type.includes(normalizeMealType(alias)));
+    });
+
+    if (index >= 0) {
+      usedIndexes.add(index);
+      result[slot.key] = {
+        time: toPlainText(list[index]?.time, 'N/A'),
+        descriptionEn: toPlainText(list[index]?.en, 'N/A'),
+        descriptionAr: toPlainText(list[index]?.ar, 'N/A'),
+      };
+    }
+  }
+
+  return result;
+}
+
+function localizedDayName(day, language) {
+  const english = toPlainText(day, language === 'arabic' ? 'اليوم' : 'Day');
+  if (language !== 'arabic') return english;
+  return EN_DAY_TO_AR[english] || english;
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  if (!words.length) return [''];
+
+  const lines = [];
+  let line = words[0];
+  for (let i = 1; i < words.length; i += 1) {
+    const candidate = `${line} ${words[i]}`;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = words[i];
+    }
+  }
+  lines.push(line);
+  return lines;
+}
+
+async function tryLoadBackgroundImage() {
+  try {
+    const response = await fetch(CLIENT_PDF_BACKGROUND_IMAGE, { cache: 'no-cache' });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = objectUrl;
+    });
+    URL.revokeObjectURL(objectUrl);
+    return img;
+  } catch {
+    return null;
+  }
+}
+
+function drawTransparentCard(ctx, x, y, width, height) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.20)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 2;
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 16);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeRect(x, y, width, height);
+  }
+  ctx.restore();
+}
+
+function setupPageCanvas(backgroundImage) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1240;
+  canvas.height = 1754;
+  const ctx = canvas.getContext('2d');
+
+  if (backgroundImage) {
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, '#1b3b5f');
+    g.addColorStop(1, '#4a97f5');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  return { canvas, ctx };
+}
+
+async function canvasToPngBytes(canvas) {
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  return await blob.arrayBuffer();
+}
+
+function drawPageHeader(ctx, { language, clientName }) {
+  const title = language === 'arabic' ? 'نظام غذائي' : 'Nutrition Plan';
+  const weeklyTitle = language === 'arabic' ? 'الخطة الأسبوعية' : 'Weekly Meal Plan';
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.font = language === 'arabic' ? 'bold 56px "Segoe UI", "Tahoma", sans-serif' : 'bold 56px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(title, 620, 96);
+
+  ctx.font = language === 'arabic' ? 'bold 42px "Segoe UI", "Tahoma", sans-serif' : 'bold 42px "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(232,245,255,0.98)';
+  ctx.fillText(toPlainText(clientName, language === 'arabic' ? 'العميل' : 'Client'), 620, 152);
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.font = language === 'arabic' ? 'bold 30px "Segoe UI", "Tahoma", sans-serif' : 'bold 30px "Segoe UI", sans-serif';
+  ctx.fillText(weeklyTitle, 72, 218);
+  ctx.restore();
+}
+
+function drawMealsCard(ctx, { language, day, meals, x, y, width, height }) {
+  drawTransparentCard(ctx, x, y, width, height);
+
+  const dayTitle = language === 'arabic'
+    ? localizedDayName(day, language)
+    : toPlainText(day, 'Day');
+  const mealData = extractMealSlotData(meals);
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.font = language === 'arabic' ? 'bold 30px "Segoe UI", "Tahoma", sans-serif' : 'bold 30px "Segoe UI", sans-serif';
+  ctx.textAlign = language === 'arabic' ? 'right' : 'left';
+  ctx.direction = language === 'arabic' ? 'rtl' : 'ltr';
+  ctx.fillText(dayTitle, language === 'arabic' ? x + width - 24 : x + 24, y + 44);
+
+  let cursorY = y + 90;
+  const cardBottom = y + height - 20;
+
+  for (let slotIndex = 0; slotIndex < MEAL_SLOT_CONFIG.length; slotIndex += 1) {
+    const slot = MEAL_SLOT_CONFIG[slotIndex];
+    const mealLabel = language === 'arabic' ? slot.labelAr : slot.labelEn;
+    const slotsLeft = MEAL_SLOT_CONFIG.length - slotIndex;
+    const remainingHeight = cardBottom - cursorY;
+    if (remainingHeight <= 48) break;
+
+    const blockHeight = Math.max(76, Math.floor(remainingHeight / slotsLeft));
+    const blockTop = cursorY;
+    const labelY = blockTop;
+    const timeY = blockTop + 24;
+    const descStartY = blockTop + 48;
+    const availableDescHeight = Math.max(0, blockHeight - 54);
+
+    ctx.font = language === 'arabic' ? 'bold 23px "Segoe UI", "Tahoma", sans-serif' : 'bold 23px "Segoe UI", sans-serif';
+    ctx.fillText(mealLabel, language === 'arabic' ? x + width - 24 : x + 24, labelY);
+
+    // Keep numerals/time visually stable even on RTL pages.
+    ctx.direction = 'ltr';
+    ctx.textAlign = language === 'arabic' ? 'right' : 'left';
+    ctx.font = '22px "Segoe UI", "Tahoma", sans-serif';
+    ctx.fillText(toPlainText(mealData[slot.key]?.time, 'N/A'), language === 'arabic' ? x + width - 24 : x + 24, timeY);
+    ctx.direction = language === 'arabic' ? 'rtl' : 'ltr';
+
+    const rawDescription = language === 'arabic'
+      ? toPlainText(mealData[slot.key]?.descriptionAr, 'N/A')
+      : toPlainText(mealData[slot.key]?.descriptionEn, 'N/A');
+    const description = rawDescription === 'N/A'
+      ? (language === 'arabic' ? toPlainText(mealData[slot.key]?.descriptionEn, 'N/A') : rawDescription)
+      : rawDescription;
+
+    ctx.font = language === 'arabic' ? '19px "Segoe UI", "Tahoma", sans-serif' : '19px "Segoe UI", sans-serif';
+    const wrappedDescription = wrapCanvasText(ctx, description, width - 52);
+    const lineHeight = 20;
+    const maxDescLines = Math.max(1, Math.min(2, Math.floor(availableDescHeight / lineHeight)));
+    wrappedDescription.slice(0, maxDescLines).forEach((line, lineIndex) => {
+      const lineY = descStartY + (lineIndex * lineHeight);
+      if (lineY > blockTop + blockHeight - 8) return;
+      ctx.fillText(line, language === 'arabic' ? x + width - 24 : x + 24, lineY);
+    });
+
+    cursorY += blockHeight;
+  }
+
+  ctx.restore();
+}
+
+function drawTextCard(ctx, { language, title, text, x, y, width, height }) {
+  drawTransparentCard(ctx, x, y, width, height);
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.font = language === 'arabic' ? 'bold 28px "Segoe UI", "Tahoma", sans-serif' : 'bold 28px "Segoe UI", sans-serif';
+  ctx.fillText(title, x + 24, y + 42);
+
+  ctx.font = language === 'arabic' ? '23px "Segoe UI", "Tahoma", sans-serif' : '23px "Segoe UI", sans-serif';
+  const wrapped = wrapCanvasText(ctx, toPlainText(text, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.'), width - 44);
+  let cursorY = y + 76;
+  wrapped.forEach((line) => {
+    if (cursorY > y + height - 16) return;
+    ctx.fillText(line, x + 24, cursorY);
+    cursorY += 26;
+  });
+  ctx.restore();
+}
+
+async function generateClientProgramsPdf({ clientName, language, weekDays, dayMealsMap, programFields }) {
+  const backgroundImage = await tryLoadBackgroundImage();
+  const pdfDoc = await PDFDocument.create();
+
+  const labels = language === 'arabic'
+    ? {
+        title: 'الخطة الغذائية',
+        weeklyPlan: 'الخطة الأسبوعية',
+        notes: 'الملاحظات',
+        supplements: 'المكملات',
+        mental: 'الملاحظات الذهنية',
+        noMeals: 'لا توجد وجبات لهذا اليوم.',
+        noValue: 'لا يوجد بيانات.',
+      }
+    : {
+        title: 'Nutrition Plan',
+        weeklyPlan: 'Weekly Meal Plan',
+        notes: 'Notes',
+        supplements: 'Supplements',
+        mental: 'Mental Observations',
+        noMeals: 'No meals added for this day.',
+        noValue: 'No data.',
+      };
+
+  const allDays = Array.isArray(weekDays) && weekDays.length
+    ? weekDays
+    : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  const pagesDays = chunksOfTwo(allDays);
+
+  for (const dayChunk of pagesDays) {
+    const { canvas, ctx } = setupPageCanvas(backgroundImage);
+    drawPageHeader(ctx, { language, clientName });
+
+    const cardWidth = canvas.width - 144;
+    const cardHeight = 670;
+
+    dayChunk.forEach((day, idx) => {
+      const y = 250 + (idx * (cardHeight + 28));
+      drawMealsCard(ctx, {
+        language,
+        day,
+        meals: dayMealsMap?.[day] || [],
+        x: 72,
+        y,
+        width: cardWidth,
+        height: cardHeight,
+      });
+    });
+
+    const pngBytes = await canvasToPngBytes(canvas);
+    const png = await pdfDoc.embedPng(pngBytes);
+    const page = pdfDoc.addPage([595.28, 841.89]);
+    page.drawImage(png, { x: 0, y: 0, width: 595.28, height: 841.89 });
+  }
+
+  const { canvas: lastCanvas, ctx: lastCtx } = setupPageCanvas(backgroundImage);
+  drawPageHeader(lastCtx, { language, clientName });
+
+  const sectionTitles = language === 'arabic'
+    ? { notes: 'الملاحظات', supplements: 'المكملات', mental: 'الملاحظات الذهنية' }
+    : { notes: 'Notes', supplements: 'Supplements', mental: 'Mental Observations' };
+
+  const sections = [
+    { title: sectionTitles.notes, text: toPlainText(programFields?.notesText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
+    { title: sectionTitles.supplements, text: toPlainText(programFields?.supplementsText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
+    { title: sectionTitles.mental, text: toPlainText(programFields?.mentalText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
+  ];
+
+  const startY = 250;
+  const gap = 24;
+  const available = lastCanvas.height - startY - 72;
+  const cardHeight = Math.floor((available - (gap * (sections.length - 1))) / sections.length);
+  const cardWidth = lastCanvas.width - 144;
+  let currentY = startY;
+
+  sections.forEach((section) => {
+    if (currentY + cardHeight <= lastCanvas.height - 40) {
+      drawTextCard(lastCtx, {
+        language,
+        title: section.title,
+        text: section.text,
+        x: 72,
+        y: currentY,
+        width: cardWidth,
+        height: cardHeight,
+      });
+      currentY += cardHeight + gap;
+    }
+  });
+
+  const lastPngBytes = await canvasToPngBytes(lastCanvas);
+  const lastPng = await pdfDoc.embedPng(lastPngBytes);
+  const finalPage = pdfDoc.addPage([595.28, 841.89]);
+  finalPage.drawImage(lastPng, { x: 0, y: 0, width: 595.28, height: 841.89 });
+
+  return pdfDoc.save();
+}
+
+function toValue(client, keys, fallback = 'N/A') {
+  for (const key of keys) {
+    const value = client?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return value;
+    }
+  }
+  return fallback;
+}
+
+function computeAge(birthday) {
+  if (!birthday) return 'N/A';
+  const date = new Date(birthday);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  const now = new Date();
+  let age = now.getFullYear() - date.getFullYear();
+  const monthDiff = now.getMonth() - date.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < date.getDate())) {
+    age -= 1;
+  }
+  return Number.isFinite(age) && age >= 0 ? `${age} years` : 'N/A';
+}
+
+function initialsFromName(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'CL';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+}
+
 function ClientDetail() {
+  const navigate = useNavigate();
   const {
     selectedClientId,
     loading,
@@ -14,196 +662,710 @@ function ClientDetail() {
     selectedDay,
     setSelectedDay,
     programsState,
+    dietPlansWithSummary,
     updateNotes,
     updateProgramField,
+    applyDietPlan,
     addMeal,
     updateMeal,
     moveMealUp,
     moveMealDown,
     deleteMeal,
     saveNotes,
+    saveDetailFields,
   } = useClientDetail();
+  const [activeTab, setActiveTab] = useState('personal');
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [isEditingPrograms, setIsEditingPrograms] = useState(false);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfLanguage, setPdfLanguage] = useState('english');
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+  const [selectedPlanDraft, setSelectedPlanDraft] = useState(null);
+  const [detailForm, setDetailForm] = useState({
+    birthday: '',
+    gender: '',
+    club: '',
+    country: '',
+    religion: '',
+    height: '',
+    weight: '',
+    bmi: '',
+    bmr: '',
+    tdee: '',
+    activity_level: '',
+    sport: '',
+    position: '',
+    calories: '',
+    body_fat_percentage: '',
+    skeletal_muscle: '',
+    water_in_body: '',
+    minerals: '',
+    goal_weight: '',
+    progression_type: '',
+    competition_status: '',
+    injuries: '',
+    food_allergies: '',
+    mental_observation: '',
+    medical_notes: '',
+  });
+
+  useEffect(() => {
+    setDetailForm({
+      birthday: toValue(client, ['birthday'], ''),
+      gender: toValue(client, ['gender'], ''),
+      club: toValue(client, ['club'], ''),
+      country: toValue(client, ['country'], ''),
+      religion: toValue(client, ['religion'], ''),
+      height: toValue(client, ['height'], ''),
+      weight: toValue(client, ['weight'], ''),
+      bmi: toValue(client, ['bmi'], ''),
+      bmr: toValue(client, ['bmr'], ''),
+      tdee: toValue(client, ['tdee'], ''),
+      activity_level: toValue(client, ['activity_level', 'activityLevel'], ''),
+      sport: toValue(client, ['sport'], ''),
+      position: toValue(client, ['position'], ''),
+      calories: toValue(client, ['calories'], ''),
+      body_fat_percentage: toValue(client, ['body_fat_percentage', 'bodyFat'], ''),
+      skeletal_muscle: toValue(client, ['skeletal_muscle', 'muscleMass'], ''),
+      water_in_body: toValue(client, ['water_in_body', 'waterInBody'], ''),
+      minerals: toValue(client, ['minerals'], ''),
+      goal_weight: toValue(client, ['goal_weight', 'goalWeight'], ''),
+      progression_type: toValue(client, ['progression_type', 'progressionType'], ''),
+      competition_status: toValue(client, ['competition_status', 'competitionStatus'], ''),
+      injuries: toValue(client, ['injuries'], ''),
+      food_allergies: toValue(client, ['food_allergies', 'foodAllergies'], ''),
+      mental_observation: toValue(client, ['mental_observation', 'mental_notes', 'mentalObservation'], ''),
+      medical_notes: toValue(client, ['medical_notes', 'medicalNotes'], ''),
+    });
+  }, [client]);
+
+  useEffect(() => {
+    setSelectedPlanDraft(programsState.selectedPlanIndex);
+  }, [programsState.selectedPlanIndex]);
+
+  const updateDetailForm = (field, value) => {
+    setDetailForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const startDetailsEdit = () => {
+    setIsEditingDetails(true);
+  };
+
+  const cancelDetailsEdit = () => {
+    setIsEditingDetails(false);
+    setDetailForm({
+      birthday: toValue(client, ['birthday'], ''),
+      gender: toValue(client, ['gender'], ''),
+      club: toValue(client, ['club'], ''),
+      country: toValue(client, ['country'], ''),
+      religion: toValue(client, ['religion'], ''),
+      height: toValue(client, ['height'], ''),
+      weight: toValue(client, ['weight'], ''),
+      bmi: toValue(client, ['bmi'], ''),
+      bmr: toValue(client, ['bmr'], ''),
+      tdee: toValue(client, ['tdee'], ''),
+      activity_level: toValue(client, ['activity_level', 'activityLevel'], ''),
+      sport: toValue(client, ['sport'], ''),
+      position: toValue(client, ['position'], ''),
+      calories: toValue(client, ['calories'], ''),
+      body_fat_percentage: toValue(client, ['body_fat_percentage', 'bodyFat'], ''),
+      skeletal_muscle: toValue(client, ['skeletal_muscle', 'muscleMass'], ''),
+      water_in_body: toValue(client, ['water_in_body', 'waterInBody'], ''),
+      minerals: toValue(client, ['minerals'], ''),
+      goal_weight: toValue(client, ['goal_weight', 'goalWeight'], ''),
+      progression_type: toValue(client, ['progression_type', 'progressionType'], ''),
+      competition_status: toValue(client, ['competition_status', 'competitionStatus'], ''),
+      injuries: toValue(client, ['injuries'], ''),
+      food_allergies: toValue(client, ['food_allergies', 'foodAllergies'], ''),
+      mental_observation: toValue(client, ['mental_observation', 'mental_notes', 'mentalObservation'], ''),
+      medical_notes: toValue(client, ['medical_notes', 'medicalNotes'], ''),
+    });
+  };
+
+  const saveEditedDetails = async () => {
+    const ok = await saveDetailFields(detailForm);
+    if (ok) setIsEditingDetails(false);
+  };
 
   const dayMeals = programsState.dayMeals[selectedDay] || [];
+  const clientName = toValue(client, ['name', 'full_name'], 'Client');
+  const tabs = useMemo(() => ([
+    { id: 'personal', label: 'Personal Info', icon: '👤' },
+    { id: 'metabolism', label: 'Metabolism & Activity', icon: '💪' },
+    { id: 'nutrition', label: 'Nutrition Plan', icon: '🍽️' },
+    { id: 'health', label: 'Health & Observations', icon: '💉' },
+    { id: 'goals', label: 'Goals', icon: '🎯' },
+    { id: 'measurements', label: 'Measurements', icon: '📊' },
+    { id: 'programs', label: 'Programs', icon: '🗓️' },
+  ]), []);
+
+  const openPdfModal = () => {
+    setPdfError('');
+    setPdfLanguage('english');
+    setPdfModalOpen(true);
+  };
+
+  const closePdfModal = () => {
+    if (generatingPdf) return;
+    setPdfModalOpen(false);
+  };
+
+  const downloadGeneratedPdf = (bytes, language) => {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = String(clientName || 'client').replace(/\s+/g, '_').toLowerCase();
+    const suffix = language === 'arabic' ? 'ar' : 'en';
+    link.href = url;
+    link.download = `${safeName}_nutrition_plan_${suffix}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleGeneratePdf = async () => {
+    setPdfError('');
+    setGeneratingPdf(true);
+    try {
+      const bytes = await generateClientProgramsPdf({
+        clientName,
+        language: pdfLanguage,
+        weekDays,
+        dayMealsMap: programsState.dayMeals,
+        programFields: programsState.programFields,
+      });
+      downloadGeneratedPdf(bytes, pdfLanguage);
+      setPdfModalOpen(false);
+    } catch (err) {
+      setPdfError(err?.message || 'Failed to generate client PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   if (loading) {
     return <main className="react-page-wrap">Loading client details...</main>;
   }
 
   return (
-    <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
-      <section className="react-panel">
-        <h1 style={{ marginTop: 0 }}>Client Detail</h1>
-        <p style={{ marginBottom: 0 }}>
-          Client ID: {selectedClientId || 'N/A'}
-          {client?.name ? ` | Name: ${client.name}` : ''}
-        </p>
-      </section>
-
-      {error ? <div className="react-alert react-alert-error">{error}</div> : null}
-      {message ? <div className="react-alert react-alert-success">{message}</div> : null}
-
-      <section className="react-panel react-grid">
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Programs Fields</h2>
-        <form onSubmit={saveNotes} className="react-grid">
-          <label>
-            <span className="react-label">Notes</span>
-            <textarea
-              className="react-textarea"
-              rows={6}
-              value={programsState.programFields.notesText}
-              onChange={(event) => updateNotes(event.target.value)}
-              placeholder="Enter notes from Programs section"
-            />
-          </label>
-          <label>
-            <span className="react-label">Mental Observation</span>
-            <textarea
-              className="react-textarea"
-              rows={3}
-              value={programsState.programFields.mentalText}
-              onChange={(event) => updateProgramField('mentalText', event.target.value)}
-              placeholder="Mental notes"
-            />
-          </label>
-          <label>
-            <span className="react-label">Supplements</span>
-            <textarea
-              className="react-textarea"
-              rows={3}
-              value={programsState.programFields.supplementsText}
-              onChange={(event) => updateProgramField('supplementsText', event.target.value)}
-              placeholder="Supplements list"
-            />
-          </label>
-          <div className="react-grid react-grid-2">
-            <label>
-              <span className="react-label">Competition Status</span>
-              <input
-                className="react-input"
-                value={programsState.programFields.competitionStatus}
-                onChange={(event) => updateProgramField('competitionStatus', event.target.value)}
-                placeholder="On / Off"
-              />
-            </label>
-            <label className="react-inline-toggle">
-              <input
-                type="checkbox"
-                checked={programsState.programFields.competitionEnabled}
-                onChange={(event) => updateProgramField('competitionEnabled', event.target.checked)}
-              />
-              <span>Competition Enabled</span>
-            </label>
+    <main className="detail-page">
+      <style>{PAGE_CSS}</style>
+      <div className="detail-wrap">
+        <section className="detail-nav">
+          <div className="detail-nav-left">
+            <button className="detail-back" type="button" onClick={() => navigate(-1)}>Back</button>
+            <h1 className="detail-nav-title">{clientName}</h1>
           </div>
-          <button className="react-btn" type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Programs'}
-          </button>
-        </form>
-      </section>
+          <div className="detail-nav-actions">
+            <button className="detail-nav-link" type="button" onClick={openPdfModal}>Generate PDF</button>
+            <Link className="detail-nav-link" to={`/progress-tracking?client_id=${encodeURIComponent(selectedClientId || '')}`}>Progress</Link>
+            <Link className="detail-nav-link" to="/diet-management">Diet Management</Link>
+          </div>
+        </section>
 
-      <section className="react-panel react-grid">
-        <div className="react-row-between">
-          <h2 style={{ marginTop: 0, marginBottom: 0 }}>Weekly Meal Plan</h2>
-          <button className="react-btn" type="button" onClick={addMeal}>+ Add Meal</button>
-        </div>
+        {pdfModalOpen ? (
+          <div className="detail-modal-overlay" role="dialog" aria-modal="true" aria-label="Generate client PDF">
+            <section className="detail-modal">
+              <h2 className="detail-modal-title">Generate Client PDF</h2>
+              <p className="detail-modal-subtitle">Choose PDF language, then generate the client nutrition plan document.</p>
+              <label>
+                <span className="react-label">Language</span>
+                <select
+                  className="react-input"
+                  value={pdfLanguage}
+                  onChange={(event) => setPdfLanguage(event.target.value)}
+                  disabled={generatingPdf}
+                >
+                  <option value="english">English</option>
+                  <option value="arabic">Arabic</option>
+                </select>
+              </label>
+              {pdfError ? <div className="react-alert react-alert-error" style={{ margin: 0 }}>{pdfError}</div> : null}
+              <div className="detail-modal-actions">
+                <button className="react-btn react-btn-ghost" type="button" onClick={closePdfModal} disabled={generatingPdf}>Cancel</button>
+                <button className="react-btn" type="button" onClick={handleGeneratePdf} disabled={generatingPdf}>
+                  {generatingPdf ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
-        <div className="react-day-tabs">
-          {weekDays.map((day) => (
-            <button
-              key={day}
-              type="button"
-              className={`react-day-tab ${day === selectedDay ? 'active' : ''}`}
-              onClick={() => setSelectedDay(day)}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
+        {error ? <div className="react-alert react-alert-error" style={{ marginTop: 16 }}>{error}</div> : null}
+        {message ? <div className="react-alert react-alert-success" style={{ marginTop: 16 }}>{message}</div> : null}
 
-        {!dayMeals.length ? (
-          <p className="react-muted" style={{ margin: 0 }}>No meals added for {selectedDay}.</p>
-        ) : (
-          <div className="react-meals-list">
-            {dayMeals.map((meal, index) => (
-              <article key={meal.id} className="react-meal-card">
-                <div className="react-grid react-grid-2">
-                  <label>
-                    <span className="react-label">Meal Type</span>
-                    <input
-                      className="react-input"
-                      value={meal.type}
-                      onChange={(event) => updateMeal(meal.id, 'type', event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span className="react-label">Time</span>
-                    <input
-                      className="react-input"
-                      value={meal.time}
-                      onChange={(event) => updateMeal(meal.id, 'time', event.target.value)}
-                    />
-                  </label>
-                </div>
+        <section className="detail-card">
+          <div className="detail-profile-top">
+            <div className="detail-avatar">{initialsFromName(clientName)}</div>
+            <h2 className="detail-name">{clientName}</h2>
+          </div>
+          <div className="detail-stats">
+            <article className="detail-stat">
+              <div className="detail-stat-value">{toValue(client, ['weight'], 'N/A')}</div>
+              <div className="detail-stat-label">Weight</div>
+            </article>
+            <article className="detail-stat">
+              <div className="detail-stat-value">{toValue(client, ['height'], 'N/A')}</div>
+              <div className="detail-stat-label">Height</div>
+            </article>
+            <article className="detail-stat">
+              <div className="detail-stat-value">{String(toValue(client, ['age'], computeAge(toValue(client, ['birthday'], '')))).replace(' years', '')}</div>
+              <div className="detail-stat-label">Age</div>
+            </article>
+            <article className="detail-stat">
+              <div className="detail-stat-value">{toValue(client, ['gender'], 'N/A')}</div>
+              <div className="detail-stat-label">Gender</div>
+            </article>
+          </div>
+        </section>
 
-                <label>
-                  <span className="react-label">English Description</span>
-                  <textarea
-                    className="react-textarea"
-                    rows={2}
-                    value={meal.en}
-                    onChange={(event) => updateMeal(meal.id, 'en', event.target.value)}
-                  />
-                </label>
-
-                <label>
-                  <span className="react-label">Arabic Description</span>
-                  <textarea
-                    className="react-textarea"
-                    rows={2}
-                    value={meal.ar}
-                    onChange={(event) => updateMeal(meal.id, 'ar', event.target.value)}
-                  />
-                </label>
-
-                <div className="react-row-between">
-                  <small className="react-muted">Meal #{index + 1}</small>
-                  <div className="react-inline-actions">
-                    <button className="react-btn react-btn-ghost" type="button" onClick={() => moveMealUp(meal.id)}>Up</button>
-                    <button className="react-btn react-btn-ghost" type="button" onClick={() => moveMealDown(meal.id)}>Down</button>
-                    <button className="react-btn react-btn-danger" type="button" onClick={() => deleteMeal(meal.id)}>Delete</button>
-                  </div>
-                </div>
-              </article>
+        <section className="detail-tabs-card">
+          <div className="detail-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`detail-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <div>{tab.icon}</div>
+                <div>{tab.label}</div>
+              </button>
             ))}
           </div>
-        )}
-      </section>
 
-      <section className="react-panel">
-        <h2 style={{ marginTop: 0 }}>Profile Snapshot</h2>
-        <div className="stat-list">
-          <article className="stat-item">
-            <div className="stat-label">Weight</div>
-            <div className="stat-value">{client?.weight ?? 'N/A'}</div>
-          </article>
-          <article className="stat-item">
-            <div className="stat-label">Goal Weight</div>
-            <div className="stat-value">{client?.goalWeight ?? client?.goal_weight ?? 'N/A'}</div>
-          </article>
-          <article className="stat-item">
-            <div className="stat-label">TDEE</div>
-            <div className="stat-value">{client?.tdee ?? 'N/A'}</div>
-          </article>
-        </div>
-      </section>
+          {(activeTab === 'personal' || activeTab === 'metabolism' || activeTab === 'measurements' || activeTab === 'goals' || activeTab === 'health') ? (
+            <div className="react-inline-actions" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+              {!isEditingDetails ? (
+                <button className="react-btn react-btn-ghost" type="button" onClick={startDetailsEdit}>Edit Details</button>
+              ) : (
+                <>
+                  <button className="react-btn react-btn-ghost" type="button" onClick={cancelDetailsEdit}>Cancel</button>
+                  <button className="react-btn" type="button" onClick={saveEditedDetails} disabled={saving}>{saving ? 'Saving...' : 'Save Details'}</button>
+                </>
+              )}
+            </div>
+          ) : null}
 
-      <section className="react-panel">
-        <h2 style={{ marginTop: 0 }}>Navigation</h2>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Link className="react-btn" to="/dashboard">Dashboard</Link>
-          <Link className="react-btn" to="/clients">Clients</Link>
-        </div>
-      </section>
+          {activeTab === 'personal' ? (
+            <div className="detail-section">
+              <div className="detail-grid">
+                <div>
+                  <div className="detail-item-label">Birthday</div>
+                  {isEditingDetails ? (
+                    <input className="react-input" value={detailForm.birthday} onChange={(event) => updateDetailForm('birthday', event.target.value)} placeholder="YYYY-MM-DD" />
+                  ) : <div className="detail-item-value">{toValue(client, ['birthday'], 'N/A')}</div>}
+                </div>
+                <div><div className="detail-item-label">Age</div><div className="detail-item-value">{toValue(client, ['age'], computeAge(toValue(client, ['birthday'], '')))}</div></div>
+                <div>
+                  <div className="detail-item-label">Gender</div>
+                  {isEditingDetails ? (
+                    <input className="react-input" value={detailForm.gender} onChange={(event) => updateDetailForm('gender', event.target.value)} />
+                  ) : <div className="detail-item-value">{toValue(client, ['gender'], 'N/A')}</div>}
+                </div>
+                <div>
+                  <div className="detail-item-label">Club</div>
+                  {isEditingDetails ? (
+                    <input className="react-input" value={detailForm.club} onChange={(event) => updateDetailForm('club', event.target.value)} />
+                  ) : <div className="detail-item-value">{toValue(client, ['club'], 'N/A')}</div>}
+                </div>
+                <div>
+                  <div className="detail-item-label">Country</div>
+                  {isEditingDetails ? (
+                    <input className="react-input" value={detailForm.country} onChange={(event) => updateDetailForm('country', event.target.value)} />
+                  ) : <div className="detail-item-value">{toValue(client, ['country'], 'N/A')}</div>}
+                </div>
+                <div>
+                  <div className="detail-item-label">Religion</div>
+                  {isEditingDetails ? (
+                    <input className="react-input" value={detailForm.religion} onChange={(event) => updateDetailForm('religion', event.target.value)} />
+                  ) : <div className="detail-item-value">{toValue(client, ['religion'], 'N/A')}</div>}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === 'metabolism' ? (
+            <div className="detail-section detail-grid">
+              <div><div className="detail-item-label">BMI</div>{isEditingDetails ? <input className="react-input" value={detailForm.bmi} onChange={(event) => updateDetailForm('bmi', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['bmi'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">BMR</div>{isEditingDetails ? <input className="react-input" value={detailForm.bmr} onChange={(event) => updateDetailForm('bmr', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['bmr'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">TDEE</div>{isEditingDetails ? <input className="react-input" value={detailForm.tdee} onChange={(event) => updateDetailForm('tdee', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['tdee'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">Activity Level</div>{isEditingDetails ? <input className="react-input" value={detailForm.activity_level} onChange={(event) => updateDetailForm('activity_level', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['activity_level', 'activityLevel'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">Sport</div>{isEditingDetails ? <input className="react-input" value={detailForm.sport} onChange={(event) => updateDetailForm('sport', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['sport'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">Position</div>{isEditingDetails ? <input className="react-input" value={detailForm.position} onChange={(event) => updateDetailForm('position', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['position'], 'N/A')}</div>}</div>
+            </div>
+          ) : null}
+
+          {activeTab === 'nutrition' ? (
+            <div className="detail-section react-grid" style={{ gap: 12 }}>
+              <div className="react-day-tabs">
+                {weekDays.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`react-day-tab ${day === selectedDay ? 'active' : ''}`}
+                    onClick={() => setSelectedDay(day)}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+              {!dayMeals.length ? <p className="react-muted" style={{ margin: 0 }}>No meals added for {selectedDay}.</p> : null}
+              {dayMeals.map((meal) => (
+                <article key={meal.id} className="react-meal-card">
+                  <div className="react-row-between"><strong>{meal.type || 'Meal'}</strong><span className="react-muted">{meal.time || 'N/A'}</span></div>
+                  <div>{meal.en || 'No english description'}</div>
+                  <div style={{ direction: 'rtl' }}>{meal.ar || 'لا يوجد وصف عربي'}</div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+
+          {activeTab === 'health' ? (
+            <div className="detail-section detail-grid">
+              <div>
+                <div className="detail-item-label">Injuries</div>
+                {isEditingDetails ? (
+                  <textarea className="react-textarea" rows={3} value={detailForm.injuries} onChange={(event) => updateDetailForm('injuries', event.target.value)} />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['injuries'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Medical Notes</div>
+                {isEditingDetails ? (
+                  <textarea
+                    className="react-textarea"
+                    rows={3}
+                    value={detailForm.medical_notes}
+                    onChange={(event) => updateDetailForm('medical_notes', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['medical_notes', 'medicalNotes'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Food Allergies</div>
+                {isEditingDetails ? (
+                  <textarea className="react-textarea" rows={3} value={detailForm.food_allergies} onChange={(event) => updateDetailForm('food_allergies', event.target.value)} />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['food_allergies', 'foodAllergies'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Mental Observation</div>
+                {isEditingDetails ? (
+                  <textarea className="react-textarea" rows={3} value={detailForm.mental_observation} onChange={(event) => updateDetailForm('mental_observation', event.target.value)} />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['mental_observation', 'mental_notes', 'mentalObservation'], programsState.programFields.mentalText || 'N/A')}</div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === 'goals' ? (
+            <div className="detail-section detail-grid">
+              <div>
+                <div className="detail-item-label">Goal Weight</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.goal_weight}
+                    onChange={(event) => updateDetailForm('goal_weight', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['goal_weight', 'goalWeight'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Progression Type</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.progression_type}
+                    onChange={(event) => updateDetailForm('progression_type', event.target.value)}
+                    placeholder="maintain / cut / bulk"
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['progression_type', 'progressionType'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Calories Target</div>
+                {isEditingDetails ? (
+                  <input className="react-input" value={detailForm.calories} onChange={(event) => updateDetailForm('calories', event.target.value)} />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['calories'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Competition</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.competition_status}
+                    onChange={(event) => updateDetailForm('competition_status', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['competition_status', 'competitionStatus'], programsState.programFields.competitionStatus || 'N/A')}</div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === 'measurements' ? (
+            <div className="detail-section detail-grid">
+              <div><div className="detail-item-label">Weight</div>{isEditingDetails ? <input className="react-input" value={detailForm.weight} onChange={(event) => updateDetailForm('weight', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['weight'], 'N/A')}</div>}</div>
+              <div><div className="detail-item-label">Height</div>{isEditingDetails ? <input className="react-input" value={detailForm.height} onChange={(event) => updateDetailForm('height', event.target.value)} /> : <div className="detail-item-value">{toValue(client, ['height'], 'N/A')}</div>}</div>
+              <div>
+                <div className="detail-item-label">Body Fat %</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.body_fat_percentage}
+                    onChange={(event) => updateDetailForm('body_fat_percentage', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['body_fat_percentage', 'bodyFat'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Skeletal Muscle</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.skeletal_muscle}
+                    onChange={(event) => updateDetailForm('skeletal_muscle', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['skeletal_muscle', 'muscleMass'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Water In Body</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.water_in_body}
+                    onChange={(event) => updateDetailForm('water_in_body', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['water_in_body', 'waterInBody'], 'N/A')}</div>
+                )}
+              </div>
+              <div>
+                <div className="detail-item-label">Minerals</div>
+                {isEditingDetails ? (
+                  <input
+                    className="react-input"
+                    value={detailForm.minerals}
+                    onChange={(event) => updateDetailForm('minerals', event.target.value)}
+                  />
+                ) : (
+                  <div className="detail-item-value">{toValue(client, ['minerals'], 'N/A')}</div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === 'programs' ? (
+            <div className="detail-section react-grid" style={{ gap: 14 }}>
+              <form onSubmit={saveNotes} className="react-grid" style={{ gap: 10 }}>
+                <section className="react-panel react-grid" style={{ gap: 10 }}>
+                  <h3 style={{ margin: 0 }}>Select Diet Plan</h3>
+                  <div className="react-grid" style={{ gap: 10 }}>
+                    {dietPlansWithSummary.map((entry) => {
+                      const isSelected = selectedPlanDraft === entry.index;
+                      return (
+                        <button
+                          key={`diet-plan-${entry.index}`}
+                          type="button"
+                          className={isSelected ? 'react-btn' : 'react-btn react-btn-ghost'}
+                          style={{ justifyContent: 'space-between', textAlign: 'left' }}
+                          onClick={() => setSelectedPlanDraft(entry.index)}
+                        >
+                          <span>{`${entry.min}-${entry.max} kcal | ${entry.dietType} | ${entry.mealsCount} meals`}</span>
+                          <span>{`${entry.min} Min / ${entry.max} Max`}</span>
+                        </button>
+                      );
+                    })}
+                    {!dietPlansWithSummary.length ? <p className="react-muted" style={{ margin: 0 }}>No saved plans found in Diet Management.</p> : null}
+                  </div>
+                  <div className="react-inline-actions" style={{ justifyContent: 'flex-end' }}>
+                    <button
+                      className="react-btn"
+                      type="button"
+                      disabled={selectedPlanDraft === null || selectedPlanDraft === undefined}
+                      onClick={() => {
+                        if (selectedPlanDraft === null || selectedPlanDraft === undefined) return;
+                        applyDietPlan(selectedPlanDraft);
+                      }}
+                    >
+                      Save Selection
+                    </button>
+                    <button
+                      className="react-btn react-btn-ghost"
+                      type="button"
+                      onClick={() => setSelectedPlanDraft(programsState.selectedPlanIndex)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </section>
+
+                <div className="react-inline-actions" style={{ justifyContent: 'flex-end' }}>
+                  {!isEditingPrograms ? (
+                    <button className="react-btn react-btn-ghost" type="button" onClick={() => setIsEditingPrograms(true)}>Edit</button>
+                  ) : (
+                    <button className="react-btn react-btn-ghost" type="button" onClick={() => setIsEditingPrograms(false)}>Stop Editing</button>
+                  )}
+                </div>
+
+                <label>
+                  <span className="react-label">Notes</span>
+                  <textarea
+                    className="react-textarea"
+                    rows={5}
+                    value={programsState.programFields.notesText}
+                    readOnly={!isEditingPrograms}
+                    onChange={(event) => updateNotes(event.target.value)}
+                    placeholder="Enter notes from Programs section"
+                  />
+                </label>
+                <div className="react-grid react-grid-2">
+                  <label>
+                    <span className="react-label">Mental Observation</span>
+                    <textarea
+                      className="react-textarea"
+                      rows={3}
+                      value={programsState.programFields.mentalText}
+                      readOnly={!isEditingPrograms}
+                      onChange={(event) => updateProgramField('mentalText', event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span className="react-label">Supplements</span>
+                    <textarea
+                      className="react-textarea"
+                      rows={3}
+                      value={programsState.programFields.supplementsText}
+                      readOnly={!isEditingPrograms}
+                      onChange={(event) => updateProgramField('supplementsText', event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="react-grid react-grid-2">
+                  <label>
+                    <span className="react-label">Competition Status</span>
+                    <input
+                      className="react-input"
+                      value={programsState.programFields.competitionStatus}
+                      readOnly={!isEditingPrograms}
+                      onChange={(event) => updateProgramField('competitionStatus', event.target.value)}
+                      placeholder="On / Off"
+                    />
+                  </label>
+                  <label className="react-inline-toggle">
+                    <input
+                      type="checkbox"
+                      checked={programsState.programFields.competitionEnabled}
+                      disabled={!isEditingPrograms}
+                      onChange={(event) => updateProgramField('competitionEnabled', event.target.checked)}
+                    />
+                    <span>Competition Enabled</span>
+                  </label>
+                </div>
+
+                <div className="react-row-between" style={{ marginTop: 8 }}>
+                  <h3 style={{ margin: 0 }}>Weekly Meal Plan</h3>
+                  <button className="react-btn" type="button" onClick={addMeal} disabled={!isEditingPrograms}>+ Add Meal</button>
+                </div>
+
+                <div className="react-day-tabs">
+                  {weekDays.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      className={`react-day-tab ${day === selectedDay ? 'active' : ''}`}
+                      onClick={() => setSelectedDay(day)}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+
+                {!dayMeals.length ? (
+                  <p className="react-muted" style={{ margin: 0 }}>No meals added for {selectedDay}.</p>
+                ) : (
+                  <div className="react-meals-list">
+                    {dayMeals.map((meal, index) => (
+                      <article key={meal.id} className="react-meal-card">
+                        <div className="react-grid react-grid-2">
+                          <label>
+                            <span className="react-label">Meal Type</span>
+                            <input
+                              className="react-input"
+                              value={meal.type}
+                              readOnly={!isEditingPrograms}
+                              onChange={(event) => updateMeal(meal.id, 'type', event.target.value)}
+                            />
+                          </label>
+                          <label>
+                            <span className="react-label">Time</span>
+                            <input
+                              className="react-input"
+                              value={meal.time}
+                              readOnly={!isEditingPrograms}
+                              onChange={(event) => updateMeal(meal.id, 'time', event.target.value)}
+                            />
+                          </label>
+                        </div>
+
+                        <label>
+                          <span className="react-label">English Description</span>
+                          <textarea
+                            className="react-textarea"
+                            rows={2}
+                            value={meal.en}
+                            readOnly={!isEditingPrograms}
+                            onChange={(event) => updateMeal(meal.id, 'en', event.target.value)}
+                          />
+                        </label>
+
+                        <label>
+                          <span className="react-label">Arabic Description</span>
+                          <textarea
+                            className="react-textarea"
+                            rows={2}
+                            value={meal.ar}
+                            readOnly={!isEditingPrograms}
+                            onChange={(event) => updateMeal(meal.id, 'ar', event.target.value)}
+                          />
+                        </label>
+
+                        <div className="react-row-between">
+                          <small className="react-muted">Meal #{index + 1}</small>
+                          <div className="react-inline-actions">
+                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms} onClick={() => moveMealUp(meal.id)}>Up</button>
+                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms} onClick={() => moveMealDown(meal.id)}>Down</button>
+                            <button className="react-btn react-btn-danger" type="button" disabled={!isEditingPrograms} onClick={() => deleteMeal(meal.id)}>Delete</button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+
+                <div className="react-inline-actions" style={{ justifyContent: 'flex-end' }}>
+                  <button className="react-btn" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Programs'}</button>
+                </div>
+              </form>
+            </div>
+          ) : null}
+        </section>
+      </div>
     </main>
   );
 }

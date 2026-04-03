@@ -1,4 +1,33 @@
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const PLAN_TO_WEEK_DAY = {
+  sunday: 'Sunday',
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday',
+};
+const PLAN_MEAL_TYPES = {
+  breakfast: 'Breakfast',
+  snack1: 'Snack 1',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  preworkout: 'Pre-Workout Snack',
+  postworkout: 'Post-Workout Snack',
+};
+
+function formatPlanTime(rawTime) {
+  const value = String(rawTime || '').trim();
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return value || '12:00 PM';
+  const hour24 = Number(match[1]);
+  const minute = match[2];
+  if (!Number.isFinite(hour24)) return value;
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = ((hour24 + 11) % 12) + 1;
+  return `${hour12}:${minute} ${ampm}`;
+}
 
 function normalizeNotes(value) {
   const text = String(value || '').trim();
@@ -36,6 +65,30 @@ function normalizeDayMeals(rawDayMeals) {
   WEEK_DAYS.forEach((day) => {
     const meals = Array.isArray(rawDayMeals[day]) ? rawDayMeals[day] : [];
     next[day] = meals.map((meal) => createMealRow(meal));
+  });
+
+  return next;
+}
+
+function mapDietPlanToDayMeals(plan) {
+  const next = buildEmptyDayMeals();
+  if (!plan || typeof plan !== 'object') return next;
+
+  Object.entries(PLAN_TO_WEEK_DAY).forEach(([planDay, weekDay]) => {
+    const sourceDay = plan?.[planDay];
+    if (!sourceDay || typeof sourceDay !== 'object') return;
+
+    const meals = Object.entries(PLAN_MEAL_TYPES).map(([planMeal, mealType]) => {
+      const sourceMeal = sourceDay?.[planMeal] || {};
+      return createMealRow({
+        type: mealType,
+        time: formatPlanTime(sourceMeal.time),
+        en: normalizeText(sourceMeal.en),
+        ar: normalizeText(sourceMeal.ar),
+      });
+    });
+
+    next[weekDay] = meals;
   });
 
   return next;
@@ -205,6 +258,14 @@ export function programsReducer(state, action) {
           ...state.dayMeals,
           [dayName]: reorder(currentMeals, currentIndex, currentIndex + 1),
         },
+      };
+    }
+    case 'APPLY_DIET_PLAN': {
+      const { selectedPlanIndex, plan } = action.payload;
+      return {
+        ...state,
+        selectedPlanIndex,
+        dayMeals: mapDietPlanToDayMeals(plan),
       };
     }
     default:

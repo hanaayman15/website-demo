@@ -84,6 +84,18 @@ function parseApiError(error, fallback) {
   return fallback;
 }
 
+function readStoredSubscriptionPlan() {
+  try {
+    const fromNewKey = localStorage.getItem('subscriptionPlan');
+    if (fromNewKey) return fromNewKey;
+    const fromLegacyKey = localStorage.getItem('selectedPlan');
+    if (fromLegacyKey) return fromLegacyKey;
+  } catch {
+    // Ignore storage access failures.
+  }
+  return buildHomeSummaryDefaults().subscriptionPlan;
+}
+
 function buildInitialState() {
   return {
     loading: true,
@@ -139,7 +151,7 @@ export function useClientPortalHome({ requireAuth = false } = {}) {
           currentWeight: data.current_weight ?? null,
           targetWeight: data.target_weight ?? null,
           caloriesTarget: data.calories_target ?? null,
-          subscriptionPlan: String(data.subscription_plan || buildHomeSummaryDefaults().subscriptionPlan),
+          subscriptionPlan: String(data.subscription_plan || readStoredSubscriptionPlan()),
           supplements: String(data.supplements || buildHomeSummaryDefaults().supplements),
           consultationType: String(data.consultation_type || buildHomeSummaryDefaults().consultationType),
           antiDopingFocus: String(data.anti_doping_focus || buildHomeSummaryDefaults().antiDopingFocus),
