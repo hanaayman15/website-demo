@@ -20,7 +20,7 @@ function DoctorAuth() {
             </Link>
             <div className="text-2xl font-bold" style={{ color: '#6eabf2' }}>Team Management Access</div>
           </div>
-          <div className="space-x-6 hidden md:block">
+          <div className="hidden md:flex items-center gap-6 whitespace-nowrap">
             <Link to="/client-login" className="text-gray-600 hover:text-gray-900">Client Login</Link>
             <Link to="/client-signup" className="text-gray-600 hover:text-gray-900">Client Sign Up</Link>
           </div>
@@ -195,7 +195,7 @@ function DoctorAuth() {
             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
           >
             <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-4">Doctor/Admin Access for Team Management</h2>
+              <h2 className="text-3xl font-bold mb-4  text-white">Doctor/Admin Access for Team Management</h2>
               <p className="leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 Use this access point to create your doctor account, sign in as doctor, or sign in as admin to continue to management pages.
               </p>

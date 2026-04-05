@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
 import { useDietManagement } from '../hooks/useDietManagement';
+import AdminQuickNav from '../components/layout/AdminQuickNav';
 import '../assets/styles/react-pages.css';
 
 const PAGE_CSS = `
@@ -224,7 +224,6 @@ const MEAL_META = {
 };
 
 function DietManagement() {
-  const navigate = useNavigate();
   const {
     state,
     constants,
@@ -245,27 +244,9 @@ function DietManagement() {
 >
   <style>{PAGE_CSS}</style>
 
-  {/* NAV */}
-  <section className="diet-top-nav">
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <button
-        className="diet-nav-link"
-        type="button"
-        onClick={() => navigate(-1)}
-      >
-        ← Back
-      </button>
-      <div className="diet-nav-title">Diet Management</div>
-    </div>
-
-    <div className="diet-nav-links">
-      <Link className="diet-nav-link" to="/">Home</Link>
-      <Link className="diet-nav-link" to="/clients">Clients</Link>
-      <Link className="diet-nav-link" to="/add-client">Add Client</Link>
-      <Link className="diet-nav-link" to="/pdf-generator">PDF</Link>
-      <Link className="diet-nav-link active" to="/diet-management">Diet</Link>
-    </div>
-  </section>
+  <div style={{ maxWidth: 1200, margin: '0 auto 20px' }}>
+    <AdminQuickNav activePath="/diet-management" title="Diet Management" />
+  </div>
 
   {/* MAIN CARD */}
   <section className="diet-shell">

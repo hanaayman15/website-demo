@@ -135,15 +135,17 @@ function Progress() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <ClientPortalNav activePath="/progress" isLoggedIn />
+
       <div className="container mx-auto px-6 pt-6">
-        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-2xl mb-1">😴</p>
-            <p className="text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+        <div className="bg-white/95 border border-blue-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">😴</p>
+            <p className="text-sm text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
           </div>
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
             onClick={handleSleepLog}
             disabled={submitting}
           >
@@ -151,8 +153,6 @@ function Progress() {
           </button>
         </div>
       </div>
-
-      <ClientPortalNav activePath="/progress" isLoggedIn />
 
       <section className="py-8 bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-gray-200">
         <div className="container mx-auto px-6">
@@ -182,14 +182,14 @@ function Progress() {
               <div className="text-3xl">⚖️</div>
               <h3 className="text-sm text-gray-500 mt-3">Current Weight</h3>
               <p className="text-3xl font-bold">{latestWeight} kg</p>
-              <p className="text-xs text-gray-500 mt-2">No data yet</p>
+              <p className="text-xs text-gray-500 mt-2">{summary.weightTrend}</p>
             </article>
 
             <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <div className="text-3xl">💪</div>
               <h3 className="text-sm text-gray-500 mt-3">Body Fat</h3>
               <p className="text-3xl font-bold">{latestBodyFat}%</p>
-              <p className="text-xs text-gray-500 mt-2">Latest log</p>
+              <p className="text-xs text-gray-500 mt-2">{latestBodyFat === '--' ? 'No data yet' : 'Latest saved value'}</p>
             </article>
 
             <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

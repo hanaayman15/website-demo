@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../services/api';
+import { getStorage, safeJsonGet, safeJsonSet } from '../utils/storageSafe';
 
 export function formatDateLabel(dateString) {
   if (!dateString) return 'N/A';
@@ -8,13 +9,20 @@ export function formatDateLabel(dateString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function buildWeightTrend(weightLogs) {
+function toNumberOrNull(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function buildWeightTrend(weightLogs, profile = null) {
   const logs = Array.isArray(weightLogs) ? weightLogs : [];
   if (!logs.length) {
+    const fallbackWeight = toNumberOrNull(profile?.weight);
+    const fallbackBodyFat = toNumberOrNull(profile?.body_fat_percentage);
     return {
-      latestWeight: null,
-      bodyFat: null,
-      trendText: 'No data yet',
+      latestWeight: fallbackWeight,
+      bodyFat: fallbackBodyFat,
+      trendText: fallbackWeight !== null ? 'Using latest profile data' : 'No data yet',
       trendDelta: 0,
     };
   }
@@ -27,9 +35,9 @@ export function buildWeightTrend(weightLogs) {
 
   return {
     latestWeight,
-    bodyFat: latest?.body_fat_percentage ?? null,
+    bodyFat: toNumberOrNull(latest?.body_fat_percentage),
     trendDelta: delta,
-    trendText: delta > 0 ? `+${Math.abs(delta)} kg` : `-${Math.abs(delta)} kg`,
+    trendText: delta === 0 ? 'No change' : (delta > 0 ? `+${Math.abs(delta)} kg` : `-${Math.abs(delta)} kg`),
   };
 }
 
@@ -89,6 +97,7 @@ function parseApiError(error, fallback) {
 }
 
 export function useReports() {
+  const local = getStorage('local');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -109,15 +118,35 @@ export function useReports() {
     setLoading(true);
     setError('');
     try {
-      const [profileResponse, weightResponse, moodResponse] = await Promise.all([
+      const [profileResult, weightResult, moodResult] = await Promise.allSettled([
         apiClient.get('/api/client/profile'),
         apiClient.get('/api/client/weight', { params: { days: 90, skip: 0, limit: 50 } }),
         apiClient.get('/api/client/mood', { params: { days: 30, skip: 0, limit: 50 } }),
       ]);
 
-      setProfile(profileResponse?.data || null);
-      setWeightLogs(Array.isArray(weightResponse?.data) ? weightResponse.data : []);
-      setMoodLogs(Array.isArray(moodResponse?.data) ? moodResponse.data : []);
+      const loadedProfile = profileResult.status === 'fulfilled' ? (profileResult.value?.data || null) : null;
+      const loadedWeight = weightResult.status === 'fulfilled' && Array.isArray(weightResult.value?.data)
+        ? weightResult.value.data
+        : [];
+      const loadedMood = moodResult.status === 'fulfilled' && Array.isArray(moodResult.value?.data)
+        ? moodResult.value.data
+        : [];
+
+      setProfile(loadedProfile);
+      setWeightLogs(loadedWeight);
+      setMoodLogs(loadedMood);
+
+      if (loadedProfile) {
+        setMeasurementForm((prev) => ({
+          weight: prev.weight || (loadedProfile.weight ?? ''),
+          bodyFat: prev.bodyFat || (loadedProfile.body_fat_percentage ?? ''),
+          muscleMass: prev.muscleMass || (loadedProfile.skeletal_muscle ?? ''),
+        }));
+      }
+
+      if (!loadedProfile && !loadedWeight.length && !loadedMood.length) {
+        setError('Could not load progress data from server.');
+      }
     } catch (err) {
       setError(parseApiError(err, 'Could not load progress data from server.'));
       setProfile(null);
@@ -147,16 +176,44 @@ export function useReports() {
 
     setSubmitting(true);
     try {
+      const bodyFatValue = measurementForm.bodyFat;
+      const muscleMassValue = measurementForm.muscleMass;
       const payload = buildMeasurementPayload({
         currentClientId,
         weight: measurementForm.weight,
-        bodyFat: measurementForm.bodyFat,
-        muscleMass: measurementForm.muscleMass,
+        bodyFat: bodyFatValue,
+        muscleMass: muscleMassValue,
       });
       await apiClient.post('/api/client/weight', payload);
+
+      // Keep profile-based pages (dashboard/settings/progress cards) in sync with latest progress entry.
+      await apiClient.put('/api/client/profile', {
+        weight: Number(measurementForm.weight),
+        body_fat_percentage: bodyFatValue === '' ? null : Number(bodyFatValue),
+        skeletal_muscle: muscleMassValue === '' ? null : Number(muscleMassValue),
+      });
+
+      if (profile) {
+        const cacheIds = [profile?.user_id, profile?.id, profile?.display_id]
+          .map((value) => String(value || '').trim())
+          .filter(Boolean);
+        cacheIds.forEach((id) => {
+          const dataKey = `clientData_${id}`;
+          const dashboardKey = `clientDashboardCache_${id}`;
+          const fullProfileKey = `clientFullProfile_${id}`;
+          safeJsonSet(local, dataKey, { ...(safeJsonGet(local, dataKey, {}) || {}), weight: Number(measurementForm.weight), body_fat_percentage: bodyFatValue === '' ? null : Number(bodyFatValue), skeletal_muscle: muscleMassValue === '' ? null : Number(muscleMassValue) });
+          safeJsonSet(local, dashboardKey, { ...(safeJsonGet(local, dashboardKey, {}) || {}), weight: Number(measurementForm.weight), body_fat_percentage: bodyFatValue === '' ? null : Number(bodyFatValue), skeletal_muscle: muscleMassValue === '' ? null : Number(muscleMassValue) });
+          safeJsonSet(local, fullProfileKey, { ...(safeJsonGet(local, fullProfileKey, {}) || {}), weight: Number(measurementForm.weight), body_fat_percentage: bodyFatValue === '' ? null : Number(bodyFatValue), skeletal_muscle: muscleMassValue === '' ? null : Number(muscleMassValue) });
+        });
+      }
+
       setMessage('Measurements updated successfully.');
       await refreshData();
-      setMeasurementForm({ weight: '', bodyFat: '', muscleMass: '' });
+      setMeasurementForm({
+        weight: String(measurementForm.weight || ''),
+        bodyFat: String(bodyFatValue || ''),
+        muscleMass: String(muscleMassValue || ''),
+      });
     } catch (err) {
       setError(parseApiError(err, 'Failed to save measurements.'));
     } finally {
@@ -224,10 +281,23 @@ export function useReports() {
   };
 
   const summary = useMemo(() => {
-    const trend = buildWeightTrend(weightLogs);
+    const trend = buildWeightTrend(weightLogs, profile);
     const avgMood = moodLogs.length
       ? Number((moodLogs.reduce((sum, row) => sum + Number(row?.mood_level || 0), 0) / moodLogs.length).toFixed(1))
       : null;
+
+    const recentWeightRows = weightLogs.slice(0, 8).reverse().map((row) => ({
+      label: formatDateLabel(row?.logged_at),
+      weight: row?.weight,
+      bodyFat: row?.body_fat_percentage,
+    }));
+    if (!recentWeightRows.length && (trend.latestWeight !== null || trend.bodyFat !== null)) {
+      recentWeightRows.push({
+        label: 'Today',
+        weight: trend.latestWeight,
+        bodyFat: trend.bodyFat,
+      });
+    }
 
     return {
       latestWeight: trend.latestWeight,
@@ -235,18 +305,14 @@ export function useReports() {
       weightTrend: trend.trendText,
       avgMood,
       strengthScore: 75,
-      recentWeights: weightLogs.slice(0, 8).reverse().map((row) => ({
-        label: formatDateLabel(row?.logged_at),
-        weight: row?.weight,
-        bodyFat: row?.body_fat_percentage,
-      })),
+      recentWeights: recentWeightRows,
       recentMood: moodLogs.slice(0, 8).reverse().map((row) => ({
         label: formatDateLabel(row?.logged_at),
         mood: row?.mood_level,
         sleep: row?.sleep_hours,
       })),
     };
-  }, [moodLogs, weightLogs]);
+  }, [moodLogs, profile, weightLogs]);
 
   return {
     loading,

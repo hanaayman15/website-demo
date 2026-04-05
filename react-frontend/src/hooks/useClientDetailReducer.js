@@ -148,6 +148,7 @@ export function buildProgramsPayload(programsState) {
   const mentalText = normalizeText(programsState.programFields.mentalText);
   const supplementsText = normalizeText(programsState.programFields.supplementsText);
   const competitionStatus = normalizeText(programsState.programFields.competitionStatus);
+  const updatedAt = Date.now();
 
   return {
     notesText,
@@ -155,6 +156,7 @@ export function buildProgramsPayload(programsState) {
     supplementsText,
     competitionStatus,
     mealSwapsPayload: {
+      __updatedAt: updatedAt,
       selectedPlanIndex: programsState.selectedPlanIndex,
       dayMeals: programsState.dayMeals,
       programFields: {

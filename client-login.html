@@ -283,6 +283,24 @@
             return { response, payload };
         }
 
+        function buildApiBaseCandidates(primaryApiBaseUrl) {
+            const ordered = [];
+            const pushUnique = (value) => {
+                const normalized = String(value || '').trim().replace(/\/$/, '');
+                if (!normalized) return;
+                if (!ordered.includes(normalized)) ordered.push(normalized);
+            };
+
+            pushUnique(primaryApiBaseUrl);
+
+            const localCandidates = Array.isArray(CONFIG?.LOCAL_API_BASE_URLS)
+                ? CONFIG.LOCAL_API_BASE_URLS
+                : [];
+            localCandidates.forEach(pushUnique);
+
+            return ordered;
+        }
+
         async function handleLogin(event) {
             event.preventDefault();
             hideLoginNotification();
@@ -304,24 +322,24 @@
                 let activeApiBaseUrl = API_BASE_URL;
                 let loginResponse;
                 let loginData;
+                let lastNetworkError = null;
 
-                try {
-                    const initialResult = await loginWithApiBase(activeApiBaseUrl, email, password);
-                    loginResponse = initialResult.response;
-                    loginData = initialResult.payload;
-                } catch (initialError) {
-                    const fallbackApiBaseUrl = typeof getAlternativeLocalApiBaseUrl === 'function'
-                        ? getAlternativeLocalApiBaseUrl(activeApiBaseUrl)
-                        : null;
-
-                    if (!fallbackApiBaseUrl) {
-                        throw initialError;
+                const apiCandidates = buildApiBaseCandidates(API_BASE_URL);
+                for (const apiBaseUrl of apiCandidates) {
+                    try {
+                        const attempt = await loginWithApiBase(apiBaseUrl, email, password);
+                        loginResponse = attempt.response;
+                        loginData = attempt.payload;
+                        activeApiBaseUrl = apiBaseUrl;
+                        lastNetworkError = null;
+                        break;
+                    } catch (networkError) {
+                        lastNetworkError = networkError;
                     }
+                }
 
-                    const retryResult = await loginWithApiBase(fallbackApiBaseUrl, email, password);
-                    loginResponse = retryResult.response;
-                    loginData = retryResult.payload;
-                    activeApiBaseUrl = fallbackApiBaseUrl;
+                if (!loginResponse) {
+                    throw (lastNetworkError || new Error('Unable to reach authentication server.'));
                 }
 
                 if (!loginResponse.ok || !loginData.access_token) {

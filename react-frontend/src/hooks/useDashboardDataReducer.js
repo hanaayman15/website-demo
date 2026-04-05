@@ -1,12 +1,21 @@
 const DAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function toNumber(value) {
+  if (typeof value === 'string') {
+    const match = value.match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+      const parsed = Number(match[0]);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+  }
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
 
 function toMacroNumber(value, fallback = 0) {
-  const n = Number(value);
+  const parsed = toNumber(value);
+  if (Number.isFinite(parsed)) return parsed;
+  const n = Number(fallback);
   return Number.isFinite(n) ? n : fallback;
 }
 
@@ -44,13 +53,181 @@ function buildMealId(dayName, meal, index) {
   return `${String(dayName || '').toLowerCase()}-${mealKey || `meal-${index + 1}`}-${index}`;
 }
 
+function parseTimeToMinutes(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value) return null;
+
+  const twentyFour = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFour) {
+    const hours = Number(twentyFour[1]);
+    const minutes = Number(twentyFour[2]);
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+      return hours * 60 + minutes;
+    }
+  }
+
+  const twelve = value.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!twelve) return null;
+  let hours = Number(twelve[1]);
+  const minutes = Number(twelve[2]);
+  const suffix = String(twelve[3] || '').toUpperCase();
+  if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
+  if (suffix === 'AM' && hours === 12) hours = 0;
+  if (suffix === 'PM' && hours < 12) hours += 12;
+  return hours * 60 + minutes;
+}
+
+function formatMinutesToTime(totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) return 'N/A';
+  const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+  let hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function normalizeMealKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function isBreakfastMeal(meal) {
+  const key = normalizeMealKey(meal?.mealKey || meal?.mealLabel);
+  return key.includes('breakfast');
+}
+
+function isPreWorkoutMeal(meal) {
+  const key = normalizeMealKey(meal?.mealKey || meal?.mealLabel);
+  return key.includes('preworkout');
+}
+
+function isPostWorkoutMeal(meal) {
+  const key = normalizeMealKey(meal?.mealKey || meal?.mealLabel);
+  return key.includes('postworkout');
+}
+
+function isDinnerMeal(meal) {
+  const key = normalizeMealKey(meal?.mealKey || meal?.mealLabel);
+  return key.includes('dinner');
+}
+
+function withDynamicSchedule(profile, meals) {
+  if (!Array.isArray(meals) || !meals.length) return meals;
+
+  const wakeMinutes = parseTimeToMinutes(profile?.wake_up_time);
+  const breakfastBase = Number.isFinite(wakeMinutes) ? wakeMinutes + 30 : null;
+
+  const trainingStartMinutes = parseTimeToMinutes(profile?.training_time || profile?.training_start_time);
+  const trainingEndMinutes = parseTimeToMinutes(profile?.training_end_time);
+  const resolvedTrainingEnd = Number.isFinite(trainingEndMinutes)
+    ? trainingEndMinutes
+    : (Number.isFinite(trainingStartMinutes) ? trainingStartMinutes : null);
+  const isMorningTraining = Number.isFinite(trainingStartMinutes) && trainingStartMinutes < 12 * 60;
+
+  const breakfastIndex = meals.findIndex((meal) => isBreakfastMeal(meal));
+  const preWorkoutIndex = meals.findIndex((meal) => isPreWorkoutMeal(meal));
+  const postWorkoutIndex = meals.findIndex((meal) => isPostWorkoutMeal(meal));
+
+  const assignedByIndex = new Map();
+
+  if (Number.isFinite(trainingStartMinutes) && preWorkoutIndex >= 0) {
+    assignedByIndex.set(preWorkoutIndex, trainingStartMinutes - 45);
+  }
+  if (Number.isFinite(resolvedTrainingEnd) && postWorkoutIndex >= 0) {
+    assignedByIndex.set(postWorkoutIndex, resolvedTrainingEnd + 30);
+  }
+
+  const generalIndexes = meals
+    .map((meal, index) => ({ meal, index }))
+    .filter(({ index }) => index !== preWorkoutIndex && index !== postWorkoutIndex)
+    .map(({ index }) => index);
+
+  const hasTraining = Number.isFinite(trainingStartMinutes) || Number.isFinite(resolvedTrainingEnd);
+
+  let firstBaseSlot = breakfastBase;
+  if (!Number.isFinite(firstBaseSlot)) {
+    const existingTimes = meals
+      .map((meal) => parseTimeToMinutes(meal?.scheduledTime || meal?.time))
+      .filter((value) => Number.isFinite(value));
+    firstBaseSlot = existingTimes.length ? Math.min(...existingTimes) : 8 * 60;
+  }
+
+  let beforeTrainingIndexes = generalIndexes;
+  let afterTrainingIndexes = [];
+
+  if (hasTraining) {
+    if (isMorningTraining) {
+      // Morning training: pre and post should lead the day, then other meals follow.
+      beforeTrainingIndexes = [];
+      afterTrainingIndexes = [...generalIndexes];
+    } else {
+      beforeTrainingIndexes = generalIndexes.filter((index) => {
+        if (isDinnerMeal(meals[index])) return false;
+        if (postWorkoutIndex >= 0 && index > postWorkoutIndex) return false;
+        if (preWorkoutIndex >= 0 && index > preWorkoutIndex) return false;
+        return true;
+      });
+
+      afterTrainingIndexes = generalIndexes.filter((index) => !beforeTrainingIndexes.includes(index));
+    }
+  }
+
+  let beforeSlot = firstBaseSlot;
+  if (breakfastIndex >= 0 && beforeTrainingIndexes.includes(breakfastIndex)) {
+    assignedByIndex.set(breakfastIndex, beforeSlot);
+    beforeSlot += 180;
+  }
+
+  beforeTrainingIndexes.forEach((index) => {
+    if (assignedByIndex.has(index)) return;
+    assignedByIndex.set(index, beforeSlot);
+    beforeSlot += 180;
+  });
+
+  if (afterTrainingIndexes.length) {
+    const postBase = Number.isFinite(assignedByIndex.get(postWorkoutIndex))
+      ? assignedByIndex.get(postWorkoutIndex) + 180
+      : beforeSlot;
+
+    let afterSlot = Number.isFinite(postBase) ? postBase : firstBaseSlot;
+    afterTrainingIndexes.forEach((index) => {
+      if (assignedByIndex.has(index)) return;
+      assignedByIndex.set(index, afterSlot);
+      afterSlot += 180;
+    });
+  }
+
+  const withTimes = meals.map((meal, index) => {
+    const explicit = assignedByIndex.get(index);
+    if (Number.isFinite(explicit)) {
+      return { ...meal, scheduledTime: formatMinutesToTime(explicit), sortMinutes: explicit };
+    }
+    const parsedExisting = parseTimeToMinutes(meal?.scheduledTime || meal?.time);
+    return {
+      ...meal,
+      scheduledTime: Number.isFinite(parsedExisting) ? formatMinutesToTime(parsedExisting) : 'N/A',
+      sortMinutes: Number.isFinite(parsedExisting) ? parsedExisting : Number.MAX_SAFE_INTEGER,
+    };
+  });
+
+  return withTimes
+    .sort((a, b) => {
+      const aTime = Number.isFinite(a.sortMinutes) ? a.sortMinutes : Number.MAX_SAFE_INTEGER;
+      const bTime = Number.isFinite(b.sortMinutes) ? b.sortMinutes : Number.MAX_SAFE_INTEGER;
+      if (aTime !== bTime) return aTime - bTime;
+      return (a.mealIndex || 0) - (b.mealIndex || 0);
+    })
+    .map(({ sortMinutes, ...meal }) => meal);
+}
+
 export function buildTodayMeals(profile) {
   const dayName = getTodayDayName();
   const dayMeals = Array.isArray(profile?.meal_swaps?.dayMeals?.[dayName])
     ? profile.meal_swaps.dayMeals[dayName]
     : [];
 
-  return dayMeals.map((meal, index) => ({
+  const mapped = dayMeals.map((meal, index) => ({
     dayName,
     mealIndex: index,
     mealId: buildMealId(dayName, meal, index),
@@ -64,6 +241,8 @@ export function buildTodayMeals(profile) {
     fats: toNumber(meal?.fats),
     calories: toNumber(meal?.calories),
   }));
+
+  return withDynamicSchedule(profile, mapped);
 }
 
 export function buildSummary(profile) {
@@ -90,16 +269,38 @@ export function buildSummary(profile) {
 }
 
 export function buildMacroState(profile, todayMeals, mealStatuses) {
-  const proteinTarget = toNumber(profile?.protein_target) || 0;
-  const carbsTarget = toNumber(profile?.carbs_target) || 0;
-  const fatsTarget = toNumber(profile?.fats_target) || 0;
-  const caloriesTarget = toNumber(profile?.tdee) || (proteinTarget * 4 + carbsTarget * 4 + fatsTarget * 9);
+  const profileProteinTarget = toNumber(profile?.protein_target) || 0;
+  const profileCarbsTarget = toNumber(profile?.carbs_target) || 0;
+  const profileFatsTarget = toNumber(profile?.fats_target) || 0;
+
+  const mealsProteinTarget = todayMeals.reduce((sum, meal) => sum + toMacroNumber(meal?.protein, 0), 0);
+  const mealsCarbsTarget = todayMeals.reduce((sum, meal) => sum + toMacroNumber(meal?.carbs, 0), 0);
+  const mealsFatsTarget = todayMeals.reduce((sum, meal) => sum + toMacroNumber(meal?.fats, 0), 0);
+  const mealsCaloriesTarget = todayMeals.reduce((sum, meal) => sum + toMacroNumber(meal?.calories, 0), 0);
+
+  const hasMealMacroTargets = mealsProteinTarget > 0 || mealsCarbsTarget > 0 || mealsFatsTarget > 0 || mealsCaloriesTarget > 0;
+
+  const proteinTarget = hasMealMacroTargets ? mealsProteinTarget : profileProteinTarget;
+  const carbsTarget = hasMealMacroTargets ? mealsCarbsTarget : profileCarbsTarget;
+  const fatsTarget = hasMealMacroTargets ? mealsFatsTarget : profileFatsTarget;
+  const profileCaloriesTarget = toNumber(profile?.tdee) || (profileProteinTarget * 4 + profileCarbsTarget * 4 + profileFatsTarget * 9);
+  const caloriesTarget = hasMealMacroTargets
+    ? (mealsCaloriesTarget || (proteinTarget * 4 + carbsTarget * 4 + fatsTarget * 9))
+    : profileCaloriesTarget;
 
   const totalMeals = todayMeals.length;
   const fallbackProtein = totalMeals ? proteinTarget / totalMeals : 0;
   const fallbackCarbs = totalMeals ? carbsTarget / totalMeals : 0;
   const fallbackFats = totalMeals ? fatsTarget / totalMeals : 0;
   const fallbackCalories = totalMeals ? caloriesTarget / totalMeals : 0;
+
+  const hasPerMealMacros = todayMeals.some((meal) => {
+    const p = toNumber(meal?.protein) || 0;
+    const c = toNumber(meal?.carbs) || 0;
+    const f = toNumber(meal?.fats) || 0;
+    const k = toNumber(meal?.calories) || 0;
+    return p > 0 || c > 0 || f > 0 || k > 0;
+  });
 
   let consumedProtein = 0;
   let consumedCarbs = 0;
@@ -112,11 +313,26 @@ export function buildMacroState(profile, todayMeals, mealStatuses) {
     if (status !== 'completed') return;
 
     completeMeals += 1;
-    consumedProtein += toMacroNumber(meal.protein, fallbackProtein);
-    consumedCarbs += toMacroNumber(meal.carbs, fallbackCarbs);
-    consumedFats += toMacroNumber(meal.fats, fallbackFats);
-    consumedCalories += toMacroNumber(meal.calories, fallbackCalories);
+    if (hasPerMealMacros) {
+      consumedProtein += toMacroNumber(meal.protein, fallbackProtein);
+      consumedCarbs += toMacroNumber(meal.carbs, fallbackCarbs);
+      consumedFats += toMacroNumber(meal.fats, fallbackFats);
+      consumedCalories += toMacroNumber(meal.calories, fallbackCalories);
+      return;
+    }
+
+    consumedProtein += fallbackProtein;
+    consumedCarbs += fallbackCarbs;
+    consumedFats += fallbackFats;
+    consumedCalories += fallbackCalories;
   });
+
+  if (completeMeals > 0) {
+    if (proteinTarget > 0 && consumedProtein <= 0) consumedProtein = 1;
+    if (carbsTarget > 0 && consumedCarbs <= 0) consumedCarbs = 1;
+    if (fatsTarget > 0 && consumedFats <= 0) consumedFats = 1;
+    if (caloriesTarget > 0 && consumedCalories <= 0) consumedCalories = 1;
+  }
 
   return {
     target: {

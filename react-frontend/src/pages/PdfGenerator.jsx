@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { usePdfGenerator } from '../hooks/usePdfGenerator';
+import AdminQuickNav from '../components/layout/AdminQuickNav';
 import '../assets/styles/react-pages.css';
 
 function PdfGenerator() {
@@ -14,7 +14,6 @@ function PdfGenerator() {
     generateServerPdf,
   } = usePdfGenerator();
   const canUsePdfGenerator = state.role === 'admin' || state.role === 'doctor';
-  const isDoctor = state.role === 'doctor';
 
   const getSafeErrorText = (err) => {
     if (typeof err?.message === 'string' && err.message.trim()) return err.message;
@@ -29,9 +28,11 @@ function PdfGenerator() {
   const onGenerate = async () => {
     try {
       if (state.clientId) {
-        const ok = await generateServerPdf();
-        if (!ok) {
-          alert(`PDF generation failed: ${state.error || 'Unknown server error.'}`);
+        const language = state.language === 'arabic' ? 'arabic' : 'english';
+        const targetUrl = `/client-detail?id=${encodeURIComponent(state.clientId)}&auto_generate_pdf=1&pdf_language=${encodeURIComponent(language)}`;
+        const popup = window.open(targetUrl, '_blank', 'noopener');
+        if (!popup) {
+          window.location.assign(targetUrl);
         }
         return;
       }
@@ -43,15 +44,12 @@ function PdfGenerator() {
   };
 
   return (
-    <main className="react-page-wrap react-grid" style={{ maxWidth: 900, gap: '1rem' }}>
+    <main className="react-page-wrap react-grid" style={{ maxWidth: 1240, gap: '1rem' }}>
+      <AdminQuickNav activePath="/pdf-generator" title="PDF Generator" />
       <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>PDF Generator</h1>
           <p className="react-muted" style={{ margin: 0 }}>Generate client report PDFs with language selection.</p>
-        </div>
-        <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/clients">Clients</Link>
-          {!isDoctor && <Link className="react-btn react-btn-ghost" to="/diet-management">Diet Management</Link>}
         </div>
       </section>
 

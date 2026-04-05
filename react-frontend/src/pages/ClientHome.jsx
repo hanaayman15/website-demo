@@ -39,6 +39,12 @@ const TESTIMONIALS = [
 function ClientHome() {
   const { state } = useClientPortalHome({ requireAuth: false });
   const s = state.summary;
+  const recipesDestination = state.isAuthenticated ? '/client-recipes' : '/subscription-plan?upgrade=recipes';
+  const recipeDetailDestination = (recipeKey) => (
+    state.isAuthenticated
+      ? `/client-recipes?recipe=${encodeURIComponent(recipeKey)}`
+      : '/subscription-plan?upgrade=recipes'
+  );
 
   return (
     <div className="bg-gray-50 text-gray-800 font-sans leading-normal">
@@ -151,7 +157,7 @@ function ClientHome() {
                     <span>💪 {r.protein}g Protein</span>
                   </div>
                   <div className="text-sm text-gray-500 mb-4">⚖️ {r.serving}g serving</div>
-                  <Link to="/subscription-plan?upgrade=recipes" className="block w-full py-2 rounded-xl text-center font-bold hover:opacity-90 transition" style={{ border: `1px solid ${ACCENT}`, color: ACCENT }}>
+                  <Link to={recipeDetailDestination(r.key)} className="block w-full py-2 rounded-xl text-center font-bold hover:opacity-90 transition" style={{ border: `1px solid ${ACCENT}`, color: ACCENT }}>
                     View Recipe
                   </Link>
                 </div>
@@ -159,7 +165,7 @@ function ClientHome() {
             ))}
           </div>
           <div className="text-center mt-12">
-            <Link to="/subscription-plan?upgrade=recipes" className="font-bold hover:underline" style={{ color: ACCENT }}>View All Recipes </Link>
+            <Link to={recipesDestination} className="font-bold hover:underline" style={{ color: ACCENT }}>View All Recipes </Link>
           </div>
         </div>
       </section>

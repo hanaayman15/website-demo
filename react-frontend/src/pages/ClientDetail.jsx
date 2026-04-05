@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PDFDocument } from 'pdf-lib';
 import { useClientDetail } from '../hooks/useClientDetail';
+import AdminQuickNav from '../components/layout/AdminQuickNav';
 import '../assets/styles/react-pages.css';
 
 const PAGE_CSS = `
@@ -40,13 +41,14 @@ const PAGE_CSS = `
   background: #f7f9fc;
   color: #1b3b5f;
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
 }
 .detail-nav-title {
   color: #3b3b3b;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
 }
 .detail-nav-actions {
@@ -60,7 +62,8 @@ const PAGE_CSS = `
   background: #f0f2f6;
   color: #1b3b5f;
   border-radius: 14px;
-  padding: 12px 18px;
+  padding: 9px 14px;
+  font-size: 14px;
   font-weight: 700;
 }
 .detail-card {
@@ -78,21 +81,21 @@ const PAGE_CSS = `
   margin-bottom: 22px;
 }
 .detail-avatar {
-  width: 124px;
-  height: 124px;
+  width: 108px;
+  height: 108px;
   border-radius: 999px;
   background: #94c2e7;
   color: #1c2f44;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 52px;
+  font-size: 40px;
   font-weight: 800;
 }
 .detail-name {
   margin: 0;
   color: #224569;
-  font-size: 52px;
+  font-size: 42px;
   font-weight: 800;
 }
 .detail-stats {
@@ -109,12 +112,15 @@ const PAGE_CSS = `
 .detail-stat-value {
   color: #4a97f5;
   font-weight: 800;
-  font-size: 38px;
+  font-size: 30px;
 }
 .detail-stat-label {
   color: #7b7b7b;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
+}
+.detail-wrap .react-alert {
+  font-size: 13px;
 }
 .detail-tabs-card {
   margin-top: 20px;
@@ -228,11 +234,17 @@ const PAGE_CSS = `
 }
 `;
 
-const CLIENT_PDF_BACKGROUND_IMAGE = '/images/client-detail-pdf-background.jpg';
+const CLIENT_PDF_BACKGROUND_IMAGE = '/images/pdf-bg-custom.png?v=20260405c';
 
 function toPlainText(value, fallback = '-') {
   const text = String(value ?? '').trim();
   return text || fallback;
+}
+
+function limitClientNameWords(name, maxWords = 3) {
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return 'Client';
+  return words.slice(0, maxWords).join(' ');
 }
 
 function chunksOfTwo(items) {
@@ -254,86 +266,29 @@ const EN_DAY_TO_AR = {
   Saturday: 'السبت',
 };
 
-const MEAL_SLOT_CONFIG = [
-  {
-    key: 'breakfast',
-    labelEn: 'Breakfast',
-    labelAr: 'الفطور',
-    aliases: ['breakfast', 'فطور', 'الفطور'],
-  },
-  {
-    key: 'snack1',
-    labelEn: 'Snack 1',
-    labelAr: 'Snack 1',
-    aliases: ['snack 1', 'snack1', 'snack one', 'سناك 1', 'snack'],
-  },
-  {
-    key: 'lunch',
-    labelEn: 'Lunch',
-    labelAr: 'الغداء',
-    aliases: ['lunch', 'غداء', 'الغداء'],
-  },
-  {
-    key: 'dinner',
-    labelEn: 'Dinner',
-    labelAr: 'العشاء',
-    aliases: ['dinner', 'عشاء', 'العشاء'],
-  },
-  {
-    key: 'preWorkoutSnack',
-    labelEn: 'Pre-Workout Snack',
-    labelAr: 'وجبة قبل التمرين',
-    aliases: ['pre-workout snack', 'pre workout snack', 'pre workout', 'pre-workout', 'قبل التمرين'],
-  },
-  {
-    key: 'postWorkoutSnack',
-    labelEn: 'Post-Workout Snack',
-    labelAr: 'وجبة بعد التمرين',
-    aliases: ['post-workout snack', 'post workout snack', 'post workout', 'post-workout', 'بعد التمرين'],
-  },
-];
-
-function normalizeMealType(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (!raw) return '';
-  return raw
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[()]/g, '')
-    .trim();
-}
-
-function extractMealSlotData(meals) {
-  const result = Object.fromEntries(
-    MEAL_SLOT_CONFIG.map((slot) => [slot.key, { time: 'N/A', descriptionEn: 'N/A', descriptionAr: 'N/A' }])
-  );
-  const usedIndexes = new Set();
+function normalizePdfMeals(meals) {
   const list = Array.isArray(meals) ? meals : [];
-
-  for (const slot of MEAL_SLOT_CONFIG) {
-    const index = list.findIndex((meal, idx) => {
-      if (usedIndexes.has(idx)) return false;
-      const type = normalizeMealType(meal?.type);
-      return slot.aliases.some((alias) => type.includes(normalizeMealType(alias)));
-    });
-
-    if (index >= 0) {
-      usedIndexes.add(index);
-      result[slot.key] = {
-        time: toPlainText(list[index]?.time, 'N/A'),
-        descriptionEn: toPlainText(list[index]?.en, 'N/A'),
-        descriptionAr: toPlainText(list[index]?.ar, 'N/A'),
-      };
-    }
-  }
-
-  return result;
+  return list.map((meal, index) => ({
+    mealLabel: toPlainText(meal?.type, `Meal ${index + 1}`),
+    time: toPlainText(meal?.time, 'N/A'),
+    descriptionEn: toPlainText(meal?.en || meal?.description_en || meal?.description || meal?.name || meal?.meal, 'N/A'),
+    descriptionAr: toPlainText(meal?.ar || meal?.description_ar, 'N/A'),
+  }));
 }
 
 function localizedDayName(day, language) {
   const english = toPlainText(day, language === 'arabic' ? 'اليوم' : 'Day');
   if (language !== 'arabic') return english;
   return EN_DAY_TO_AR[english] || english;
+}
+
+function resolveMealDescription(meal, language) {
+  const rawDescription = language === 'arabic'
+    ? meal.descriptionAr
+    : meal.descriptionEn;
+  return rawDescription === 'N/A'
+    ? (language === 'arabic' ? meal.descriptionEn : rawDescription)
+    : rawDescription;
 }
 
 function wrapCanvasText(ctx, text, maxWidth) {
@@ -353,6 +308,47 @@ function wrapCanvasText(ctx, text, maxWidth) {
   }
   lines.push(line);
   return lines;
+}
+
+function getMealBlockMetrics(ctx, { language, meal, width, maxLines = 6 }) {
+  const description = resolveMealDescription(meal, language);
+  ctx.font = language === 'arabic' ? '17px "Segoe UI", "Tahoma", sans-serif' : '17px "Segoe UI", sans-serif';
+  const wrappedDescription = wrapCanvasText(ctx, description, width - 52);
+  const linesToDraw = wrappedDescription.slice(0, Math.max(1, Math.min(maxLines, wrappedDescription.length)));
+  const lineHeight = 18;
+  const blockHeight = Math.max(72, 54 + (linesToDraw.length * lineHeight));
+  return { linesToDraw, lineHeight, blockHeight };
+}
+
+function getTextCardMetrics(ctx, { language, text, width, maxLines = 18 }) {
+  const normalized = String(text ?? '').trim();
+  if (!normalized) {
+    return { linesToDraw: [], lineHeight: 26, cardHeight: 0 };
+  }
+
+  ctx.font = language === 'arabic' ? '23px "Segoe UI", "Tahoma", sans-serif' : '23px "Segoe UI", sans-serif';
+  const wrapped = wrapCanvasText(ctx, normalized, width - 44);
+  const linesToDraw = wrapped.slice(0, Math.max(1, Math.min(maxLines, wrapped.length)));
+  const lineHeight = 26;
+  const cardHeight = Math.max(132, 92 + (linesToDraw.length * lineHeight));
+  return { linesToDraw, lineHeight, cardHeight };
+}
+
+function calculateMealsCardHeight(ctx, { language, meals, width }) {
+  const orderedMeals = normalizePdfMeals(meals);
+  if (!orderedMeals.length) return 128;
+
+  const blockGap = 2;
+  let totalHeight = 92;
+  orderedMeals.forEach((meal, index) => {
+    const { blockHeight } = getMealBlockMetrics(ctx, { language, meal, width });
+    totalHeight += blockHeight;
+    if (index < orderedMeals.length - 1) {
+      totalHeight += blockGap;
+    }
+  });
+
+  return Math.max(128, Math.min(760, totalHeight));
 }
 
 async function tryLoadBackgroundImage() {
@@ -377,7 +373,7 @@ async function tryLoadBackgroundImage() {
 function drawTransparentCard(ctx, x, y, width, height) {
   ctx.save();
   ctx.fillStyle = 'rgba(255,255,255,0.20)';
-  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.98)';
   ctx.lineWidth = 2;
   if (typeof ctx.roundRect === 'function') {
     ctx.beginPath();
@@ -417,22 +413,17 @@ async function canvasToPngBytes(canvas) {
 
 function drawPageHeader(ctx, { language, clientName }) {
   const title = language === 'arabic' ? 'نظام غذائي' : 'Nutrition Plan';
-  const weeklyTitle = language === 'arabic' ? 'الخطة الأسبوعية' : 'Weekly Meal Plan';
+  const displayName = limitClientNameWords(clientName, 3);
 
   ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.fillStyle = 'rgba(0,0,0,0.98)';
   ctx.font = language === 'arabic' ? 'bold 56px "Segoe UI", "Tahoma", sans-serif' : 'bold 56px "Segoe UI", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(title, 620, 96);
 
   ctx.font = language === 'arabic' ? 'bold 42px "Segoe UI", "Tahoma", sans-serif' : 'bold 42px "Segoe UI", sans-serif';
-  ctx.fillStyle = 'rgba(232,245,255,0.98)';
-  ctx.fillText(toPlainText(clientName, language === 'arabic' ? 'العميل' : 'Client'), 620, 152);
-
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  ctx.font = language === 'arabic' ? 'bold 30px "Segoe UI", "Tahoma", sans-serif' : 'bold 30px "Segoe UI", sans-serif';
-  ctx.fillText(weeklyTitle, 72, 218);
+  ctx.fillStyle = 'rgba(0,0,0,0.98)';
+  ctx.fillText(toPlainText(displayName, language === 'arabic' ? 'العميل' : 'Client'), 620, 152);
   ctx.restore();
 }
 
@@ -442,60 +433,66 @@ function drawMealsCard(ctx, { language, day, meals, x, y, width, height }) {
   const dayTitle = language === 'arabic'
     ? localizedDayName(day, language)
     : toPlainText(day, 'Day');
-  const mealData = extractMealSlotData(meals);
+  const orderedMeals = normalizePdfMeals(meals);
 
   ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.98)';
-  ctx.font = language === 'arabic' ? 'bold 30px "Segoe UI", "Tahoma", sans-serif' : 'bold 30px "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(0,0,0,0.98)';
+  ctx.font = language === 'arabic' ? 'bold 28px "Segoe UI", "Tahoma", sans-serif' : 'bold 28px "Segoe UI", sans-serif';
   ctx.textAlign = language === 'arabic' ? 'right' : 'left';
   ctx.direction = language === 'arabic' ? 'rtl' : 'ltr';
-  ctx.fillText(dayTitle, language === 'arabic' ? x + width - 24 : x + 24, y + 44);
+  ctx.fillText(dayTitle, language === 'arabic' ? x + width - 24 : x + 24, y + 38);
 
-  let cursorY = y + 90;
-  const cardBottom = y + height - 20;
+  let cursorY = y + 72;
+  const cardBottom = y + height - 16;
+  const blockGap = 2;
 
-  for (let slotIndex = 0; slotIndex < MEAL_SLOT_CONFIG.length; slotIndex += 1) {
-    const slot = MEAL_SLOT_CONFIG[slotIndex];
-    const mealLabel = language === 'arabic' ? slot.labelAr : slot.labelEn;
-    const slotsLeft = MEAL_SLOT_CONFIG.length - slotIndex;
+  if (!orderedMeals.length) {
+    ctx.font = language === 'arabic' ? '22px "Segoe UI", "Tahoma", sans-serif' : '22px "Segoe UI", sans-serif';
+    const emptyLabel = language === 'arabic' ? 'لا توجد وجبات لهذا اليوم.' : 'No meals added for this day.';
+    ctx.fillText(emptyLabel, language === 'arabic' ? x + width - 24 : x + 24, cursorY + 26);
+    ctx.restore();
+    return;
+  }
+
+  for (let mealIndex = 0; mealIndex < orderedMeals.length; mealIndex += 1) {
+    const meal = orderedMeals[mealIndex];
     const remainingHeight = cardBottom - cursorY;
-    if (remainingHeight <= 48) break;
+    if (remainingHeight <= 42) break;
 
-    const blockHeight = Math.max(76, Math.floor(remainingHeight / slotsLeft));
+    const maxLinesByRemaining = Math.max(1, Math.floor((remainingHeight - 56) / 18));
+    const { linesToDraw, lineHeight, blockHeight: preferredBlockHeight } = getMealBlockMetrics(ctx, {
+      language,
+      meal,
+      width,
+      maxLines: maxLinesByRemaining,
+    });
+    const blockHeight = Math.min(preferredBlockHeight, remainingHeight);
     const blockTop = cursorY;
     const labelY = blockTop;
-    const timeY = blockTop + 24;
-    const descStartY = blockTop + 48;
-    const availableDescHeight = Math.max(0, blockHeight - 54);
+    const timeY = blockTop + 20;
+    const descStartY = blockTop + 38;
 
-    ctx.font = language === 'arabic' ? 'bold 23px "Segoe UI", "Tahoma", sans-serif' : 'bold 23px "Segoe UI", sans-serif';
-    ctx.fillText(mealLabel, language === 'arabic' ? x + width - 24 : x + 24, labelY);
+    ctx.font = language === 'arabic' ? 'bold 22px "Segoe UI", "Tahoma", sans-serif' : 'bold 22px "Segoe UI", sans-serif';
+    ctx.fillText(meal.mealLabel, language === 'arabic' ? x + width - 24 : x + 24, labelY);
 
     // Keep numerals/time visually stable even on RTL pages.
     ctx.direction = 'ltr';
     ctx.textAlign = language === 'arabic' ? 'right' : 'left';
-    ctx.font = '22px "Segoe UI", "Tahoma", sans-serif';
-    ctx.fillText(toPlainText(mealData[slot.key]?.time, 'N/A'), language === 'arabic' ? x + width - 24 : x + 24, timeY);
+    ctx.font = '20px "Segoe UI", "Tahoma", sans-serif';
+    ctx.fillText(meal.time, language === 'arabic' ? x + width - 24 : x + 24, timeY);
     ctx.direction = language === 'arabic' ? 'rtl' : 'ltr';
 
-    const rawDescription = language === 'arabic'
-      ? toPlainText(mealData[slot.key]?.descriptionAr, 'N/A')
-      : toPlainText(mealData[slot.key]?.descriptionEn, 'N/A');
-    const description = rawDescription === 'N/A'
-      ? (language === 'arabic' ? toPlainText(mealData[slot.key]?.descriptionEn, 'N/A') : rawDescription)
-      : rawDescription;
-
-    ctx.font = language === 'arabic' ? '19px "Segoe UI", "Tahoma", sans-serif' : '19px "Segoe UI", sans-serif';
-    const wrappedDescription = wrapCanvasText(ctx, description, width - 52);
-    const lineHeight = 20;
-    const maxDescLines = Math.max(1, Math.min(2, Math.floor(availableDescHeight / lineHeight)));
-    wrappedDescription.slice(0, maxDescLines).forEach((line, lineIndex) => {
+    ctx.font = language === 'arabic' ? '17px "Segoe UI", "Tahoma", sans-serif' : '17px "Segoe UI", sans-serif';
+    linesToDraw.forEach((line, lineIndex) => {
       const lineY = descStartY + (lineIndex * lineHeight);
-      if (lineY > blockTop + blockHeight - 8) return;
+      if (lineY > blockTop + blockHeight - 6) return;
       ctx.fillText(line, language === 'arabic' ? x + width - 24 : x + 24, lineY);
     });
 
     cursorY += blockHeight;
+    if (mealIndex < orderedMeals.length - 1) {
+      cursorY += blockGap;
+    }
   }
 
   ctx.restore();
@@ -505,14 +502,14 @@ function drawTextCard(ctx, { language, title, text, x, y, width, height }) {
   drawTransparentCard(ctx, x, y, width, height);
 
   ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.98)';
+  ctx.fillStyle = 'rgba(0,0,0,0.98)';
   ctx.font = language === 'arabic' ? 'bold 28px "Segoe UI", "Tahoma", sans-serif' : 'bold 28px "Segoe UI", sans-serif';
   ctx.fillText(title, x + 24, y + 42);
 
+  const { linesToDraw } = getTextCardMetrics(ctx, { language, text, width });
   ctx.font = language === 'arabic' ? '23px "Segoe UI", "Tahoma", sans-serif' : '23px "Segoe UI", sans-serif';
-  const wrapped = wrapCanvasText(ctx, toPlainText(text, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.'), width - 44);
   let cursorY = y + 76;
-  wrapped.forEach((line) => {
+  linesToDraw.forEach((line) => {
     if (cursorY > y + height - 16) return;
     ctx.fillText(line, x + 24, cursorY);
     cursorY += 26;
@@ -555,19 +552,31 @@ async function generateClientProgramsPdf({ clientName, language, weekDays, dayMe
     drawPageHeader(ctx, { language, clientName });
 
     const cardWidth = canvas.width - 144;
-    const cardHeight = 670;
 
+    let currentY = 299;
     dayChunk.forEach((day, idx) => {
-      const y = 250 + (idx * (cardHeight + 28));
+      const meals = dayMealsMap?.[day] || [];
+      const preferredHeight = calculateMealsCardHeight(ctx, {
+        language,
+        meals,
+        width: cardWidth,
+      });
+      const availableHeight = canvas.height - currentY - 72;
+      const cardHeight = Math.max(128, Math.min(preferredHeight, availableHeight));
+
       drawMealsCard(ctx, {
         language,
         day,
-        meals: dayMealsMap?.[day] || [],
+        meals,
         x: 72,
-        y,
+        y: currentY,
         width: cardWidth,
         height: cardHeight,
       });
+
+      if (idx < dayChunk.length - 1) {
+        currentY += cardHeight + 16;
+      }
     });
 
     const pngBytes = await canvasToPngBytes(canvas);
@@ -584,20 +593,29 @@ async function generateClientProgramsPdf({ clientName, language, weekDays, dayMe
     : { notes: 'Notes', supplements: 'Supplements', mental: 'Mental Observations' };
 
   const sections = [
-    { title: sectionTitles.notes, text: toPlainText(programFields?.notesText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
-    { title: sectionTitles.supplements, text: toPlainText(programFields?.supplementsText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
-    { title: sectionTitles.mental, text: toPlainText(programFields?.mentalText, language === 'arabic' ? 'لا يوجد بيانات.' : 'No data.') },
-  ];
+    { title: sectionTitles.notes, text: String(programFields?.notesText ?? '').trim() },
+    { title: sectionTitles.supplements, text: String(programFields?.supplementsText ?? '').trim() },
+    { title: sectionTitles.mental, text: String(programFields?.mentalText ?? '').trim() },
+  ].filter((section) => section.text.length > 0);
 
-  const startY = 250;
-  const gap = 24;
-  const available = lastCanvas.height - startY - 72;
-  const cardHeight = Math.floor((available - (gap * (sections.length - 1))) / sections.length);
+  const startY = 292;
+  const gap = 14;
   const cardWidth = lastCanvas.width - 144;
   let currentY = startY;
 
   sections.forEach((section) => {
-    if (currentY + cardHeight <= lastCanvas.height - 40) {
+    const availableHeight = lastCanvas.height - currentY - 40;
+    if (availableHeight <= 0) return;
+
+    const maxLinesByAvailable = Math.max(1, Math.floor((availableHeight - 108) / 26));
+    const { cardHeight } = getTextCardMetrics(lastCtx, {
+      language,
+      text: section.text,
+      width: cardWidth,
+      maxLines: maxLinesByAvailable,
+    });
+
+    if (cardHeight > 0 && currentY + cardHeight <= lastCanvas.height - 40) {
       drawTextCard(lastCtx, {
         language,
         title: section.title,
@@ -605,9 +623,9 @@ async function generateClientProgramsPdf({ clientName, language, weekDays, dayMe
         x: 72,
         y: currentY,
         width: cardWidth,
-        height: cardHeight,
+        height: Math.max(132, cardHeight),
       });
-      currentY += cardHeight + gap;
+      currentY += Math.max(132, cardHeight) + gap;
     }
   });
 
@@ -650,7 +668,7 @@ function initialsFromName(name) {
 }
 
 function ClientDetail() {
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     selectedClientId,
     loading,
@@ -681,6 +699,7 @@ function ClientDetail() {
   const [pdfLanguage, setPdfLanguage] = useState('english');
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState('');
+  const hasAutoGeneratedPdf = useRef(false);
   const [selectedPlanDraft, setSelectedPlanDraft] = useState(null);
   const [detailForm, setDetailForm] = useState({
     birthday: '',
@@ -825,18 +844,20 @@ function ClientDetail() {
     URL.revokeObjectURL(url);
   };
 
-  const handleGeneratePdf = async () => {
+  const handleGeneratePdf = async (languageOverride) => {
+    const languageToUse = languageOverride === 'arabic' ? 'arabic' : (languageOverride === 'english' ? 'english' : pdfLanguage);
     setPdfError('');
     setGeneratingPdf(true);
     try {
+      await saveNotes();
       const bytes = await generateClientProgramsPdf({
         clientName,
-        language: pdfLanguage,
+        language: languageToUse,
         weekDays,
         dayMealsMap: programsState.dayMeals,
         programFields: programsState.programFields,
       });
-      downloadGeneratedPdf(bytes, pdfLanguage);
+      downloadGeneratedPdf(bytes, languageToUse);
       setPdfModalOpen(false);
     } catch (err) {
       setPdfError(err?.message || 'Failed to generate client PDF.');
@@ -844,6 +865,18 @@ function ClientDetail() {
       setGeneratingPdf(false);
     }
   };
+
+  useEffect(() => {
+    const autoGenerate = searchParams.get('auto_generate_pdf') === '1';
+    if (!autoGenerate) return;
+    if (hasAutoGeneratedPdf.current) return;
+    if (loading || !selectedClientId || generatingPdf) return;
+
+    const requestedLanguage = searchParams.get('pdf_language') === 'arabic' ? 'arabic' : 'english';
+    hasAutoGeneratedPdf.current = true;
+    setPdfLanguage(requestedLanguage);
+    handleGeneratePdf(requestedLanguage);
+  }, [searchParams, loading, selectedClientId, generatingPdf]);
 
   if (loading) {
     return <main className="react-page-wrap">Loading client details...</main>;
@@ -853,15 +886,13 @@ function ClientDetail() {
     <main className="detail-page">
       <style>{PAGE_CSS}</style>
       <div className="detail-wrap">
+        <AdminQuickNav title="Client Details" />
         <section className="detail-nav">
           <div className="detail-nav-left">
-            <button className="detail-back" type="button" onClick={() => navigate(-1)}>Back</button>
             <h1 className="detail-nav-title">{clientName}</h1>
           </div>
           <div className="detail-nav-actions">
             <button className="detail-nav-link" type="button" onClick={openPdfModal}>Generate PDF</button>
-            <Link className="detail-nav-link" to={`/progress-tracking?client_id=${encodeURIComponent(selectedClientId || '')}`}>Progress</Link>
-            <Link className="detail-nav-link" to="/diet-management">Diet Management</Link>
           </div>
         </section>
 

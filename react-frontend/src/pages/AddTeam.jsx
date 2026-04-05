@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAddTeam } from '../hooks/useAddTeam';
 import { WORLD_COUNTRIES, WORLD_PHONE_OPTIONS, WORLD_SPORTS } from '../constants/globalOptions';
 import '../assets/styles/react-pages.css';
@@ -88,7 +87,6 @@ function AddTeam() {
           <p className="react-muted" style={{ margin: 0 }}>Dynamic roster builder with full player profiles and auto calculations.</p>
         </div>
         <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/">Back</Link>
           <button className="react-btn react-btn-ghost" type="button" onClick={autofillPlayers}>Autofill Empty Fields</button>
         </div>
       </section>

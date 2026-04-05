@@ -75,6 +75,21 @@ window.ClientDetailPdfTemplate = {
             }
 
             const bgSource = window.PDF_ASSETS && window.PDF_ASSETS.BG_IMAGE;
+            const bgImageUrl = window.PDF_ASSETS && window.PDF_ASSETS.BG_IMAGE_URL;
+
+            if (!bgImage && bgImageUrl) {
+                try {
+                    const res = await fetch(bgImageUrl, { cache: "no-store" });
+                    if (res.ok) {
+                        const imageBytes = new Uint8Array(await res.arrayBuffer());
+                        const contentType = res.headers.get("content-type") || bgImageUrl;
+                        bgImage = await embedImageBytes(imageBytes, contentType);
+                    }
+                } catch (urlErr) {
+                    console.warn("Configured BG_IMAGE_URL failed, falling back:", urlErr);
+                }
+            }
+
             if (bgSource) {
                 try {
                     const commaIndex = bgSource.indexOf(',');
@@ -96,7 +111,7 @@ window.ClientDetailPdfTemplate = {
                     console.info("Skipping background URL fetch on non-http(s) protocol:", protocol);
                 }
                 if (canFetchAssets) {
-                const fallbackUrls = ["images/bb.png", "images/bb.jpg", "/images/bb.png", "/images/bb.jpg"];
+                const fallbackUrls = ["images/pdf-bg-custom.png", "images/bb.png", "images/bb.jpg", "/images/pdf-bg-custom.png", "/images/bb.png", "/images/bb.jpg"];
                 for (const imageUrl of fallbackUrls) {
                     try {
                         const res = await fetch(imageUrl, { cache: "no-store" });
@@ -115,7 +130,7 @@ window.ClientDetailPdfTemplate = {
             }
 
             if (!bgImage) {
-                const fallbackUrls = ["images/bb.png", "images/bb.jpg", "/images/bb.png", "/images/bb.jpg"];
+                const fallbackUrls = ["images/pdf-bg-custom.png", "images/bb.png", "images/bb.jpg", "/images/pdf-bg-custom.png", "/images/bb.png", "/images/bb.jpg"];
                 for (const imageUrl of fallbackUrls) {
                     try {
                         const bytes = await loadImageViaElementAsPngBytes(imageUrl);

@@ -1,5 +1,5 @@
 ﻿import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import ClientPortalNav from '../components/layout/ClientPortalNav';
 
@@ -45,6 +45,47 @@ function formatDateInput(value) {
   return parsed.toISOString().slice(0, 10);
 }
 
+function normalizeTimeForInput(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const hhmm24 = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm24) {
+    const hour = Number(hhmm24[1]);
+    const minute = Number(hhmm24[2]);
+    if (Number.isFinite(hour) && Number.isFinite(minute) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+  }
+
+  const ampm = raw.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!ampm) return '';
+
+  let hour = Number(ampm[1]);
+  const minute = Number(ampm[2]);
+  const suffix = String(ampm[3] || '').toUpperCase();
+  if (!Number.isFinite(hour) || !Number.isFinite(minute) || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+    return '';
+  }
+
+  if (suffix === 'AM' && hour === 12) hour = 0;
+  if (suffix === 'PM' && hour < 12) hour += 12;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function formatTimeForStorage(value) {
+  const normalized = normalizeTimeForInput(value);
+  if (!normalized) return null;
+
+  const [hourText, minuteText] = normalized.split(':');
+  let hour = Number(hourText);
+  const minute = String(minuteText || '00').padStart(2, '0');
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${String(hour).padStart(2, '0')}:${minute} ${suffix}`;
+}
+
 function ClientDashboard() {
   const {
     loading,
@@ -57,22 +98,37 @@ function ClientDashboard() {
     weeklyMeals,
     mealStatuses,
     macro,
-    toggleMealStatus,
+    setMealStatus,
     swapMeal,
     saveCompetitionDate,
+    saveDailySchedule,
+    saveTrainingWindow,
     addCustomSupplement,
     refresh,
-    forceRefreshIgnoringCache,
   } = useDashboardData();
   const [wakeTime, setWakeTime] = useState('');
   const [sleepTime, setSleepTime] = useState('');
-  const [trainingTime, setTrainingTime] = useState(profile?.training_time || profile?.training_start_time || '');
-  const [trainingEndTime, setTrainingEndTime] = useState(profile?.training_end_time || '');
+  const [trainingTime, setTrainingTime] = useState(normalizeTimeForInput(profile?.training_time || profile?.training_start_time || ''));
+  const [trainingEndTime, setTrainingEndTime] = useState(normalizeTimeForInput(profile?.training_end_time || ''));
   const [showAllDays, setShowAllDays] = useState(false);
   const [swapTarget, setSwapTarget] = useState(null);
   const [showCompetitionEditor, setShowCompetitionEditor] = useState(false);
   const [competitionDateDraft, setCompetitionDateDraft] = useState(formatDateInput(summary.competitionDate));
   const [supplementDraft, setSupplementDraft] = useState({ name: '', amount: '', notes: '' });
+  const [scheduleStatus, setScheduleStatus] = useState('');
+
+  useEffect(() => {
+    setWakeTime(profile?.wake_up_time || '');
+    setSleepTime(profile?.sleep_time || '');
+    setTrainingTime(normalizeTimeForInput(profile?.training_time || profile?.training_start_time || ''));
+    setTrainingEndTime(normalizeTimeForInput(profile?.training_end_time || ''));
+  }, [
+    profile?.wake_up_time,
+    profile?.sleep_time,
+    profile?.training_time,
+    profile?.training_start_time,
+    profile?.training_end_time,
+  ]);
 
   const todayName = getTodayName();
   const currentDate = formatLongDate(new Date());
@@ -167,6 +223,19 @@ function ClientDashboard() {
     if (ok) setShowCompetitionEditor(false);
   };
 
+  const handleScheduleSave = async () => {
+    const ok = await saveDailySchedule({ wakeUpTime: wakeTime, sleepTime });
+    setScheduleStatus(ok ? 'Daily schedule saved.' : 'Failed to save daily schedule.');
+  };
+
+  const handleTrainingSave = async () => {
+    const ok = await saveTrainingWindow({
+      trainingStartTime: formatTimeForStorage(trainingTime),
+      trainingEndTime: formatTimeForStorage(trainingEndTime),
+    });
+    setScheduleStatus(ok ? 'Training time saved.' : 'Failed to save training time.');
+  };
+
   const consultationLabel = useMemo(() => {
     const key = String(localStorage.getItem('subscriptionPlan') || localStorage.getItem('selectedPlan') || 'starter').toLowerCase();
     if (key === 'elite') return 'Elite';
@@ -187,6 +256,28 @@ function ClientDashboard() {
     <div className="bg-gray-50 text-gray-800 font-sans leading-normal">
       <ClientPortalNav activePath="/client-dashboard" isLoggedIn />
 
+      <div className="container mx-auto px-6 pt-6 space-y-3">
+        <div className="bg-white/95 border border-blue-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">😴</p>
+            <p className="text-sm text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+          </div>
+          <Link to="/progress-tracking" className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+            📝 Log Sleep
+          </Link>
+        </div>
+
+        <div className="bg-white/95 border border-purple-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">🧠</p>
+            <p className="text-sm text-gray-700 font-medium">🧠 Unlock your full potential! Upgrade to the Mental Performance Program for advanced mindset training.</p>
+          </div>
+          <Link to="/subscription-plan?upgrade=mental-performance" className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700">
+            🚀 Upgrade Now
+          </Link>
+        </div>
+      </div>
+
       <section className="py-8 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200">
         <div className="container mx-auto px-6">
           <div className="flex justify-between items-start gap-6 flex-wrap">
@@ -195,7 +286,7 @@ function ClientDashboard() {
               <p className="text-gray-600 mt-2">Here's your nutrition overview for today</p>
               <div className="mt-3 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold" style={{ backgroundColor: ACCENT }}>{avatarInitials}</div>
-                <Link to="/profile-setup?edit=1" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">✏️ Edit Full Profile</Link>
+                <Link to="/client-nutrition-profile" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">✏️ Edit Full Profile</Link>
               </div>
             </div>
             <div className="text-right">
@@ -278,9 +369,10 @@ function ClientDashboard() {
                   <label className="text-xs text-gray-500 block mb-1">Sleep Time</label>
                   <input type="time" className="w-full px-3 py-2 border rounded-lg text-sm" value={sleepTime} onChange={(e) => setSleepTime(e.target.value)} />
                 </div>
-                <button type="button" className="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 text-sm" onClick={() => localStorage.setItem('clientDailySchedule', JSON.stringify({ wakeTime, sleepTime }))}>
+                <button type="button" className="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 text-sm" onClick={handleScheduleSave}>
                   Save Schedule
                 </button>
+                {scheduleStatus ? <p className="text-xs text-gray-600">{scheduleStatus}</p> : null}
               </div>
             </div>
 
@@ -300,6 +392,9 @@ function ClientDashboard() {
                 </div>
                 <p className="text-xs text-blue-600 font-semibold">Category: N/A</p>
                 <p className="text-xs text-gray-500 italic">Meal order will adjust based on training time. Post-workout snack is set 30 minutes after training end time.</p>
+                <button type="button" className="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 text-sm" onClick={handleTrainingSave}>
+                  Save Training Time
+                </button>
               </div>
             </div>
 
@@ -326,7 +421,6 @@ function ClientDashboard() {
                   <h2 className="text-xl font-bold">{todayName}'s Meal Plan</h2>
                   <div className="flex gap-3">
                     <button type="button" className="text-sm font-semibold hover:underline" style={{ color: ACCENT }} onClick={() => refresh()}>🔄 Refresh</button>
-                    <button type="button" className="text-sm font-semibold hover:underline text-orange-600" title="Clear cached data and reload from server" onClick={() => forceRefreshIgnoringCache()}>🔄 Force Reload</button>
                     <button type="button" className="text-sm font-semibold hover:underline" style={{ color: ACCENT }} onClick={() => setShowAllDays(true)}>View All Days →</button>
                   </div>
                 </div>
@@ -355,12 +449,22 @@ function ClientDashboard() {
                             {meal.ar ? <p className="text-sm text-gray-600 mt-1" style={{ direction: 'rtl', fontFamily: 'Cairo, Tahoma, sans-serif' }}>{meal.ar}</p> : null}
                             {meal.scheduledTime && meal.scheduledTime !== 'N/A' ? <p className="text-xs text-gray-500 mt-1"><strong>⏰ {meal.scheduledTime}</strong></p> : null}
                           </div>
-                          <button
-                            onClick={() => toggleMealStatus(meal.mealId)}
-                            className={`px-4 py-2 rounded-lg border-2 font-semibold text-sm ${isComplete ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-amber-400 border-amber-400 text-white'}`}
-                          >
-                            {isComplete ? 'Completed' : 'Not Completed'}
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setMealStatus(meal.mealId, 'completed')}
+                              className={`px-4 py-2 rounded-lg border-2 font-semibold text-sm ${isComplete ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}
+                            >
+                              Complete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMealStatus(meal.mealId, 'not-completed')}
+                              className={`px-4 py-2 rounded-lg border-2 font-semibold text-sm ${!isComplete ? 'bg-amber-400 border-amber-400 text-white' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-50'}`}
+                            >
+                              Not Complete
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -371,15 +475,9 @@ function ClientDashboard() {
 
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4">
                   <h3 className="text-lg font-bold">Today's Macros</h3>
-                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${macro.pendingMeals > 0 ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-green-700'}`}>
-                    {macro.pendingMeals > 0 ? '⚠️ Not Completed' : '✅ Completed'}
-                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mb-4 text-center">
-                  {macro.pendingMeals > 0 ? 'Meals are still not completed for today.' : 'Great work. All meals are completed for today.'}
-                </p>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Protein</span><span className="font-semibold">{macro.consumed.protein}g / {macro.target.protein}g</span></div>
@@ -578,9 +676,7 @@ function ClientDashboard() {
         </div>
       </section>
 
-      <footer className="py-8 text-center text-gray-500 text-sm border-t border-gray-200 bg-white">
-        &copy; 2026 Client Nutrition Management. All rights reserved.
-      </footer>
+
     </div>
   );
 }

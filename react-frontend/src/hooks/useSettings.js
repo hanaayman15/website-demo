@@ -12,25 +12,56 @@ const DEFAULT_PREFS = {
 
 function syncProfileCaches(profile) {
   if (!profile) return;
-  const id = profile?.display_id || profile?.id;
-  if (!id) return;
+  const candidateIds = [
+    profile?.user_id,
+    profile?.id,
+    profile?.display_id,
+    localStorage.getItem('currentClientId'),
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  const uniqueIds = Array.from(new Set(candidateIds));
+  if (!uniqueIds.length) return;
+
+  uniqueIds.forEach((id) => {
+    try {
+      const key = `clientData_${id}`;
+      const raw = localStorage.getItem(key);
+      const existing = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+    } catch {
+      // Ignore cache sync issues.
+    }
+
+    try {
+      const key = `clientDashboardCache_${id}`;
+      const raw = localStorage.getItem(key);
+      const existing = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+    } catch {
+      // Ignore cache sync issues.
+    }
+
+    try {
+      const key = `clientFullProfile_${id}`;
+      const raw = localStorage.getItem(key);
+      const existing = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+    } catch {
+      // Ignore cache sync issues.
+    }
+  });
 
   try {
-    const key = `clientData_${id}`;
-    const raw = localStorage.getItem(key);
-    const existing = raw ? JSON.parse(raw) : {};
-    localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
+    if (profile?.full_name) localStorage.setItem('clientFullName', String(profile.full_name));
+    if (profile?.email) localStorage.setItem('clientEmail', String(profile.email).toLowerCase());
+    if (profile?.phone) localStorage.setItem('clientPhone', String(profile.phone));
+    if (profile?.country) localStorage.setItem('clientPhoneCountry', String(profile.country));
+    const resolvedId = String(profile?.user_id || profile?.id || profile?.display_id || '').trim();
+    if (resolvedId) localStorage.setItem('currentClientId', resolvedId);
   } catch {
-    // Ignore cache sync issues.
-  }
-
-  try {
-    const key = `clientDashboardCache_${id}`;
-    const raw = localStorage.getItem(key);
-    const existing = raw ? JSON.parse(raw) : {};
-    localStorage.setItem(key, JSON.stringify({ ...existing, ...profile }));
-  } catch {
-    // Ignore cache sync issues.
+    // Ignore storage sync issues.
   }
 }
 
@@ -133,7 +164,9 @@ export function useSettings() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+    verificationCode: '',
   });
+  const [passwordVerificationSent, setPasswordVerificationSent] = useState(false);
 
   const [notificationPrefs, setNotificationPrefs] = useState(readNotificationPrefs);
 
@@ -264,7 +297,7 @@ export function useSettings() {
     setError('');
     setMessage('');
 
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
       setError('Please fill in all password fields.');
       return;
     }
@@ -277,19 +310,68 @@ export function useSettings() {
       return;
     }
 
+    const accountEmail = String(profile?.email || personalForm.email || '').trim().toLowerCase();
+    if (!accountEmail) {
+      setError('Unable to resolve your account email. Reload the page and try again.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await apiClient.post('/api/auth/change-password', {
-        current_password: passwordForm.currentPassword,
+      if (!passwordVerificationSent) {
+        await apiClient.post('/api/auth/request-password-reset', { email: accountEmail });
+        setPasswordVerificationSent(true);
+        setMessage('Verification code sent to your email. Enter the code to complete password update.');
+        return;
+      }
+
+      const verificationCode = String(passwordForm.verificationCode || '').trim();
+      if (verificationCode.length !== 6) {
+        setError('Please enter the 6-digit verification code sent to your email.');
+        return;
+      }
+
+      await apiClient.post('/api/auth/complete-password-reset', {
+        email: accountEmail,
+        verification_code: verificationCode,
         new_password: passwordForm.newPassword,
       });
       setMessage('Password changed successfully.');
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordVerificationSent(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '', verificationCode: '' });
     } catch (err) {
       setError(parseApiError(err, 'Failed to change password.'));
     } finally {
       setSaving(false);
     }
+  };
+
+  const resendPasswordCode = async () => {
+    setError('');
+    setMessage('');
+    const accountEmail = String(profile?.email || personalForm.email || '').trim().toLowerCase();
+    if (!accountEmail) {
+      setError('Unable to resolve your account email. Reload the page and try again.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await apiClient.post('/api/auth/request-password-reset', { email: accountEmail });
+      setPasswordVerificationSent(true);
+      setMessage('A new verification code has been sent to your email.');
+    } catch (err) {
+      setError(parseApiError(err, 'Failed to resend verification code.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetPasswordVerificationFlow = () => {
+    setPasswordVerificationSent(false);
+    setPasswordForm((prev) => ({ ...prev, verificationCode: '' }));
+    setError('');
+    setMessage('Password verification has been canceled.');
   };
 
   const deleteAccountLocal = () => {
@@ -312,6 +394,7 @@ export function useSettings() {
     personalForm,
     fullProfileForm,
     passwordForm,
+    passwordVerificationSent,
     notificationPrefs,
     updatePersonalField,
     updateFullProfileField,
@@ -320,6 +403,8 @@ export function useSettings() {
     savePersonalInfo,
     saveFullProfile,
     changePassword,
+    resendPasswordCode,
+    resetPasswordVerificationFlow,
     deleteAccountLocal,
     refreshProfile,
   };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReports } from '../hooks/useReports';
+import ClientPortalNav from '../components/layout/ClientPortalNav';
 import '../assets/styles/react-pages.css';
 
 function ProgressTracking() {
@@ -23,8 +24,20 @@ function ProgressTracking() {
   const [sleepInput, setSleepInput] = useState('');
 
   if (loading) {
-    return <main className="react-page-wrap">Loading progress data...</main>;
+    return (
+      <div>
+        <ClientPortalNav activePath="/progress" isLoggedIn />
+        <main className="react-page-wrap">Loading progress data...</main>
+      </div>
+    );
   }
+
+  const currentWeightText = summary.latestWeight === null || summary.latestWeight === undefined
+    ? '--'
+    : Number(summary.latestWeight).toFixed(1);
+  const bodyFatText = summary.bodyFat === null || summary.bodyFat === undefined
+    ? '--'
+    : Number(summary.bodyFat).toFixed(1);
 
   const submitWorkout = async (event) => {
     event.preventDefault();
@@ -45,17 +58,19 @@ function ProgressTracking() {
   };
 
   return (
-    <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
-      <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Track Your Growth</h1>
-          <p className="react-muted" style={{ margin: 0 }}>Monitor your progress across key performance indicators.</p>
-        </div>
-        <div className="react-inline-actions">
-          <Link className="react-btn react-btn-ghost" to="/progress">Quick View</Link>
-          <Link className="react-btn react-btn-ghost" to="/settings">Settings</Link>
-        </div>
-      </section>
+    <div>
+      <ClientPortalNav activePath="/progress" isLoggedIn />
+      <main className="react-page-wrap react-grid" style={{ gap: '1rem' }}>
+        <section className="react-panel react-row-between" style={{ flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ marginTop: 0, marginBottom: '0.35rem' }}>Track Your Growth</h1>
+            <p className="react-muted" style={{ margin: 0 }}>Monitor your progress across key performance indicators.</p>
+          </div>
+          <div className="react-inline-actions">
+            <Link className="react-btn react-btn-ghost" to="/progress">Quick View</Link>
+            <Link className="react-btn react-btn-ghost" to="/settings">Settings</Link>
+          </div>
+        </section>
 
       {error ? <div className="react-alert react-alert-error">{error}</div> : null}
       {message ? <div className="react-alert react-alert-success">{message}</div> : null}
@@ -64,12 +79,12 @@ function ProgressTracking() {
         <div className="stat-list">
           <article className="stat-item">
             <div className="stat-label">Current Weight</div>
-            <div className="stat-value">{summary.latestWeight ?? '--'} kg</div>
+            <div className="stat-value">{currentWeightText} kg</div>
             <div className="react-muted" style={{ fontSize: '0.85rem' }}>{summary.weightTrend}</div>
           </article>
           <article className="stat-item">
             <div className="stat-label">Body Fat</div>
-            <div className="stat-value">{summary.bodyFat ?? '--'}%</div>
+            <div className="stat-value">{bodyFatText}%</div>
           </article>
           <article className="stat-item">
             <div className="stat-label">Strength Score</div>
@@ -172,9 +187,9 @@ function ProgressTracking() {
         </div>
       </section>
 
-      <section className="react-panel" style={{ overflowX: 'auto' }}>
-        <h2 style={{ marginTop: 0 }}>Recent Weight & Body Fat Logs</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <section className="react-panel" style={{ overflowX: 'auto' }}>
+          <h2 style={{ marginTop: 0 }}>Recent Weight & Body Fat Logs</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               <th style={{ textAlign: 'left', padding: '0.65rem' }}>Date</th>
@@ -195,9 +210,10 @@ function ProgressTracking() {
               ))
             )}
           </tbody>
-        </table>
-      </section>
-    </main>
+          </table>
+        </section>
+      </main>
+    </div>
   );
 }
 

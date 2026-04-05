@@ -1,6 +1,7 @@
 ﻿import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { sourceLabel, useClientList } from '../hooks/useClientList';
+import AdminQuickNav from '../components/layout/AdminQuickNav';
 
 const PAGE_CSS = `
 .clients-page { max-width: 1100px; margin: 24px auto 40px; padding: 0 16px; }
@@ -39,7 +40,6 @@ const PAGE_CSS = `
 `;
 
 function Clients() {
-  const navigate = useNavigate();
   const {
     isAdmin,
     searchTerm,
@@ -113,19 +113,7 @@ function Clients() {
         className="clients-page"
 
       >
-        {/* Nav */}
-        <div className="top-nav">
-          <div className="top-nav-left">
-            <button className="link-btn" type="button" onClick={() => navigate(-1)}>Back</button>
-            <div className="top-nav-title">Clients &amp; Teams</div>
-          </div>
-          <div className="top-nav-links">
-            <Link className="link-btn" to="/">Home</Link>
-            <Link className="link-btn primary" to="/clients">Clients</Link>
-            <Link className="link-btn" to="/add-team">Add Team</Link>
-            {isAdmin && <Link className="link-btn" to="/add-client">Add Client</Link>}
-          </div>
-        </div>
+        <AdminQuickNav activePath="/clients" title="Clients & Teams" />
 
         {error && <div className="cp-card cp-error">{error}</div>}
 

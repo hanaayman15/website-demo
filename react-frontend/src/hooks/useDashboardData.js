@@ -109,6 +109,22 @@ function readCachedProfile(local, remoteProfile = {}) {
     merged = mergePreferNonEmpty(merged, safeJsonGet(local, `clientDashboardCache_${id}`, {}));
     merged = mergePreferNonEmpty(merged, safeJsonGet(local, `clientFullProfile_${id}`, {}));
   });
+
+  // Keep recently updated server profile identity/contact fields authoritative.
+  const authoritativeKeys = ['full_name', 'email', 'phone', 'country'];
+  authoritativeKeys.forEach((key) => {
+    const value = remoteProfile?.[key];
+    if (value === null || value === undefined) return;
+    if (typeof value === 'string' && value.trim() === '') return;
+    merged[key] = value;
+  });
+
+  // Keep backend meal swaps as source of truth so dashboard meal order and extra meals
+  // reflect latest saved programs instead of stale local cache.
+  if (remoteProfile?.meal_swaps?.dayMeals) {
+    merged.meal_swaps = remoteProfile.meal_swaps;
+  }
+
   return normalizeProfileAliases(merged);
 }
 
@@ -176,10 +192,10 @@ export function useDashboardData() {
 
         const remoteData = profileResponse?.data || {};
         if (isProfileIdentityMismatch(local, remoteData)) {
-          clearSessionAuth();
-          dispatch({ type: 'LOAD_ERROR', payload: 'Session/account mismatch detected. Please login again.' });
-          redirectToClientLogin();
-          return;
+          // Do not force sign-out on back navigation; refresh cached identity instead.
+          if (remoteData?.email) {
+            safeSet(local, 'clientEmail', normalizeEmail(remoteData.email));
+          }
         }
         const data = readCachedProfile(local, remoteData);
 
@@ -235,10 +251,12 @@ export function useDashboardData() {
     await apiClient.post('/api/client/macros/today', payload);
   };
 
-  const toggleMealStatus = async (mealId) => {
-    if (!state.profile) return;
+  const setMealStatus = async (mealId, statusValue) => {
+    if (!state.profile || !mealId) return;
+    const nextStatus = normalizeMealStatus(statusValue);
     const currentStatus = normalizeMealStatus(state.mealStatuses[mealId]);
-    const nextStatus = currentStatus === 'completed' ? 'not-completed' : 'completed';
+    if (currentStatus === nextStatus) return;
+
     const nextMealStatuses = {
       ...state.mealStatuses,
       [mealId]: nextStatus,
@@ -273,6 +291,12 @@ export function useDashboardData() {
     }
   };
 
+  const toggleMealStatus = async (mealId) => {
+    const currentStatus = normalizeMealStatus(state.mealStatuses[mealId]);
+    const nextStatus = currentStatus === 'completed' ? 'not-completed' : 'completed';
+    await setMealStatus(mealId, nextStatus);
+  };
+
   const saveCompetitionDate = async (competitionDate) => {
     if (!state.profile) return false;
     const normalized = String(competitionDate || '').trim() || null;
@@ -285,6 +309,79 @@ export function useDashboardData() {
 
     try {
       await apiClient.put('/api/client/profile', { competition_date: normalized });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const saveDailySchedule = async ({ wakeUpTime, sleepTime }) => {
+    if (!state.profile) return false;
+
+    const normalizedWake = String(wakeUpTime || '').trim() || null;
+    const normalizedSleep = String(sleepTime || '').trim() || null;
+    const nextProfile = {
+      ...state.profile,
+      wake_up_time: normalizedWake,
+      sleep_time: normalizedSleep,
+    };
+
+    const nextTodayMeals = buildTodayMeals(nextProfile);
+    const nextMacro = buildMacroState(nextProfile, nextTodayMeals, state.mealStatuses);
+
+    dispatch({ type: 'UPDATE_PROFILE', payload: { profile: nextProfile, todayMeals: nextTodayMeals, macro: nextMacro } });
+    writeProfileCaches(local, nextProfile);
+
+    try {
+      await apiClient.put('/api/client/profile', {
+        wake_up_time: normalizedWake,
+        sleep_time: normalizedSleep,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const saveTrainingWindow = async ({ trainingStartTime, trainingEndTime }) => {
+    if (!state.profile) return false;
+
+    const normalizedStart = String(trainingStartTime || '').trim() || null;
+    const normalizedEnd = String(trainingEndTime || '').trim() || null;
+    const nextProfile = {
+      ...state.profile,
+      training_time: normalizedStart,
+      training_end_time: normalizedEnd,
+    };
+
+    const nextTodayMeals = buildTodayMeals(nextProfile);
+    const nextMacro = buildMacroState(nextProfile, nextTodayMeals, state.mealStatuses);
+
+    dispatch({ type: 'UPDATE_PROFILE', payload: { profile: nextProfile, todayMeals: nextTodayMeals, macro: nextMacro } });
+    writeProfileCaches(local, nextProfile);
+
+    try {
+      const response = await apiClient.put('/api/client/profile', {
+        training_time: normalizedStart,
+        training_start_time: normalizedStart,
+        training_end_time: normalizedEnd,
+      });
+
+      const data = response?.data || {};
+      const persistedProfile = {
+        ...nextProfile,
+        training_time: data?.training_time ?? data?.training_start_time ?? nextProfile.training_time,
+        training_end_time: data?.training_end_time ?? nextProfile.training_end_time,
+      };
+
+      const persistedMeals = buildTodayMeals(persistedProfile);
+      const persistedMacro = buildMacroState(persistedProfile, persistedMeals, state.mealStatuses);
+
+      dispatch({
+        type: 'UPDATE_PROFILE',
+        payload: { profile: persistedProfile, todayMeals: persistedMeals, macro: persistedMacro },
+      });
+      writeProfileCaches(local, persistedProfile);
       return true;
     } catch {
       return false;
@@ -390,9 +487,9 @@ export function useDashboardData() {
       const response = await apiClient.get('/api/client/profile');
       const serverData = response?.data || {};
       if (isProfileIdentityMismatch(local, serverData)) {
-        clearSessionAuth();
-        redirectToClientLogin();
-        return false;
+        if (serverData?.email) {
+          safeSet(local, 'clientEmail', normalizeEmail(serverData.email));
+        }
       }
       const data = clearCache ? serverData : readCachedProfile(local, serverData);
       const nextMeals = buildTodayMeals(data);
@@ -444,9 +541,12 @@ export function useDashboardData() {
     weeklyMeals,
     mealStatuses: state.mealStatuses,
     macro: state.macro,
+    setMealStatus,
     toggleMealStatus,
     swapMeal,
     saveCompetitionDate,
+    saveDailySchedule,
+    saveTrainingWindow,
     addCustomSupplement,
     refresh,
     forceRefreshIgnoringCache,

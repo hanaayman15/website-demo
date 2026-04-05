@@ -146,7 +146,7 @@ function ClientLogin() {
             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
           >
             <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-4">Your Nutrition Journey Awaits</h2>
+              <h2 className="text-3xl font-bold mb-4  text-white">Your Nutrition Journey Awaits</h2>
               <p className="leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 Access your personalized meal plans, track your progress, and stay connected with your nutrition coach.
               </p>
@@ -163,7 +163,7 @@ function ClientLogin() {
                     <span className="text-2xl">{item.icon}</span>
                   </div>
                   <div>
-                    <h4 className="font-bold mb-1">{item.title}</h4>
+                    <h4 className="font-bold mb-1 text-white">{item.title}</h4>
                     <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{item.desc}</p>
                   </div>
                 </div>

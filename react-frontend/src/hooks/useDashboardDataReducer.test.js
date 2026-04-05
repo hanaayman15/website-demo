@@ -3,10 +3,27 @@ import {
   buildDashboardInitialState,
   buildMacroState,
   buildSummary,
+  buildTodayMeals,
   buildTodayMacrosPayload,
   dashboardDataReducer,
   normalizeMealStatus,
 } from './useDashboardDataReducer';
+
+function getTodayName() {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function minutesFrom12h(timeText) {
+  const text = String(timeText || '').trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!match) return null;
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const suffix = String(match[3] || '').toUpperCase();
+  if (suffix === 'AM' && hours === 12) hours = 0;
+  if (suffix === 'PM' && hours < 12) hours += 12;
+  return (hours * 60) + minutes;
+}
 
 describe('useDashboardDataReducer', () => {
   it('normalizes meal status values to backend-compatible values', () => {
@@ -89,5 +106,75 @@ describe('useDashboardDataReducer', () => {
   it('buildSummary computes fallback calories from macros when tdee absent', () => {
     const summary = buildSummary({ protein_target: 100, carbs_target: 200, fats_target: 50 });
     expect(summary.targetCalories).toBe(100 * 4 + 200 * 4 + 50 * 9);
+  });
+
+  it('schedules meals dynamically with evening training and keeps dinner 3h after post-workout', () => {
+    const dayName = getTodayName();
+    const profile = {
+      wake_up_time: '06:30 AM',
+      training_time: '06:00 PM',
+      training_end_time: '08:00 PM',
+      meal_swaps: {
+        dayMeals: {
+          [dayName]: [
+            { type: 'Breakfast' },
+            { type: 'Snack 1' },
+            { type: 'Lunch' },
+            { type: 'Dinner' },
+            { type: 'Pre-Workout Snack' },
+            { type: 'Post-Workout Snack' },
+          ],
+        },
+      },
+    };
+
+    const meals = buildTodayMeals(profile);
+    const byName = Object.fromEntries(meals.map((meal) => [String(meal.mealLabel || '').toLowerCase(), meal.scheduledTime]));
+
+    expect(byName['breakfast']).toBe('07:00 AM');
+    expect(byName['snack 1']).toBe('10:00 AM');
+    expect(byName['lunch']).toBe('01:00 PM');
+    expect(byName['pre-workout snack']).toBe('05:15 PM');
+    expect(byName['post-workout snack']).toBe('08:30 PM');
+    expect(byName['dinner']).toBe('11:30 PM');
+
+    const pre = minutesFrom12h(byName['pre-workout snack']);
+    const trainStart = minutesFrom12h('06:00 PM');
+    const post = minutesFrom12h(byName['post-workout snack']);
+    const trainEnd = minutesFrom12h('08:00 PM');
+    const dinner = minutesFrom12h(byName['dinner']);
+
+    expect(pre).toBeLessThan(trainStart);
+    expect(post).toBeGreaterThan(trainEnd);
+    expect(dinner).toBe(post + 180);
+  });
+
+  it('keeps pre and post workout first when training is in the morning', () => {
+    const dayName = getTodayName();
+    const profile = {
+      wake_up_time: '06:30 AM',
+      training_time: '07:00 AM',
+      training_end_time: '08:00 AM',
+      meal_swaps: {
+        dayMeals: {
+          [dayName]: [
+            { type: 'Breakfast' },
+            { type: 'Snack 1' },
+            { type: 'Lunch' },
+            { type: 'Dinner' },
+            { type: 'Pre-Workout Snack' },
+            { type: 'Post-Workout Snack' },
+          ],
+        },
+      },
+    };
+
+    const meals = buildTodayMeals(profile);
+    const labels = meals.map((meal) => String(meal.mealLabel || '').toLowerCase());
+    const preIndex = labels.indexOf('pre-workout snack');
+    const postIndex = labels.indexOf('post-workout snack');
+
+    expect(preIndex).toBe(0);
+    expect(postIndex).toBe(1);
   });
 });

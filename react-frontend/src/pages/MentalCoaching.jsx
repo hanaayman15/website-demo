@@ -13,37 +13,37 @@ function MentalCoaching() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <ClientPortalNav activePath="/mental-coaching" isLoggedIn />
+
       <div className="container mx-auto px-6 pt-6">
-        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-2xl mb-1">😴</p>
-            <p className="text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+        <div className="bg-white/95 border border-blue-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">😴</p>
+            <p className="text-sm text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
           </div>
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
             onClick={() => navigate('/progress-tracking')}
           >
             📝 Log Sleep
           </button>
         </div>
 
-        <div className="mt-4 bg-white border border-purple-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-2xl mb-1">🧠</p>
-            <p className="text-gray-700 font-medium">🧠 Unlock your full potential! Upgrade to the Mental Performance Program for advanced mindset training.</p>
+        <div className="mt-3 bg-white/95 border border-purple-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">🧠</p>
+            <p className="text-sm text-gray-700 font-medium">🧠 Unlock your full potential! Upgrade to the Mental Performance Program for advanced mindset training.</p>
           </div>
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700"
+            className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700"
             onClick={goToUpgrade}
           >
             🚀 Upgrade Now
           </button>
         </div>
       </div>
-
-      <ClientPortalNav activePath="/mental-coaching" isLoggedIn />
 
       <section className="py-8 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200">
         <div className="container mx-auto px-6">

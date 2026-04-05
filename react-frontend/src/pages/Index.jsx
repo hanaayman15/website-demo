@@ -76,7 +76,6 @@ function Index() {
   const doctorCarousel = [
     { href: '/clients', img: '/images/pexels-yaroslav-shuraev-8844379.jpg', label: 'Teams', desc: 'View and manage your teams only.' },
     { href: '/add-team', img: '/images/football-team.jpg', label: 'Add Team', desc: 'Create teams, add players, and update rosters.' },
-    { href: '/team-view', img: '/images/pexels-pixabay-46798.jpg', label: 'Team View', desc: 'Open a saved team and manage player details.' },
     { href: '/pdf-generator', img: '/images/pexels-olly-3760067.jpg', label: 'PDF Generator', desc: 'Generate team and player report PDFs.' },
   ];
 
@@ -89,14 +88,14 @@ function Index() {
       } else if (window.innerWidth <= 1100) {
         setCardsPerView(2);
       } else {
-        setCardsPerView(4);
+        setCardsPerView(isDoctor ? 3 : 4);
       }
     };
 
     updateCardsPerView();
     window.addEventListener('resize', updateCardsPerView);
     return () => window.removeEventListener('resize', updateCardsPerView);
-  }, []);
+  }, [isDoctor]);
 
   const maxIndex = useMemo(() => Math.max(0, carousel.length - cardsPerView), [carousel.length, cardsPerView]);
 
@@ -143,11 +142,21 @@ function Index() {
           <ul>
             <li><a href="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} style={{ color: 'white' }}>← Back</a></li>
             <li><Link to="/">Home</Link></li>
-            <li><Link to="/about">About</Link></li>
-            <li><Link to="/features">Features</Link></li>
-            <li><Link to="/resources">Our Clinic</Link></li>
-            <li><Link to="/success-stories">Success Stories</Link></li>
-            <li><Link to="/contact">Contact Us</Link></li>
+            {isDoctor ? (
+              <>
+                <li><Link to="/clients">Teams</Link></li>
+                <li><Link to="/add-team">Add Team</Link></li>
+                <li><Link to="/pdf-generator">PDF Generator</Link></li>
+              </>
+            ) : (
+              <>
+                <li><Link to="/clients">Clients</Link></li>
+                <li><Link to="/add-client">Add Client</Link></li>
+                <li><Link to="/add-team">Add Team</Link></li>
+                <li><Link to="/pdf-generator">PDF Generator</Link></li>
+                <li><Link to="/diet-management">Diet Management</Link></li>
+              </>
+            )}
           </ul>
         </nav>
       </div>

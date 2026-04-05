@@ -746,32 +746,10 @@ async def change_password(
     
     Requires authentication. Validates the current password before setting the new one.
     """
-    # Admin users (id=0) cannot change password through this endpoint
-    if current_user.id == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admin password cannot be changed through this endpoint"
-        )
-    
-    # Verify current password
-    user = db.query(User).filter(User.id == current_user.id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    if not verify_password(password_data.current_password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
-        )
-    
-    # Update password
-    user.hashed_password = hash_password(password_data.new_password)
-    db.commit()
-    
-    return "Password changed successfully"
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Direct password change is disabled. Use email verification code flow to update password."
+    )
 
 
 @router.post("/request-password-reset", response_model=PasswordResetResponse)

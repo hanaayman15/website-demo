@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { clearSessionAuth } from '../../utils/authSession';
 
 const ACCENT = '#6eabf2';
 
@@ -17,11 +18,12 @@ function ClientPortalNav({ activePath = '', isLoggedIn = false }) {
     : 'AM';
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('authRole');
-    sessionStorage.removeItem('role');
+    clearSessionAuth();
+    localStorage.removeItem('clientFullName');
+    localStorage.removeItem('clientEmail');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('clientCountry');
+    setMobileOpen(false);
     navigate('/client-login');
   };
 
@@ -96,9 +98,25 @@ function ClientPortalNav({ activePath = '', isLoggedIn = false }) {
                 {link.label}
               </Link>
             ))}
-            <Link to="/client-login" className="py-2 text-center text-white rounded-lg px-4" style={{ backgroundColor: ACCENT }} onClick={() => setMobileOpen(false)}>
-              {isLoggedIn ? 'Logout' : 'Log In'}
-            </Link>
+            {isLoggedIn ? (
+              <button
+                type="button"
+                className="py-2 text-center text-white rounded-lg px-4"
+                style={{ backgroundColor: ACCENT }}
+                onClick={logout}
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/client-login"
+                className="py-2 text-center text-white rounded-lg px-4"
+                style={{ backgroundColor: ACCENT }}
+                onClick={() => setMobileOpen(false)}
+              >
+                Log In
+              </Link>
+            )}
           </div>
         )}
       </div>

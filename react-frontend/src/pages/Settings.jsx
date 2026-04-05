@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ClientPortalNav from '../components/layout/ClientPortalNav';
 import { useSettings } from '../hooks/useSettings';
 import { WORLD_COUNTRIES } from '../constants/globalOptions';
+import { clearSessionAuth } from '../utils/authSession';
 import '../assets/styles/react-pages.css';
 
 function Settings() {
@@ -23,6 +24,9 @@ function Settings() {
     savePersonalInfo,
     saveFullProfile,
     changePassword,
+    resendPasswordCode,
+    resetPasswordVerificationFlow,
+    passwordVerificationSent,
     deleteAccountLocal,
   } = useSettings();
 
@@ -43,47 +47,47 @@ function Settings() {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('authRole');
-    sessionStorage.removeItem('role');
+    clearSessionAuth();
+    localStorage.removeItem('clientFullName');
+    localStorage.removeItem('clientEmail');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('clientCountry');
     navigate('/client-login');
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <ClientPortalNav activePath="/settings" isLoggedIn />
+
       <div className="container mx-auto px-6 pt-6">
-        <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-2xl mb-1">😴</p>
-            <p className="text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
+        <div className="bg-white/95 border border-blue-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">😴</p>
+            <p className="text-sm text-gray-700 font-medium">💤 Don&apos;t forget: Quality sleep is crucial for recovery! Aim for 7-9 hours tonight.</p>
           </div>
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
             onClick={() => navigate('/progress-tracking')}
           >
             📝 Log Sleep
           </button>
         </div>
 
-        <div className="mt-4 bg-white border border-amber-100 rounded-2xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-2xl mb-1">⚙️</p>
-            <p className="text-gray-700 font-medium">✨ Keep your profile up to date! Update your information to get the most accurate nutrition plan.</p>
+        <div className="mt-3 bg-white/95 border border-amber-100 rounded-xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <p className="text-lg leading-none mt-0.5">⚙️</p>
+            <p className="text-sm text-gray-700 font-medium">✨ Keep your profile up to date! Update your information to get the most accurate nutrition plan.</p>
           </div>
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600"
-            onClick={() => navigate('/profile-setup?edit=1')}
+            className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600"
+            onClick={() => navigate('/client-nutrition-profile')}
           >
             ✏️ Edit Profile
           </button>
         </div>
       </div>
-
-      <ClientPortalNav activePath="/settings" isLoggedIn />
 
       <section className="py-8 bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
         <div className="container mx-auto px-6">
@@ -145,7 +149,7 @@ function Settings() {
                 <p className="text-gray-600">Update your complete profile including physical measurements, nutrition plan, and health information</p>
               </div>
             </div>
-            <Link to="/profile-setup?edit=1" className="inline-flex items-center px-7 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:opacity-95">✏️ Edit Full Profile</Link>
+            <Link to="/client-nutrition-profile" className="inline-flex items-center px-7 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:opacity-95">✏️ Edit Full Profile</Link>
             <form className="hidden" onSubmit={saveFullProfile}>
               <input value={fullProfileForm.fullName} onChange={(event) => updateFullProfileField('fullName', event.target.value)} />
             </form>
@@ -161,10 +165,6 @@ function Settings() {
             </div>
             <form className="space-y-4" onSubmit={changePassword}>
               <label>
-                <span className="react-label">Current Password</span>
-                <input className="react-input" type="password" placeholder="Enter current password" value={passwordForm.currentPassword} onChange={(event) => updatePasswordField('currentPassword', event.target.value)} />
-              </label>
-              <label>
                 <span className="react-label">New Password</span>
                 <input className="react-input" type="password" placeholder="Enter new password" value={passwordForm.newPassword} onChange={(event) => updatePasswordField('newPassword', event.target.value)} />
               </label>
@@ -172,7 +172,52 @@ function Settings() {
                 <span className="react-label">Confirm New Password</span>
                 <input className="react-input" type="password" placeholder="Confirm new password" value={passwordForm.confirmPassword} onChange={(event) => updatePasswordField('confirmPassword', event.target.value)} />
               </label>
-              <button className="px-7 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700" type="submit" disabled={saving}>🔐 {saving ? 'Updating...' : 'Update Password'}</button>
+
+              {passwordVerificationSent ? (
+                <>
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                    A verification code has been sent to your email. Enter it below to finish changing your password.
+                  </div>
+                  <label>
+                    <span className="react-label">Verification Code</span>
+                    <input
+                      className="react-input"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="Enter 6-digit code"
+                      value={passwordForm.verificationCode}
+                      onChange={(event) => updatePasswordField('verificationCode', event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    />
+                  </label>
+                </>
+              ) : null}
+
+              <div className="flex flex-wrap gap-3">
+                <button className="px-7 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700" type="submit" disabled={saving}>
+                  🔐 {saving ? 'Updating...' : passwordVerificationSent ? 'Verify Code & Update Password' : 'Send Verification Code'}
+                </button>
+                {passwordVerificationSent ? (
+                  <>
+                    <button
+                      className="px-6 py-3 rounded-xl border-2 border-blue-200 text-blue-700 font-semibold hover:bg-blue-50"
+                      type="button"
+                      disabled={saving}
+                      onClick={resendPasswordCode}
+                    >
+                      Resend Code
+                    </button>
+                    <button
+                      className="px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100"
+                      type="button"
+                      disabled={saving}
+                      onClick={resetPasswordVerificationFlow}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : null}
+              </div>
             </form>
           </section>
 

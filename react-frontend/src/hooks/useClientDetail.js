@@ -142,6 +142,26 @@ function syncClientCaches(local, clientId, updates = {}) {
   safeJsonSet(local, dashboardKey, { ...existingDashboard, ...updates });
 }
 
+function getMealSwapsUpdatedAt(source) {
+  if (!source || typeof source !== 'object') return 0;
+  const value = Number(source.__updatedAt || source.updatedAt || 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function resolveProgramsSource(mealSwaps, savedPrograms) {
+  const backendSource = mealSwaps && mealSwaps.dayMeals ? mealSwaps : null;
+  const localSource = savedPrograms && savedPrograms.dayMeals ? savedPrograms : null;
+  if (!backendSource) return localSource;
+  if (!localSource) return backendSource;
+
+  const backendAt = getMealSwapsUpdatedAt(backendSource);
+  const localAt = getMealSwapsUpdatedAt(localSource);
+
+  // Prefer local when timestamps are missing or equal to avoid losing recent UI edits.
+  if (localAt >= backendAt) return localSource;
+  return backendSource;
+}
+
 export function useClientDetail() {
   const local = getStorage('local');
   const [searchParams] = useSearchParams();
@@ -266,8 +286,7 @@ export function useClientDetail() {
         const programsKey = selectedClientId ? `clientPrograms_${selectedClientId}` : '';
         const savedPrograms = programsKey ? safeJsonGet(local, programsKey, null) : null;
         const mealSwaps = resolvedClient.meal_swaps || null;
-        // Prefer backend meal_swaps first to avoid stale local programs overriding fresh saves.
-        const source = mealSwaps && mealSwaps.dayMeals ? mealSwaps : (savedPrograms && savedPrograms.dayMeals ? savedPrograms : null);
+        const source = resolveProgramsSource(mealSwaps, savedPrograms);
 
         dispatch({
           type: 'INIT_FROM_SOURCE',
@@ -324,8 +343,10 @@ export function useClientDetail() {
   };
 
   const saveNotes = async (event) => {
-    event.preventDefault();
-    if (!client || !selectedClientId) return;
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+    if (!client || !selectedClientId) return false;
 
     setSaving(true);
     setError('');
@@ -385,8 +406,10 @@ export function useClientDetail() {
       }
 
       setMessage('Programs and meal plan saved successfully.');
+      return true;
     } catch (err) {
       setError(err?.message || 'Failed to save notes.');
+      return false;
     } finally {
       setSaving(false);
     }
