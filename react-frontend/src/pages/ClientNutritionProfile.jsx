@@ -20,6 +20,7 @@ function Field({ label, children, full = false }) {
 function ClientNutritionProfile() {
   const {
     state,
+    canEditDietScheduleType,
     constants,
     caloriesLabel,
     hasDraft,
@@ -109,6 +110,19 @@ function ClientNutritionProfile() {
             </Field>
             <Field label="Position"><input className="react-input" value={state.fields.position} onChange={(e) => updateField('position', e.target.value)} /></Field>
             <Field label="TDEE (Calc)"><input className="react-input" value={state.fields.tdee} readOnly /></Field>
+            <Field label="Diet Schedule Type">
+              <select
+                className="react-input"
+                value={state.fields.dietScheduleType}
+                onChange={(e) => updateField('dietScheduleType', e.target.value)}
+                disabled={!canEditDietScheduleType}
+              >
+                <option value="summer">Summer</option>
+                <option value="school">School</option>
+              </select>
+            </Field>
+            <Field label="Average Wake-up Time"><input className="react-input" type="time" value={state.fields.wakeUpTime} onChange={(e) => updateField('wakeUpTime', e.target.value)} /></Field>
+            <Field label="Average Sleep Time"><input className="react-input" type="time" value={state.fields.sleepTime} onChange={(e) => updateField('sleepTime', e.target.value)} /></Field>
           </div>
         </section>
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
+import { resolveAuthRole } from '../utils/authSession';
 
 const DEFAULT_PLAN = 'starter';
 const SUBSCRIPTION_STORAGE_KEY = 'subscriptionPlan';
@@ -120,6 +121,11 @@ function parseApiError(error, fallback) {
   return fallback;
 }
 
+function isClientOnlyResourceError(error) {
+  const detail = String(error?.response?.data?.detail || '').toLowerCase();
+  return detail.includes('only client users can access this resource');
+}
+
 async function fetchClientProfileId() {
   const response = await apiClient.get('/api/client/profile');
   return response?.data?.id || null;
@@ -128,6 +134,8 @@ async function fetchClientProfileId() {
 export function useSubscriptionPlans({ saveToBackend = true } = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const role = String(resolveAuthRole() || '').toLowerCase();
+  const isClientRole = role === 'client';
   const [state, dispatch] = useReducer(
     subscriptionPlansReducer,
     undefined,
@@ -138,7 +146,7 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
     let mounted = true;
     const load = async () => {
       dispatch({ type: 'LOAD_START' });
-      if (!saveToBackend) {
+      if (!saveToBackend || !isClientRole) {
         dispatch({ type: 'LOAD_DONE' });
         return;
       }
@@ -165,7 +173,7 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
     return () => {
       mounted = false;
     };
-  }, [saveToBackend]);
+  }, [isClientRole, saveToBackend]);
 
   const selectPlan = (plan) => {
     dispatch({ type: 'SELECT_PLAN', payload: plan });
@@ -174,7 +182,7 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
   const persistSelection = async () => {
     safeStorageSet(SUBSCRIPTION_STORAGE_KEY, state.selectedPlan);
     safeStorageSet('selectedPlan', state.selectedPlan);
-    if (!saveToBackend) {
+    if (!saveToBackend || !isClientRole) {
       dispatch({ type: 'SAVE_SUCCESS', payload: 'Plan selected locally.' });
       return true;
     }
@@ -194,6 +202,10 @@ export function useSubscriptionPlans({ saveToBackend = true } = {}) {
       dispatch({ type: 'SAVE_SUCCESS', payload: `Subscription plan saved: ${state.selectedPlan}.` });
       return true;
     } catch (error) {
+      if (isClientOnlyResourceError(error)) {
+        dispatch({ type: 'SAVE_SUCCESS', payload: 'Plan selected locally.' });
+        return true;
+      }
       dispatch({ type: 'SAVE_ERROR', payload: parseApiError(error, 'Could not save subscription plan. Please retry.') });
       return false;
     }

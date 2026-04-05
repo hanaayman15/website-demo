@@ -158,6 +158,8 @@ function AddTeam() {
                       {WORLD_COUNTRIES.map((country) => <option key={`player-country-${country}`} value={country}>{country}</option>)}
                     </select>
                   </label>
+                  <label><span className="react-label">Average Wake-up Time</span><input className="react-input" type="time" value={player.wake_up_time || ''} onChange={(e) => updatePlayerField(index, 'wake_up_time', e.target.value)} /></label>
+                  <label><span className="react-label">Average Sleep Time</span><input className="react-input" type="time" value={player.sleep_time || ''} onChange={(e) => updatePlayerField(index, 'sleep_time', e.target.value)} /></label>
                   <label><span className="react-label">Sport Club</span><input className="react-input" value={player.club} onChange={(e) => updatePlayerField(index, 'club', e.target.value)} placeholder="Auto Club" /></label>
                   <label><span className="react-label">Religion</span><input className="react-input" value={player.religion} onChange={(e) => updatePlayerField(index, 'religion', e.target.value)} placeholder="Other" /></label>
                 </div>

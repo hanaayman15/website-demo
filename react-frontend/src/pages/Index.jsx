@@ -65,6 +65,15 @@ function Index() {
 
   const isDoctor = role === 'doctor';
 
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
+    { href: '/features', label: 'Features' },
+    { href: '/resources', label: 'Our Clinic' },
+    { href: '/success-stories', label: 'Success Stories' },
+    { href: '/contact', label: 'Contact Us' },
+  ];
+
   const adminCarousel = [
     { href: '/clients', img: '/images/pexels-yaroslav-shuraev-8844379.jpg', label: 'Clients', desc: 'view & manage clients.' },
     { href: '/add-client', img: '/images/pexels-beyzahzah-89810429-15319038.jpg', label: 'Add client', desc: 'create new client.' },
@@ -140,23 +149,11 @@ function Index() {
         {/* Nav */}
         <nav id="nav">
           <ul>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} style={{ color: 'white' }}>← Back</a></li>
-            <li><Link to="/">Home</Link></li>
-            {isDoctor ? (
-              <>
-                <li><Link to="/clients">Teams</Link></li>
-                <li><Link to="/add-team">Add Team</Link></li>
-                <li><Link to="/pdf-generator">PDF Generator</Link></li>
-              </>
-            ) : (
-              <>
-                <li><Link to="/clients">Clients</Link></li>
-                <li><Link to="/add-client">Add Client</Link></li>
-                <li><Link to="/add-team">Add Team</Link></li>
-                <li><Link to="/pdf-generator">PDF Generator</Link></li>
-                <li><Link to="/diet-management">Diet Management</Link></li>
-              </>
-            )}
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <Link to={link.href}>{link.label}</Link>
+              </li>
+            ))}
           </ul>
         </nav>
       </div>

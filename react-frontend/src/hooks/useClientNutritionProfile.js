@@ -24,6 +24,11 @@ function toInputValue(value) {
   return value === null || value === undefined ? '' : String(value);
 }
 
+function normalizeDietScheduleType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'school' ? 'school' : 'summer';
+}
+
 export function getCaloriesLabel(progressionType) {
   if (progressionType === 'cut') return 'Cut Calories';
   if (progressionType === 'maintain') return 'Maintain Calories';
@@ -141,6 +146,9 @@ export function buildNutritionFallbackDraft() {
       medicalNotes: 'No chronic conditions reported.',
       foodLikes: 'Rice, chicken, vegetables',
       foodDislikes: 'Deep fried foods',
+      wakeUpTime: '07:00',
+      sleepTime: '22:30',
+      dietScheduleType: 'summer',
       competition: 'none',
       competitionDate: '',
       goalWeight: '76',
@@ -198,6 +206,9 @@ export function buildNutritionFields(seed = {}) {
     medicalNotes: '',
     foodLikes: '',
     foodDislikes: '',
+    wakeUpTime: '',
+    sleepTime: '',
+    dietScheduleType: 'summer',
     competition: DEFAULT_COMPETITION,
     competitionDate: '',
     daysLeft: '',
@@ -270,6 +281,9 @@ function mapApiNutritionToState(data = {}) {
       medicalNotes: data.medical_notes ?? data.medical,
       foodLikes: data.food_likes,
       foodDislikes: data.food_dislikes,
+      wakeUpTime: data.wake_up_time || data.wakeUpTime,
+      sleepTime: data.sleep_time || data.sleepTime,
+      dietScheduleType: normalizeDietScheduleType(data.diet_schedule_type || data.schedule_type || data.plan_type),
       competition: data.competition_status || DEFAULT_COMPETITION,
       competitionDate: data.competition_date,
       daysLeft: data.days_left,
@@ -362,6 +376,9 @@ export function buildNutritionPayload({ fields, trainingSessions, supplements })
     medical_notes: fields.medicalNotes || null,
     food_likes: fields.foodLikes || null,
     food_dislikes: fields.foodDislikes || null,
+    wake_up_time: fields.wakeUpTime || null,
+    sleep_time: fields.sleepTime || null,
+    diet_schedule_type: normalizeDietScheduleType(fields.dietScheduleType),
     competition_status: fields.competition || DEFAULT_COMPETITION,
     competition_date: fields.competitionDate || null,
     days_left: toNumberOrNull(fields.daysLeft),
@@ -427,6 +444,9 @@ function buildClientProfileNutritionPayload({ fields, trainingSessions, suppleme
     food_allergies: fields.foodAllergies || null,
     food_likes: fields.foodLikes || null,
     food_dislikes: fields.foodDislikes || null,
+    wake_up_time: fields.wakeUpTime || null,
+    sleep_time: fields.sleepTime || null,
+    diet_schedule_type: normalizeDietScheduleType(fields.dietScheduleType),
     competition_status: fields.competition || DEFAULT_COMPETITION,
     competition_date: fields.competitionDate || null,
     days_left: toNumberOrNull(fields.daysLeft),
@@ -644,6 +664,7 @@ export function useClientNutritionProfile() {
     const load = async () => {
       dispatch({ type: 'LOAD_START' });
       const localDraft = normalizeDraftSnapshot(draft);
+      const cachedClientData = safeJsonGet(local, `clientData_${clientId || 'self'}`, {}) || {};
       const endpoint = isClientSession
         ? '/api/client/profile'
         : `/api/admin/clients/${encodeURIComponent(clientId)}/nutrition`;
@@ -656,7 +677,15 @@ export function useClientNutritionProfile() {
         const mapped = mapApiNutritionToState(serverData);
         const useServerFields = hasMeaningfulServerNutritionData(serverData);
         const normalized = {
-          fields: useServerFields ? mapped.fields : buildNutritionFields(localDraft.fields),
+          fields: buildNutritionFields({
+            ...(useServerFields ? mapped.fields : localDraft.fields),
+            dietScheduleType:
+              mapped.fields?.dietScheduleType ||
+              localDraft.fields?.dietScheduleType ||
+              cachedClientData.diet_schedule_type ||
+              cachedClientData.dietScheduleType ||
+              'summer',
+          }),
           trainingSessions: mapped.trainingSessions.length ? mapped.trainingSessions : localDraft.trainingSessions,
           supplements: mapped.supplements.length ? mapped.supplements : localDraft.supplements,
         };
@@ -683,7 +712,14 @@ export function useClientNutritionProfile() {
         dispatch({
           type: 'LOAD_SUCCESS',
           payload: {
-            fields: buildNutritionFields(localDraft.fields),
+            fields: buildNutritionFields({
+              ...localDraft.fields,
+              dietScheduleType:
+                localDraft.fields?.dietScheduleType ||
+                cachedClientData.diet_schedule_type ||
+                cachedClientData.dietScheduleType ||
+                'summer',
+            }),
             trainingSessions: localDraft.trainingSessions,
             supplements: localDraft.supplements,
           },
@@ -766,6 +802,8 @@ export function useClientNutritionProfile() {
           waterInBody: payload.water_in_body,
           waterIntake: payload.water_intake,
           minerals: payload.minerals,
+          diet_schedule_type: payload.diet_schedule_type,
+          dietScheduleType: payload.diet_schedule_type,
           trainingDetails: payload.training_sessions,
         };
         cacheIds.forEach((id) => {
@@ -794,6 +832,7 @@ export function useClientNutritionProfile() {
               fats_target: payload.fats_target,
               competition_date: payload.competition_date,
               activity_level: payload.activity_level,
+              diet_schedule_type: payload.diet_schedule_type,
               sport: payload.sport || row.sport,
               position: payload.position || row.position,
             };
@@ -844,6 +883,7 @@ export function useClientNutritionProfile() {
 
   return {
     state,
+    canEditDietScheduleType: authRole === 'admin',
     constants: {
       days: DAYS,
       activityOptions: [

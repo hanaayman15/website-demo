@@ -23,6 +23,8 @@ const INITIAL_FORM = {
   country: 'Egypt',
   club: '',
   religion: '',
+  wakeUpTime: '',
+  sleepTime: '',
 };
 
 export function normalizeDisplayGender(value) {
@@ -107,6 +109,8 @@ function getFallbackAutofill() {
     country: 'Egypt',
     club: 'Auto Club',
     religion: 'Other',
+    wakeUpTime: '07:00',
+    sleepTime: '22:30',
   };
 }
 
@@ -130,6 +134,8 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
     country: payload.country || 'N/A',
     club: payload.club || 'N/A',
     religion: payload.religion || 'N/A',
+    wake_up_time: payload.wake_up_time || 'N/A',
+    sleep_time: payload.sleep_time || 'N/A',
   };
 
   [userId, displayId]
@@ -180,6 +186,8 @@ function syncClientCachesAfterBasicSave(responseData, payload, editClientId) {
           club: payload.club || client.club,
           religion: payload.religion || client.religion,
           birthday: payload.birthday || client.birthday,
+          wake_up_time: payload.wake_up_time || client.wake_up_time,
+          sleep_time: payload.sleep_time || client.sleep_time,
         };
       });
       safeJsonSet(local, 'clients', updatedClients);
@@ -244,6 +252,8 @@ export function useNewClient() {
       country: data?.country || 'Egypt',
       club: data?.club || '',
       religion: data?.religion || '',
+      wakeUpTime: data?.wake_up_time || data?.wakeUpTime || '',
+      sleepTime: data?.sleep_time || data?.sleepTime || '',
     };
   };
 
@@ -262,6 +272,8 @@ export function useNewClient() {
       country: payload.country,
       club: payload.club,
       religion: payload.religion,
+      wake_up_time: payload.wake_up_time,
+      sleep_time: payload.sleep_time,
     });
     return response?.data || {};
   };
@@ -277,6 +289,8 @@ export function useNewClient() {
       country: nextForm.country,
       club: nextForm.club.trim(),
       religion: nextForm.religion,
+      wake_up_time: nextForm.wakeUpTime,
+      sleep_time: nextForm.sleepTime,
     };
     setDraft(draft);
   };
@@ -305,6 +319,8 @@ export function useNewClient() {
       country: localDraft?.country || fallback.country,
       club: localDraft?.club || fallback.club,
       religion: localDraft?.religion || fallback.religion,
+      wakeUpTime: localDraft?.wake_up_time || fallback.wakeUpTime,
+      sleepTime: localDraft?.sleep_time || fallback.sleepTime,
     };
     setForm(next);
     persistAutofillDraft(next);
@@ -325,6 +341,8 @@ export function useNewClient() {
       country: draft.country || 'Egypt',
       club: draft.club || '',
       religion: draft.religion || '',
+      wakeUpTime: draft.wake_up_time || '',
+      sleepTime: draft.sleep_time || '',
     };
     setForm(restored);
     setMessage('Saved draft restored.');
@@ -408,6 +426,8 @@ export function useNewClient() {
       country: form.country,
       club: form.club.trim() || null,
       religion: form.religion || null,
+      wake_up_time: form.wakeUpTime || null,
+      sleep_time: form.sleepTime || null,
       source: 'add_client',
     };
 

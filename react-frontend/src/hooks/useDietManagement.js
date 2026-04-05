@@ -1,4 +1,5 @@
 import { useMemo, useReducer } from 'react';
+import { DEFAULT_DIET_PLANS, REQUIRED_DIET_TYPES } from '../data/defaultDietPlans';
 
 const STORAGE_KEY = 'dietPlans';
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -27,9 +28,22 @@ function safeReadPlans() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [...DEFAULT_DIET_PLANS];
+
+    const presentTypes = new Set(
+      parsed
+        .map((plan) => String(plan?.dietType || '').trim())
+        .filter(Boolean)
+    );
+
+    const hasRequiredPlans = REQUIRED_DIET_TYPES.every((type) => presentTypes.has(type));
+    if (hasRequiredPlans) return parsed;
+
+    safeWritePlans(DEFAULT_DIET_PLANS);
+    return [...DEFAULT_DIET_PLANS];
   } catch {
-    return [];
+    safeWritePlans(DEFAULT_DIET_PLANS);
+    return [...DEFAULT_DIET_PLANS];
   }
 }
 
@@ -91,6 +105,8 @@ export function buildDietPlanSummary(plan) {
   const max = parseCaloriesInput(plan?.maxCalories) || 0;
   const type = String(plan?.dietType || 'No type specified');
   return {
+    min,
+    max,
     caloriesLabel: `${min}-${max} kcal`,
     type,
     totalMeals: DAYS.length * MEALS.length,

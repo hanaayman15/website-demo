@@ -10,6 +10,7 @@ import {
   normalizeProgramsSource,
   programsReducer,
 } from './useClientDetailReducer';
+import { DEFAULT_DIET_PLANS } from '../data/defaultDietPlans';
 
 function parseClientId(rawValue) {
   const parsed = Number(rawValue);
@@ -38,8 +39,11 @@ function mapTeamPlayerToClient(player, teamId) {
     country: player.country || '',
     club: player.club || '',
     religion: player.religion || '',
+    wake_up_time: player.wake_up_time || '',
+    sleep_time: player.sleep_time || '',
     sport: player.sport || '',
     position: player.position || '',
+    diet_schedule_type: player.diet_schedule_type || player.dietScheduleType || '',
     height: player.height || '',
     weight: player.weight || '',
     bmi: player.bmi || '',
@@ -99,10 +103,46 @@ function safeReadDietPlans(local) {
   try {
     const raw = safeGet(local, 'dietPlans');
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) && parsed.length ? parsed : [...DEFAULT_DIET_PLANS];
   } catch {
-    return [];
+    return [...DEFAULT_DIET_PLANS];
   }
+}
+
+function normalizeDietScheduleType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'school' ? 'school' : 'summer';
+}
+
+function parseTdeeValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function selectRecommendedDietPlanIndex(plans = [], tdeeRaw, scheduleTypeRaw) {
+  if (!Array.isArray(plans) || !plans.length) return null;
+  const tdee = parseTdeeValue(tdeeRaw);
+  if (!Number.isFinite(tdee)) return null;
+
+  const scheduleType = normalizeDietScheduleType(scheduleTypeRaw);
+  const bracket = tdee <= 1500 ? [0, 1500] : (tdee <= 2000 ? [1500, 2000] : [2000, 2500]);
+
+  const exact = plans.findIndex((plan) => {
+    const min = Number(plan?.minCalories);
+    const max = Number(plan?.maxCalories);
+    const type = String(plan?.dietType || '').toLowerCase();
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return false;
+    if (min !== bracket[0] || max !== bracket[1]) return false;
+    return type.includes(scheduleType);
+  });
+  if (exact >= 0) return exact;
+
+  const rangeOnly = plans.findIndex((plan) => {
+    const min = Number(plan?.minCalories);
+    const max = Number(plan?.maxCalories);
+    return Number.isFinite(min) && Number.isFinite(max) && min === bracket[0] && max === bracket[1];
+  });
+  return rangeOnly >= 0 ? rangeOnly : null;
 }
 
 function countPlanMeals(plan = {}) {
@@ -134,12 +174,16 @@ function syncClientCaches(local, clientId, updates = {}) {
   if (!clientId) return;
   const cacheKey = `clientData_${clientId}`;
   const dashboardKey = `clientDashboardCache_${clientId}`;
+  const fullProfileKey = `clientFullProfile_${clientId}`;
 
   const existing = safeJsonGet(local, cacheKey, {}) || {};
   safeJsonSet(local, cacheKey, { ...existing, ...updates });
 
   const existingDashboard = safeJsonGet(local, dashboardKey, {}) || {};
   safeJsonSet(local, dashboardKey, { ...existingDashboard, ...updates });
+
+  const existingFullProfile = safeJsonGet(local, fullProfileKey, {}) || {};
+  safeJsonSet(local, fullProfileKey, { ...existingFullProfile, ...updates });
 }
 
 function getMealSwapsUpdatedAt(source) {
@@ -160,6 +204,50 @@ function resolveProgramsSource(mealSwaps, savedPrograms) {
   // Prefer local when timestamps are missing or equal to avoid losing recent UI edits.
   if (localAt >= backendAt) return localSource;
   return backendSource;
+}
+
+function formatTrainingSessionTime(session, prefix) {
+  if (!session || typeof session !== 'object') return '';
+  const hourRaw = String(session?.[`${prefix}_hour`] || '').trim();
+  const minRaw = String(session?.[`${prefix}_min`] || '').trim();
+  const ampmRaw = String(session?.[`${prefix}_ampm`] || '').trim().toUpperCase();
+  if (!hourRaw || !minRaw || !(ampmRaw === 'AM' || ampmRaw === 'PM')) return '';
+  const hour = Number(hourRaw);
+  const minute = Number(minRaw);
+  if (!Number.isFinite(hour) || hour < 1 || hour > 12) return '';
+  if (!Number.isFinite(minute) || minute < 0 || minute > 59) return '';
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${ampmRaw}`;
+}
+
+function parseSessionInfo(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    const parsed = JSON.parse(String(raw));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveTrainingScheduleFromClient(client) {
+  const sessions = Array.isArray(client?.training_sessions)
+    ? client.training_sessions
+    : (Array.isArray(client?.training_details) ? client.training_details : []);
+
+  for (const item of sessions) {
+    const normalized = parseSessionInfo(item?.session_info) || item;
+    const start = formatTrainingSessionTime(normalized, 'start');
+    const end = formatTrainingSessionTime(normalized, 'end');
+    if (start || end) {
+      return { start, end };
+    }
+  }
+
+  return {
+    start: client?.training_time || client?.training_start_time || client?.trainingTime || '',
+    end: client?.training_end_time || client?.trainingEndTime || '',
+  };
 }
 
 export function useClientDetail() {
@@ -185,6 +273,7 @@ export function useClientDetail() {
   ), [dietPlans]);
   const teamId = parsePositiveInt(searchParams.get('team_id'));
   const playerId = parsePositiveInt(searchParams.get('player_id'));
+  const isAdminUser = String(resolveAuthRole() || '').toLowerCase() === 'admin';
 
   const selectedClientId = useMemo(() => {
     const explicitId = parseClientId(searchParams.get('id'));
@@ -282,16 +371,61 @@ export function useClientDetail() {
         if (!mounted) return;
 
         setClient(resolvedClient);
+        const trainingSchedule = resolveTrainingScheduleFromClient(resolvedClient);
 
         const programsKey = selectedClientId ? `clientPrograms_${selectedClientId}` : '';
         const savedPrograms = programsKey ? safeJsonGet(local, programsKey, null) : null;
         const mealSwaps = resolvedClient.meal_swaps || null;
         const source = resolveProgramsSource(mealSwaps, savedPrograms);
 
+        const normalizedPrograms = normalizeProgramsSource(source, resolvedClient);
         dispatch({
           type: 'INIT_FROM_SOURCE',
-          payload: normalizeProgramsSource(source, resolvedClient),
+          payload: normalizedPrograms,
         });
+        dispatch({
+          type: 'RECOMPUTE_MEAL_TIMES',
+          payload: {
+            scheduleContext: {
+              wakeUpTime: resolvedClient?.wake_up_time || resolvedClient?.wakeUpTime,
+              trainingTime: trainingSchedule.start,
+              trainingEndTime: trainingSchedule.end,
+            },
+          },
+        });
+
+        const hasManualSelection = Number.isInteger(normalizedPrograms?.selectedPlanIndex);
+        if (!hasManualSelection) {
+          const recommendedPlanIndex = selectRecommendedDietPlanIndex(
+            dietPlans,
+            resolvedClient?.tdee,
+            resolvedClient?.diet_schedule_type || resolvedClient?.dietScheduleType
+          );
+
+          if (Number.isInteger(recommendedPlanIndex) && dietPlans[recommendedPlanIndex]) {
+            dispatch({
+              type: 'APPLY_DIET_PLAN',
+              payload: {
+                selectedPlanIndex: recommendedPlanIndex,
+                plan: dietPlans[recommendedPlanIndex],
+                scheduleContext: {
+                  wakeUpTime: resolvedClient?.wake_up_time || resolvedClient?.wakeUpTime,
+                  trainingTime: trainingSchedule.start,
+                  trainingEndTime: trainingSchedule.end,
+                },
+              },
+            });
+
+            if (programsKey) {
+              const existingPrograms = safeJsonGet(local, programsKey, {}) || {};
+              safeJsonSet(local, programsKey, {
+                ...existingPrograms,
+                __updatedAt: Date.now(),
+                selectedPlanIndex: recommendedPlanIndex,
+              });
+            }
+          }
+        }
       } catch (err) {
         if (!mounted) return;
         setError(err?.message || 'Failed to load client details.');
@@ -304,7 +438,7 @@ export function useClientDetail() {
     return () => {
       mounted = false;
     };
-  }, [selectedClientId, teamId, playerId]);
+  }, [selectedClientId, teamId, playerId, dietPlans]);
 
   const updateProgramField = (field, value) => {
     dispatch({ type: 'UPDATE_FIELD', payload: { field, value } });
@@ -337,7 +471,30 @@ export function useClientDetail() {
   const applyDietPlan = (planIndex) => {
     const selectedPlan = dietPlans[planIndex];
     if (!selectedPlan) return false;
-    dispatch({ type: 'APPLY_DIET_PLAN', payload: { selectedPlanIndex: planIndex, plan: selectedPlan } });
+    const trainingSchedule = resolveTrainingScheduleFromClient(client);
+    dispatch({
+      type: 'APPLY_DIET_PLAN',
+      payload: {
+        selectedPlanIndex: planIndex,
+        plan: selectedPlan,
+        scheduleContext: {
+          wakeUpTime: client?.wake_up_time || client?.wakeUpTime,
+          trainingTime: trainingSchedule.start,
+          trainingEndTime: trainingSchedule.end,
+        },
+      },
+    });
+
+    if (selectedClientId) {
+      const programsKey = `clientPrograms_${selectedClientId}`;
+      const existingPrograms = safeJsonGet(local, programsKey, {}) || {};
+      safeJsonSet(local, programsKey, {
+        ...existingPrograms,
+        __updatedAt: Date.now(),
+        selectedPlanIndex: planIndex,
+      });
+    }
+
     setMessage('Diet plan applied to weekly meal plan. Save Programs to persist.');
     return true;
   };
@@ -448,6 +605,8 @@ export function useClientDetail() {
               club: normalizeTextOrNull(merged.club),
               country: normalizeTextOrNull(merged.country),
               religion: normalizeTextOrNull(merged.religion),
+              wake_up_time: normalizeTextOrNull(merged.wake_up_time || merged.wakeUpTime),
+              sleep_time: normalizeTextOrNull(merged.sleep_time || merged.sleepTime),
               height: toNullableNumber(merged.height),
               weight: toNullableNumber(merged.weight),
               bmi: toNullableNumber(merged.bmi),
@@ -506,6 +665,8 @@ export function useClientDetail() {
     selectedDay,
     setSelectedDay,
     programsState,
+    canEditDietPlanSelection: isAdminUser,
+    selectedDietScheduleType: normalizeDietScheduleType(client?.diet_schedule_type || client?.dietScheduleType),
     dietPlansWithSummary,
     updateNotes,
     updateProgramField,

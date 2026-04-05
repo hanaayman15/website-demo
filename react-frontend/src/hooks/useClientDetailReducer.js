@@ -29,6 +29,179 @@ function formatPlanTime(rawTime) {
   return `${hour12}:${minute} ${ampm}`;
 }
 
+function parseTimeToMinutes(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value) return null;
+
+  const twentyFour = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFour) {
+    const hours = Number(twentyFour[1]);
+    const minutes = Number(twentyFour[2]);
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+      return hours * 60 + minutes;
+    }
+  }
+
+  const twelve = value.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!twelve) return null;
+  let hours = Number(twelve[1]);
+  const minutes = Number(twelve[2]);
+  const suffix = String(twelve[3] || '').toUpperCase();
+  if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
+  if (suffix === 'AM' && hours === 12) hours = 0;
+  if (suffix === 'PM' && hours < 12) hours += 12;
+  return hours * 60 + minutes;
+}
+
+function formatMinutesToTime(totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) return 'N/A';
+  const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+  let hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function normalizeMealKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function isBreakfastMeal(meal) {
+  const key = normalizeMealKey(meal?.type);
+  return key.includes('breakfast');
+}
+
+function isPreWorkoutMeal(meal) {
+  const key = normalizeMealKey(meal?.type);
+  return key.includes('preworkout');
+}
+
+function isPostWorkoutMeal(meal) {
+  const key = normalizeMealKey(meal?.type);
+  return key.includes('postworkout');
+}
+
+function isDinnerMeal(meal) {
+  const key = normalizeMealKey(meal?.type);
+  return key.includes('dinner');
+}
+
+function isSnack2Meal(meal) {
+  const key = normalizeMealKey(meal?.type);
+  return key === 'snack2' || key.includes('snack2');
+}
+
+function withDynamicSchedule(meals, scheduleContext = {}) {
+  if (!Array.isArray(meals) || !meals.length) return meals;
+
+  const wakeMinutes = parseTimeToMinutes(scheduleContext?.wakeUpTime);
+  const breakfastBase = Number.isFinite(wakeMinutes) ? wakeMinutes + 30 : null;
+
+  const trainingStartMinutes = parseTimeToMinutes(scheduleContext?.trainingTime);
+  const trainingEndMinutes = parseTimeToMinutes(scheduleContext?.trainingEndTime);
+  const resolvedTrainingEnd = Number.isFinite(trainingEndMinutes)
+    ? trainingEndMinutes
+    : (Number.isFinite(trainingStartMinutes) ? trainingStartMinutes : null);
+  const isMorningTraining = Number.isFinite(trainingStartMinutes) && trainingStartMinutes < 12 * 60;
+
+  const breakfastIndex = meals.findIndex((meal) => isBreakfastMeal(meal));
+  const preWorkoutIndex = meals.findIndex((meal) => isPreWorkoutMeal(meal));
+  const postWorkoutIndex = meals.findIndex((meal) => isPostWorkoutMeal(meal));
+
+  const assignedByIndex = new Map();
+
+  if (Number.isFinite(trainingStartMinutes) && preWorkoutIndex >= 0) {
+    assignedByIndex.set(preWorkoutIndex, trainingStartMinutes - 45);
+  }
+  if (Number.isFinite(resolvedTrainingEnd) && postWorkoutIndex >= 0) {
+    assignedByIndex.set(postWorkoutIndex, resolvedTrainingEnd + 30);
+  }
+
+  const generalIndexes = meals
+    .map((meal, index) => ({ meal, index }))
+    .filter(({ index }) => index !== preWorkoutIndex && index !== postWorkoutIndex)
+    .map(({ index }) => index);
+
+  const hasTraining = Number.isFinite(trainingStartMinutes) || Number.isFinite(resolvedTrainingEnd);
+
+  let firstBaseSlot = breakfastBase;
+  if (!Number.isFinite(firstBaseSlot)) {
+    const existingTimes = meals
+      .map((meal) => parseTimeToMinutes(meal?.time))
+      .filter((value) => Number.isFinite(value));
+    firstBaseSlot = existingTimes.length ? Math.min(...existingTimes) : 8 * 60;
+  }
+
+  let beforeTrainingIndexes = generalIndexes;
+  let afterTrainingIndexes = [];
+
+  if (hasTraining) {
+    if (isMorningTraining) {
+      // Morning training: pre and post first, then remaining meals after post workout.
+      beforeTrainingIndexes = [];
+      afterTrainingIndexes = [...generalIndexes];
+    } else {
+      beforeTrainingIndexes = generalIndexes.filter((index) => {
+        if (isDinnerMeal(meals[index])) return false;
+        if (postWorkoutIndex >= 0 && index > postWorkoutIndex) return false;
+        if (preWorkoutIndex >= 0 && index > preWorkoutIndex) return false;
+        return true;
+      });
+
+      afterTrainingIndexes = generalIndexes.filter((index) => !beforeTrainingIndexes.includes(index));
+    }
+  }
+
+  let beforeSlot = firstBaseSlot;
+  if (breakfastIndex >= 0 && beforeTrainingIndexes.includes(breakfastIndex)) {
+    assignedByIndex.set(breakfastIndex, beforeSlot);
+    beforeSlot += 180;
+  }
+
+  beforeTrainingIndexes.forEach((index) => {
+    if (assignedByIndex.has(index)) return;
+    assignedByIndex.set(index, beforeSlot);
+    beforeSlot += 180;
+  });
+
+  if (afterTrainingIndexes.length) {
+    const postBase = Number.isFinite(assignedByIndex.get(postWorkoutIndex))
+      ? assignedByIndex.get(postWorkoutIndex) + 180
+      : beforeSlot;
+
+    let afterSlot = Number.isFinite(postBase) ? postBase : firstBaseSlot;
+    afterTrainingIndexes.forEach((index) => {
+      if (assignedByIndex.has(index)) return;
+      assignedByIndex.set(index, afterSlot);
+      afterSlot += 180;
+    });
+  }
+
+  const withTimes = meals.map((meal, index) => {
+    const explicit = assignedByIndex.get(index);
+    if (Number.isFinite(explicit)) {
+      return { ...meal, time: formatMinutesToTime(explicit), sortMinutes: explicit };
+    }
+    const parsedExisting = parseTimeToMinutes(meal?.time);
+    return {
+      ...meal,
+      time: Number.isFinite(parsedExisting) ? formatMinutesToTime(parsedExisting) : 'N/A',
+      sortMinutes: Number.isFinite(parsedExisting) ? parsedExisting : Number.MAX_SAFE_INTEGER,
+    };
+  });
+
+  return withTimes
+    .sort((a, b) => {
+      const aTime = Number.isFinite(a.sortMinutes) ? a.sortMinutes : Number.MAX_SAFE_INTEGER;
+      const bTime = Number.isFinite(b.sortMinutes) ? b.sortMinutes : Number.MAX_SAFE_INTEGER;
+      if (aTime !== bTime) return aTime - bTime;
+      return (a.type || '').localeCompare(b.type || '');
+    })
+    .map(({ sortMinutes, ...meal }) => meal);
+}
+
 function normalizeNotes(value) {
   const text = String(value || '').trim();
   if (!text || text === 'No notes added' || text === 'N/A') return '';
@@ -64,13 +237,15 @@ function normalizeDayMeals(rawDayMeals) {
 
   WEEK_DAYS.forEach((day) => {
     const meals = Array.isArray(rawDayMeals[day]) ? rawDayMeals[day] : [];
-    next[day] = meals.map((meal) => createMealRow(meal));
+    next[day] = meals
+      .filter((meal) => !isSnack2Meal(meal))
+      .map((meal) => createMealRow(meal));
   });
 
   return next;
 }
 
-function mapDietPlanToDayMeals(plan) {
+function mapDietPlanToDayMeals(plan, scheduleContext = {}) {
   const next = buildEmptyDayMeals();
   if (!plan || typeof plan !== 'object') return next;
 
@@ -88,7 +263,19 @@ function mapDietPlanToDayMeals(plan) {
       });
     });
 
-    next[weekDay] = meals;
+    next[weekDay] = withDynamicSchedule(meals, scheduleContext);
+  });
+
+  return next;
+}
+
+function recomputeAllDayMeals(dayMeals, scheduleContext = {}) {
+  const normalized = normalizeDayMeals(dayMeals);
+  const next = buildEmptyDayMeals();
+
+  WEEK_DAYS.forEach((day) => {
+    const meals = Array.isArray(normalized[day]) ? normalized[day] : [];
+    next[day] = withDynamicSchedule(meals, scheduleContext);
   });
 
   return next;
@@ -158,7 +345,7 @@ export function buildProgramsPayload(programsState) {
     mealSwapsPayload: {
       __updatedAt: updatedAt,
       selectedPlanIndex: programsState.selectedPlanIndex,
-      dayMeals: programsState.dayMeals,
+      dayMeals: normalizeDayMeals(programsState.dayMeals),
       programFields: {
         ...programsState.programFields,
         notesText,
@@ -263,11 +450,18 @@ export function programsReducer(state, action) {
       };
     }
     case 'APPLY_DIET_PLAN': {
-      const { selectedPlanIndex, plan } = action.payload;
+      const { selectedPlanIndex, plan, scheduleContext } = action.payload;
       return {
         ...state,
         selectedPlanIndex,
-        dayMeals: mapDietPlanToDayMeals(plan),
+        dayMeals: mapDietPlanToDayMeals(plan, scheduleContext),
+      };
+    }
+    case 'RECOMPUTE_MEAL_TIMES': {
+      const { scheduleContext } = action.payload || {};
+      return {
+        ...state,
+        dayMeals: recomputeAllDayMeals(state.dayMeals, scheduleContext),
       };
     }
     default:

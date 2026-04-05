@@ -96,21 +96,45 @@ const PAGE_CSS = `
   background: #f9f9f9;
   transition: all 0.25s;
 }
+.diet-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.diet-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1b3b5f;
+}
+.diet-card-subtitle {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #666;
+}
+.diet-card-menu {
+  border: none;
+  background: none;
+  color: #999;
+  font-size: 20px;
+  line-height: 1;
+  cursor: default;
+}
 .diet-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 .diet-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
   gap: 10px;
 }
 .diet-stat {
+  flex: 1;
   text-align: center;
   padding: 10px;
-  background: #f8fcf8;
+  background: #fff;
   border-radius: 8px;
-  border: 1px solid #dbeadf;
+  border: 1px solid #eee;
 }
 .diet-card-actions {
   display: flex;
@@ -281,17 +305,23 @@ function DietManagement() {
       <section className="diet-grid">
         {plansWithSummary.map(({ index, summary }) => (
           <article key={index} className="diet-card">
-            <h3>{summary.caloriesLabel}</h3>
-            <p className="react-muted">{summary.type}</p>
+            <div className="diet-card-header">
+              <div>
+                <div className="diet-card-title">{summary.caloriesLabel}</div>
+                <div className="diet-card-subtitle">{summary.type}</div>
+                <div className="diet-card-subtitle">{summary.totalMeals} meals</div>
+              </div>
+              <button className="diet-card-menu" aria-label="Plan menu" type="button">⋯</button>
+            </div>
 
             <div className="diet-stats">
               <div className="diet-stat">
-                <div className="stat-value">{summary.totalMeals}</div>
-                <div className="stat-label">Meals</div>
+                <div className="stat-value">{summary.min}</div>
+                <div className="stat-label">Min</div>
               </div>
               <div className="diet-stat">
-                <div className="stat-value">7</div>
-                <div className="stat-label">Days</div>
+                <div className="stat-value">{summary.max}</div>
+                <div className="stat-label">Max</div>
               </div>
             </div>
 
