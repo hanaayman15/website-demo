@@ -123,6 +123,14 @@ def validate_settings() -> Settings:
     # Check ADMIN_PASSWORD
     if not settings.ADMIN_PASSWORD or len(settings.ADMIN_PASSWORD) < 8:
         errors.append("[ERROR] ADMIN_PASSWORD is missing or less than 8 characters!")
+
+    # Validate JWT access token window
+    if not 15 <= settings.ACCESS_TOKEN_EXPIRE_MINUTES <= 60:
+        errors.append("[ERROR] ACCESS_TOKEN_EXPIRE_MINUTES must be between 15 and 60 minutes!")
+        errors.append(f"   Current: {settings.ACCESS_TOKEN_EXPIRE_MINUTES}")
+
+    if settings.REFRESH_TOKEN_EXPIRE_DAYS < 1:
+        errors.append("[ERROR] REFRESH_TOKEN_EXPIRE_DAYS must be at least 1 day!")
     
     # Check CORS configuration
     if not settings.FRONTEND_URL and not settings.CORS_ORIGINS:

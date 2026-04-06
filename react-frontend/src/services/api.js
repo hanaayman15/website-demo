@@ -34,7 +34,53 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
+
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+let refreshTokenPromise = null;
+
+function isAuthEndpoint(requestUrl) {
+  return /\/api\/auth\/(login|register|refresh|logout|change-password)|\/doctor\/(login|signup)|\/api\/doctor\/(login|signup)|\/admin\/login/i.test(
+    String(requestUrl || '')
+  );
+}
+
+async function requestAccessTokenRefresh() {
+  if (!refreshTokenPromise) {
+    refreshTokenPromise = refreshClient
+      .post('/api/auth/refresh', {})
+      .then((response) => {
+        const data = response?.data || {};
+        const token = String(data.access_token || '');
+        if (!token) {
+          throw new Error('Refresh response did not include an access token.');
+        }
+
+        persistSessionAuth({
+          token,
+          tokenType: String(data.token_type || 'bearer'),
+          role: String(data.role || ''),
+          email: String(data.email || ''),
+          doctorSession: String(data.role || '').toLowerCase() === 'doctor',
+        });
+
+        return token;
+      })
+      .finally(() => {
+        refreshTokenPromise = null;
+      });
+  }
+
+  return refreshTokenPromise;
+}
 
 export function getAuthToken() {
   return resolveAuthToken();
@@ -62,24 +108,37 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = Number(error?.response?.status || 0);
     const requestUrl = String(error?.config?.url || '');
-    const isAuthEndpoint = /\/doctor\/(login|signup)|\/admin\/login/i.test(requestUrl);
+    const originalRequest = error?.config || {};
 
-    if (status === 401 && !isAuthEndpoint && typeof window !== 'undefined') {
-      clearSessionAuth();
-      const currentPath = `${window.location.pathname || '/'}${window.location.search || ''}`;
-      const pathname = String(window.location.pathname || '');
-      
-      // Determine if this is a client page or doctor/admin page
-      const isClientPage = /\/(client-dashboard|anti-doping|client-home|client-main|client-recipes|forgot-password|profile-setup|progress|progress-tracking|settings|subscription-plan|client-login|client-signup|dashboard|account-recovery|contact)/.test(pathname);
-      
-      // Redirect to the appropriate login page
-      if (!pathname.startsWith('/client-login') && !pathname.startsWith('/doctor-auth')) {
-        const next = encodeURIComponent(currentPath || '/');
-        const loginPage = isClientPage ? '/client-login' : '/doctor-auth';
-        window.location.assign(`${loginPage}?next=${next}`);
+    if (status === 401 && !isAuthEndpoint(requestUrl) && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const newToken = await requestAccessTokenRefresh();
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient.request(originalRequest);
+      } catch (refreshError) {
+        if (typeof window !== 'undefined') {
+          clearSessionAuth();
+          const currentPath = `${window.location.pathname || '/'}${window.location.search || ''}`;
+          const pathname = String(window.location.pathname || '');
+
+          // Determine if this is a client page or doctor/admin page
+          const isClientPage = /\/(client-dashboard|anti-doping|client-home|client-main|client-recipes|forgot-password|profile-setup|progress|progress-tracking|settings|subscription-plan|client-login|client-signup|dashboard|account-recovery|contact)/.test(pathname);
+
+          // Redirect to the appropriate login page
+          if (!pathname.startsWith('/client-login') && !pathname.startsWith('/doctor-auth')) {
+            const next = encodeURIComponent(currentPath || '/');
+            const loginPage = isClientPage ? '/client-login' : '/doctor-auth';
+            window.location.assign(`${loginPage}?next=${next}`);
+          }
+        }
+
+        return Promise.reject(refreshError);
       }
     }
 

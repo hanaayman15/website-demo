@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   buildSessionSnapshot,
   clearSessionAuth,
@@ -8,6 +8,7 @@ import {
 } from '../utils/authSession';
 
 const AuthContext = createContext(null);
+const AUTH_SESSION_UPDATED_EVENT = 'auth-session-updated';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => buildSessionSnapshot());
@@ -25,6 +26,24 @@ export function AuthProvider({ children }) {
     clearSessionAuth();
     refreshSession();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+      return undefined;
+    }
+
+    const handleSessionUpdate = () => {
+      refreshSession();
+    };
+
+    window.addEventListener('storage', handleSessionUpdate);
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, handleSessionUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleSessionUpdate);
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, handleSessionUpdate);
+    };
+  }, []);
 
   const value = useMemo(
     () => ({

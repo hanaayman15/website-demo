@@ -18,8 +18,8 @@ from app.schemas import (
     ClientListItem, ClientDetailResponse, BodyMeasurementResponse,
 )
 from app.security import (
-    hash_password, verify_password, create_access_token, 
-    create_token_pair, verify_token, create_refresh_token, rotate_refresh_token,
+    hash_password, verify_password, 
+    create_token_pair, rotate_refresh_token,
     verify_refresh_token
 )
 from app.core.cookies import set_auth_cookies, clear_auth_cookies
@@ -34,6 +34,17 @@ logger = logging.getLogger(__name__)
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
+
+
+def _build_auth_response(tokens: dict, user_id: int, role: str) -> dict:
+    """Return an auth payload without exposing the refresh token in JSON."""
+    return {
+        "access_token": tokens["access_token"],
+        "token_type": tokens.get("token_type", "bearer"),
+        "access_token_expires": tokens.get("access_token_expires", settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60),
+        "user_id": user_id,
+        "role": role,
+    }
 
 
 def _get_or_create_admin_user(db: Session) -> User:
@@ -311,11 +322,7 @@ async def register(
     
     log_auth_attempt(user_data.email, True, details="user_registration")
     
-    return {
-        **tokens,
-        "user_id": new_user.id,
-        "role": new_user.role
-    }
+    return _build_auth_response(tokens, new_user.id, new_user.role)
 
 
 @router.post("/login", response_model=TokenPair)
@@ -354,11 +361,7 @@ async def login(
         
         log_auth_attempt(credentials.email, True, ip=client_ip, details="admin_login")
         
-        return {
-            **tokens,
-            "user_id": admin_user.id,
-            "role": "admin"
-        }
+        return _build_auth_response(tokens, admin_user.id, "admin")
     
     # Check for client login
     user = db.query(User).filter(User.email == normalized_email).first()
@@ -389,11 +392,7 @@ async def login(
     
     log_auth_attempt(credentials.email, True, ip=client_ip, details="client_login")
     
-    return {
-        **tokens,
-        "user_id": user.id,
-        "role": user.role
-    }
+    return _build_auth_response(tokens, user.id, user.role)
 
 
 @role_router.post("/doctor/signup", response_model=TokenPair)
@@ -431,11 +430,7 @@ async def doctor_signup(
         refresh_token=tokens["refresh_token"],
     )
 
-    return {
-        **tokens,
-        "user_id": new_user.id,
-        "role": new_user.role,
-    }
+    return _build_auth_response(tokens, new_user.id, new_user.role)
 
 
 @role_router.post("/doctor/login", response_model=TokenPair)
@@ -463,11 +458,7 @@ async def doctor_login(
         refresh_token=tokens["refresh_token"],
     )
 
-    return {
-        **tokens,
-        "user_id": user.id,
-        "role": user.role,
-    }
+    return _build_auth_response(tokens, user.id, user.role)
 
 
 @role_router.post("/admin/login", response_model=TokenPair)
@@ -496,11 +487,7 @@ async def admin_login(
         refresh_token=tokens["refresh_token"],
     )
 
-    return {
-        **tokens,
-        "user_id": admin_user.id,
-        "role": "admin",
-    }
+    return _build_auth_response(tokens, admin_user.id, "admin")
 
 
 @router.get("/clients-public/detail/{client_id}", response_model=ClientDetailResponse)
@@ -643,16 +630,29 @@ async def list_clients_public(
 @router.post("/refresh", response_model=TokenPair)
 async def refresh_access_token(
     response: Response,
-    request_data: RefreshTokenRequest,
+    request: Request,
+    request_data: RefreshTokenRequest | None = None,
     db: Session = Depends(get_db)
 ):
-    """Refresh expired access token using refresh token.
-    
-    Token rotation: Returns new access token AND new refresh token.
-    Old refresh token is invalidated (rotation security pattern).
+    """Refresh expired access token using the HttpOnly refresh token cookie.
+
+    Token rotation: issues a new access token and rotates the refresh token cookie.
+    The refresh token is not exposed in the JSON response.
     """
+    refresh_token = None
+    if request_data and request_data.refresh_token:
+        refresh_token = request_data.refresh_token
+    elif hasattr(request, "cookies"):
+        refresh_token = request.cookies.get("refresh_token")
+
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing refresh token"
+        )
+
     # Verify refresh token with revocation check
-    token_data = verify_refresh_token(request_data.refresh_token, db=db)
+    token_data = verify_refresh_token(refresh_token, db=db)
     
     if not token_data:
         logger.warning("Invalid or revoked refresh token attempt")
@@ -664,7 +664,7 @@ async def refresh_access_token(
     # Extract old JTI from token for revocation
     from jose import jwt
     try:
-        old_payload = jwt.decode(request_data.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        old_payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         old_jti = old_payload.get("jti")
     except:
         old_jti = None
@@ -706,14 +706,7 @@ async def refresh_access_token(
     
     logger.info(f"Token refreshed with rotation for user: {token_data.user_id}")
     
-    return {
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens["refresh_token"],
-        "token_type": "bearer",
-        "access_token_expires": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        "user_id": token_data.user_id,
-        "role": token_data.role
-    }
+    return _build_auth_response(tokens, token_data.user_id, token_data.role)
 
 
 @router.post("/logout")

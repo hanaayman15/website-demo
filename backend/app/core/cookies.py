@@ -3,6 +3,11 @@ from fastapi import Response
 from app.config import settings
 
 
+def _cookie_same_site() -> str:
+    """Use a strict browser policy in production and a local-friendly policy in development."""
+    return "none" if not getattr(settings, 'DEBUG', False) else "lax"
+
+
 def set_auth_cookies(
     response: Response,
     access_token: str,
@@ -27,8 +32,9 @@ def set_auth_cookies(
     if refresh_token_max_age is None:
         refresh_token_max_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     
-    # Determine if we're in production (HTTPS required for Secure flag)
-    is_production = not getattr(settings, 'TESTING', False) and settings.DATABASE_URL != "sqlite:///./test.db"
+    # Determine if we're in production (HTTPS required for Secure flag).
+    is_production = not getattr(settings, 'DEBUG', False) and not getattr(settings, 'TESTING', False)
+    same_site = _cookie_same_site()
     
     # Set access token cookie
     response.set_cookie(
@@ -37,7 +43,7 @@ def set_auth_cookies(
         max_age=access_token_max_age,
         httponly=True,  # Prevent JavaScript access
         secure=is_production,  # HTTPS only in production
-        samesite="lax",  # CSRF protection
+        samesite=same_site,
         path="/"
     )
     
@@ -48,7 +54,7 @@ def set_auth_cookies(
         max_age=refresh_token_max_age,
         httponly=True,  # Prevent JavaScript access
         secure=is_production,  # HTTPS only in production
-        samesite="lax",  # CSRF protection
+        samesite=same_site,
         path="/api/auth/refresh"  # Only send to refresh endpoint
     )
 

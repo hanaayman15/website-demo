@@ -2,6 +2,16 @@ import { getStorage, safeGet, safeRemove, safeSet } from './storageSafe';
 
 const LOCAL = getStorage('local');
 const SESSION = getStorage('session');
+const AUTH_SESSION_UPDATED_EVENT = 'auth-session-updated';
+
+function notifyAuthSessionUpdated() {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+  try {
+    window.dispatchEvent(new Event(AUTH_SESSION_UPDATED_EVENT));
+  } catch {
+    // Ignore event dispatch failures in restricted runtimes.
+  }
+}
 
 function decodeRoleFromToken(token) {
   try {
@@ -64,6 +74,8 @@ export function persistSessionAuth({ token, tokenType = 'bearer', role = '', ema
   if (doctorSession) {
     safeSet(SESSION, 'doctorAdminSessionActive', '1');
   }
+
+  notifyAuthSessionUpdated();
 }
 
 export function clearSessionAuth() {
@@ -77,6 +89,8 @@ export function clearSessionAuth() {
   safeRemove(SESSION, 'authRole');
   safeRemove(SESSION, 'role');
   safeRemove(SESSION, 'doctorAdminSessionActive');
+
+  notifyAuthSessionUpdated();
 }
 
 export function buildSessionSnapshot() {

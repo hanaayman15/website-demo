@@ -66,7 +66,7 @@ class Token(BaseModel):
 class TokenPair(BaseModel):
     """Token pair response with refresh token (enhanced security)."""
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str
     access_token_expires: int  # seconds
     user_id: int
@@ -75,7 +75,7 @@ class TokenPair(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     """Request to refresh access token using refresh token."""
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 class TokenData(BaseModel):
