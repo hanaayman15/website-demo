@@ -713,6 +713,7 @@ function ClientDetail() {
     setSelectedDay,
     programsState,
     canEditDietPlanSelection,
+    canEditAdminPersonalNotes,
     selectedDietScheduleType,
     dietPlansWithSummary,
     updateNotes,
@@ -1245,6 +1246,20 @@ function ClientDetail() {
                     onChange={(event) => updateNotes(event.target.value)}
                     placeholder="Enter notes from Programs section"
                   />
+                </label>
+                <label>
+                  <span className="react-label">Personal Notes (Admin Only)</span>
+                  <textarea
+                    className="react-textarea"
+                    rows={4}
+                    value={programsState.programFields.personalNotesText || ''}
+                    readOnly={!isEditingPrograms || !canEditAdminPersonalNotes}
+                    onChange={(event) => updateProgramField('personalNotesText', event.target.value)}
+                    placeholder="Private notes for admin use"
+                  />
+                  {!canEditAdminPersonalNotes ? (
+                    <small className="react-muted">Only admin can edit personal notes.</small>
+                  ) : null}
                 </label>
                 <div className="react-grid react-grid-2">
                   <label>

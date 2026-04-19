@@ -509,14 +509,27 @@ export function useClientDetail() {
     setError('');
     setMessage('');
 
-    const { notesText, mentalText, supplementsText, competitionStatus, mealSwapsPayload } =
+    const {
+      notesText,
+      personalNotesText,
+      mentalText,
+      supplementsText,
+      competitionStatus,
+      mealSwapsPayload,
+    } =
       buildProgramsPayload(programsState);
+    const resolvedPersonalNotes = isAdminUser
+      ? personalNotesText
+      : normalizeNotes(client.personal_notes || client.personalNotes || client.additional_notes || client.additionalNotes);
 
     try {
       const updated = {
         ...client,
         notes: notesText || 'No notes added',
-        additionalNotes: notesText || 'No notes added',
+        personal_notes: resolvedPersonalNotes || '',
+        personalNotes: resolvedPersonalNotes || '',
+        additional_notes: resolvedPersonalNotes || '',
+        additionalNotes: resolvedPersonalNotes || '',
         mentalObservation: mentalText || 'No mental observations',
         supplements: supplementsText || 'No supplements added',
         meal_swaps: mealSwapsPayload,
@@ -529,6 +542,9 @@ export function useClientDetail() {
         clients[idx] = {
           ...clients[idx],
           notes: updated.notes,
+          personal_notes: updated.personal_notes,
+          personalNotes: updated.personalNotes,
+          additional_notes: updated.additional_notes,
           additionalNotes: updated.additionalNotes,
           mentalObservation: updated.mentalObservation,
           supplements: updated.supplements,
@@ -541,6 +557,9 @@ export function useClientDetail() {
       if (programsKey) safeJsonSet(local, programsKey, mealSwapsPayload);
       syncClientCaches(local, selectedClientId, {
         notes: updated.notes,
+        personal_notes: updated.personal_notes,
+        personalNotes: updated.personalNotes,
+        additional_notes: updated.additional_notes,
         additionalNotes: updated.additionalNotes,
         mentalObservation: updated.mentalObservation,
         supplements: updated.supplements,
@@ -550,7 +569,7 @@ export function useClientDetail() {
         if (resolveAuthToken() && selectedClientId) {
         try {
           await apiClient.put(`/api/admin/clients/${selectedClientId}`, {
-            additional_notes: updated.additionalNotes,
+            ...(isAdminUser ? { additional_notes: updated.additionalNotes } : {}),
             mental_observation: updated.mentalObservation,
             supplements: updated.supplements,
             competition_enabled: Boolean(programsState.programFields.competitionEnabled),
@@ -666,6 +685,7 @@ export function useClientDetail() {
     setSelectedDay,
     programsState,
     canEditDietPlanSelection: isAdminUser,
+    canEditAdminPersonalNotes: isAdminUser,
     selectedDietScheduleType: normalizeDietScheduleType(client?.diet_schedule_type || client?.dietScheduleType),
     dietPlansWithSummary,
     updateNotes,

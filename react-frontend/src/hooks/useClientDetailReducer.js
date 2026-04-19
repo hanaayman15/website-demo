@@ -299,6 +299,7 @@ export function buildInitialProgramsState() {
     dayMeals: buildEmptyDayMeals(),
     programFields: {
       notesText: '',
+      personalNotesText: '',
       mentalText: '',
       supplementsText: '',
       competitionEnabled: false,
@@ -314,6 +315,9 @@ export function normalizeProgramsSource(source = {}, client = {}) {
       notesText:
         source?.programFields?.notesText ||
         normalizeNotes(client.notes || client.additional_notes || client.additionalNotes),
+      personalNotesText:
+        source?.programFields?.personalNotesText ||
+        normalizeNotes(client.personal_notes || client.personalNotes || client.additional_notes || client.additionalNotes),
       mentalText:
         source?.programFields?.mentalText ||
         normalizeText(client.mental_observation || client.mentalObservation),
@@ -332,6 +336,7 @@ export function normalizeProgramsSource(source = {}, client = {}) {
 
 export function buildProgramsPayload(programsState) {
   const notesText = normalizeNotes(programsState.programFields.notesText);
+  const personalNotesText = normalizeNotes(programsState.programFields.personalNotesText);
   const mentalText = normalizeText(programsState.programFields.mentalText);
   const supplementsText = normalizeText(programsState.programFields.supplementsText);
   const competitionStatus = normalizeText(programsState.programFields.competitionStatus);
@@ -339,6 +344,7 @@ export function buildProgramsPayload(programsState) {
 
   return {
     notesText,
+    personalNotesText,
     mentalText,
     supplementsText,
     competitionStatus,
@@ -349,6 +355,7 @@ export function buildProgramsPayload(programsState) {
       programFields: {
         ...programsState.programFields,
         notesText,
+        personalNotesText,
         mentalText,
         supplementsText,
         competitionStatus,
@@ -366,6 +373,7 @@ export function programsReducer(state, action) {
         dayMeals: normalizeDayMeals(payload.dayMeals),
         programFields: {
           notesText: normalizeNotes(payload.programFields?.notesText),
+          personalNotesText: normalizeNotes(payload.programFields?.personalNotesText),
           mentalText: normalizeText(payload.programFields?.mentalText),
           supplementsText: normalizeText(payload.programFields?.supplementsText),
           competitionEnabled: Boolean(payload.programFields?.competitionEnabled),

@@ -133,14 +133,6 @@ function AddClient() {
                   <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Sport Club</label>
                   <input type="text" value={form.club} onChange={(e) => updateField('club', e.target.value)} placeholder="Auto Club" className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Average Wake-up Time</label>
-                  <input type="time" value={form.wakeUpTime} onChange={(e) => updateField('wakeUpTime', e.target.value)} className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 uppercase">Average Sleep Time</label>
-                  <input type="time" value={form.sleepTime} onChange={(e) => updateField('sleepTime', e.target.value)} className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none" />
-                </div>
               </div>
             </div>
 
