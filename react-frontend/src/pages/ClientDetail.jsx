@@ -180,6 +180,13 @@ const PAGE_CSS = `
   font-weight: 700;
   cursor: pointer;
 }
+.detail-floating-programs-edit {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1200;
+  box-shadow: 0 12px 26px rgba(22, 45, 70, 0.28);
+}
 .detail-modal-overlay {
   position: fixed;
   inset: 0;
@@ -231,6 +238,10 @@ const PAGE_CSS = `
     font-size: 13px;
     min-width: 120px;
   }
+  .detail-floating-programs-edit {
+    right: 10px;
+    bottom: 10px;
+  }
 }
 `;
 
@@ -271,6 +282,7 @@ function normalizePdfMeals(meals) {
   return list.map((meal, index) => ({
     mealLabel: toPlainText(meal?.type, `Meal ${index + 1}`),
     time: toPlainText(meal?.time, 'N/A'),
+    notes: toPlainText(meal?.notes, ''),
     descriptionEn: toPlainText(meal?.en || meal?.description_en || meal?.description || meal?.name || meal?.meal, 'N/A'),
     descriptionAr: toPlainText(meal?.ar || meal?.description_ar, 'N/A'),
   }));
@@ -427,7 +439,7 @@ function drawPageHeader(ctx, { language, clientName }) {
   ctx.restore();
 }
 
-function drawMealsCard(ctx, { language, day, meals, x, y, width, height }) {
+function drawMealsCard(ctx, { language, day, meals, x, y, width, height, competitionEnabled }) {
   drawTransparentCard(ctx, x, y, width, height);
 
   const dayTitle = language === 'arabic'
@@ -475,11 +487,13 @@ function drawMealsCard(ctx, { language, day, meals, x, y, width, height }) {
     ctx.font = language === 'arabic' ? 'bold 22px "Segoe UI", "Tahoma", sans-serif' : 'bold 22px "Segoe UI", sans-serif';
     ctx.fillText(meal.mealLabel, language === 'arabic' ? x + width - 24 : x + 24, labelY);
 
+    // Show notes instead of time when Competition Enabled
+    const displayValue = competitionEnabled && meal.notes ? meal.notes : meal.time;
     // Keep numerals/time visually stable even on RTL pages.
     ctx.direction = 'ltr';
     ctx.textAlign = language === 'arabic' ? 'right' : 'left';
     ctx.font = '20px "Segoe UI", "Tahoma", sans-serif';
-    ctx.fillText(meal.time, language === 'arabic' ? x + width - 24 : x + 24, timeY);
+    ctx.fillText(displayValue, language === 'arabic' ? x + width - 24 : x + 24, timeY);
     ctx.direction = language === 'arabic' ? 'rtl' : 'ltr';
 
     ctx.font = language === 'arabic' ? '17px "Segoe UI", "Tahoma", sans-serif' : '17px "Segoe UI", sans-serif';
@@ -517,7 +531,7 @@ function drawTextCard(ctx, { language, title, text, x, y, width, height }) {
   ctx.restore();
 }
 
-async function generateClientProgramsPdf({ clientName, language, weekDays, dayMealsMap, programFields }) {
+async function generateClientProgramsPdf({ clientName, language, weekDays, dayMealsMap, programFields, competitionEnabled }) {
   const backgroundImage = await tryLoadBackgroundImage();
   const pdfDoc = await PDFDocument.create();
 
@@ -572,6 +586,7 @@ async function generateClientProgramsPdf({ clientName, language, weekDays, dayMe
         y: currentY,
         width: cardWidth,
         height: cardHeight,
+        competitionEnabled,
       });
 
       if (idx < dayChunk.length - 1) {
@@ -691,7 +706,7 @@ function buildDetailForm(client) {
     minerals: toValue(client, ['minerals'], ''),
     goal_weight: toValue(client, ['goal_weight', 'goalWeight'], ''),
     progression_type: toValue(client, ['progression_type', 'progressionType'], ''),
-    competition_status: toValue(client, ['competition_status', 'competitionStatus'], ''),
+    competition_date: toValue(client, ['competition_date', 'competitionDate'], ''),
     injuries: toValue(client, ['injuries'], ''),
     food_allergies: toValue(client, ['food_allergies', 'foodAllergies'], ''),
     mental_observation: toValue(client, ['mental_observation', 'mental_notes', 'mentalObservation'], ''),
@@ -712,13 +727,20 @@ function ClientDetail() {
     selectedDay,
     setSelectedDay,
     programsState,
+    isAdminUser,
     canEditDietPlanSelection,
+    canEditDietPlanNames,
     canEditAdminPersonalNotes,
     selectedDietScheduleType,
     dietPlansWithSummary,
+    competitionEnabled,
+    visibleDayMeals,
     updateNotes,
     updateProgramField,
     applyDietPlan,
+    updateDietPlanName,
+    saveDietPlanNames,
+    resetDietPlanNames,
     addMeal,
     updateMeal,
     moveMealUp,
@@ -750,8 +772,10 @@ function ClientDetail() {
     setDetailForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const canEditDetails = isAdminUser && isEditingDetails;
+
   const startDetailsEdit = () => {
-    setIsEditingDetails(true);
+    if (isAdminUser) setIsEditingDetails(true);
   };
 
   const cancelDetailsEdit = () => {
@@ -764,7 +788,7 @@ function ClientDetail() {
     if (ok) setIsEditingDetails(false);
   };
 
-  const dayMeals = programsState.dayMeals[selectedDay] || [];
+  const dayMeals = visibleDayMeals[selectedDay] || [];
   const clientName = toValue(client, ['name', 'full_name'], 'Client');
   const tabs = useMemo(() => ([
     { id: 'personal', label: 'Personal Info', icon: '👤' },
@@ -811,8 +835,9 @@ function ClientDetail() {
         clientName,
         language: languageToUse,
         weekDays,
-        dayMealsMap: programsState.dayMeals,
+        dayMealsMap: visibleDayMeals,
         programFields: programsState.programFields,
+        competitionEnabled,
       });
       downloadGeneratedPdf(bytes, languageToUse);
       setPdfModalOpen(false);
@@ -926,13 +951,17 @@ function ClientDetail() {
 
           {(activeTab === 'personal' || activeTab === 'metabolism' || activeTab === 'measurements' || activeTab === 'goals' || activeTab === 'health') ? (
             <div className="react-inline-actions" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
-              {!isEditingDetails ? (
-                <button className="react-btn react-btn-ghost" type="button" onClick={startDetailsEdit}>Edit Details</button>
+              {isAdminUser ? (
+                !isEditingDetails ? (
+                  <button className="react-btn react-btn-ghost" type="button" onClick={startDetailsEdit}>Edit Details</button>
+                ) : (
+                  <>
+                    <button className="react-btn react-btn-ghost" type="button" onClick={cancelDetailsEdit}>Cancel</button>
+                    <button className="react-btn" type="button" onClick={saveEditedDetails} disabled={saving}>{saving ? 'Saving...' : 'Save Details'}</button>
+                  </>
+                )
               ) : (
-                <>
-                  <button className="react-btn react-btn-ghost" type="button" onClick={cancelDetailsEdit}>Cancel</button>
-                  <button className="react-btn" type="button" onClick={saveEditedDetails} disabled={saving}>{saving ? 'Saving...' : 'Save Details'}</button>
-                </>
+                <span className="react-muted" style={{ fontSize: '14px' }}>Admin only - View only</span>
               )}
             </div>
           ) : null}
@@ -942,44 +971,44 @@ function ClientDetail() {
               <div className="detail-grid">
                 <div>
                   <div className="detail-item-label">Birthday</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" value={detailForm.birthday} onChange={(event) => updateDetailForm('birthday', event.target.value)} placeholder="YYYY-MM-DD" />
                   ) : <div className="detail-item-value">{toValue(client, ['birthday'], 'N/A')}</div>}
                 </div>
                 <div><div className="detail-item-label">Age</div><div className="detail-item-value">{toValue(client, ['age'], computeAge(toValue(client, ['birthday'], '')))}</div></div>
                 <div>
                   <div className="detail-item-label">Gender</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" value={detailForm.gender} onChange={(event) => updateDetailForm('gender', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['gender'], 'N/A')}</div>}
                 </div>
                 <div>
                   <div className="detail-item-label">Club</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" value={detailForm.club} onChange={(event) => updateDetailForm('club', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['club'], 'N/A')}</div>}
                 </div>
                 <div>
                   <div className="detail-item-label">Country</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" value={detailForm.country} onChange={(event) => updateDetailForm('country', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['country'], 'N/A')}</div>}
                 </div>
                 <div>
                   <div className="detail-item-label">Religion</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" value={detailForm.religion} onChange={(event) => updateDetailForm('religion', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['religion'], 'N/A')}</div>}
                 </div>
                 <div>
                   <div className="detail-item-label">Average Wake-up Time</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" type="time" value={detailForm.wake_up_time} onChange={(event) => updateDetailForm('wake_up_time', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['wake_up_time', 'wakeUpTime'], 'N/A')}</div>}
                 </div>
                 <div>
                   <div className="detail-item-label">Average Sleep Time</div>
-                  {isEditingDetails ? (
+                  {canEditDetails ? (
                     <input className="react-input" type="time" value={detailForm.sleep_time} onChange={(event) => updateDetailForm('sleep_time', event.target.value)} />
                   ) : <div className="detail-item-value">{toValue(client, ['sleep_time', 'sleepTime'], 'N/A')}</div>}
                 </div>
@@ -1015,7 +1044,12 @@ function ClientDetail() {
               {!dayMeals.length ? <p className="react-muted" style={{ margin: 0 }}>No meals added for {selectedDay}.</p> : null}
               {dayMeals.map((meal) => (
                 <article key={meal.id} className="react-meal-card">
-                  <div className="react-row-between"><strong>{meal.type || 'Meal'}</strong><span className="react-muted">{meal.time || 'N/A'}</span></div>
+                  <div className="react-row-between">
+                    <strong>{meal.type || 'Meal'}</strong>
+                    <span className="react-muted">
+                      {competitionEnabled && meal.notes ? meal.notes : (!competitionEnabled ? (meal.time || 'N/A') : 'N/A')}
+                    </span>
+                  </div>
                   <div>{meal.en || 'No english description'}</div>
                   <div style={{ direction: 'rtl' }}>{meal.ar || 'لا يوجد وصف عربي'}</div>
                 </article>
@@ -1101,15 +1135,20 @@ function ClientDetail() {
                 )}
               </div>
               <div>
-                <div className="detail-item-label">Competition</div>
+                <div className="detail-item-label">Competition Date</div>
                 {isEditingDetails ? (
                   <input
                     className="react-input"
-                    value={detailForm.competition_status}
-                    onChange={(event) => updateDetailForm('competition_status', event.target.value)}
+                    type="date"
+                    value={detailForm.competition_date}
+                    onChange={(event) => updateDetailForm('competition_date', event.target.value)}
                   />
                 ) : (
-                  <div className="detail-item-value">{toValue(client, ['competition_status', 'competitionStatus'], programsState.programFields.competitionStatus || 'N/A')}</div>
+                  <div className="detail-item-value">
+                    {toValue(client, ['competition_status', 'competitionStatus'], '') === 'none'
+                      ? 'none'
+                      : (toValue(client, ['competition_date', 'competitionDate'], '') || 'N/A')}
+                  </div>
                 )}
               </div>
             </div>
@@ -1187,20 +1226,33 @@ function ClientDetail() {
                     {dietPlansWithSummary.map((entry) => {
                       const isSelected = selectedPlanDraft === entry.index;
                       return (
-                        <button
-                          key={`diet-plan-${entry.index}`}
-                          type="button"
-                          className={isSelected ? 'react-btn' : 'react-btn react-btn-ghost'}
-                          style={{ justifyContent: 'space-between', textAlign: 'left' }}
-                          onClick={() => {
-                            if (!canEditDietPlanSelection) return;
-                            setSelectedPlanDraft(entry.index);
-                          }}
-                          disabled={!canEditDietPlanSelection}
-                        >
-                          <span>{`${entry.min}-${entry.max} kcal | ${entry.dietType} | ${entry.mealsCount} meals`}</span>
-                          <span>{`${entry.min} Min / ${entry.max} Max`}</span>
-                        </button>
+                        <div key={`diet-plan-${entry.index}`} className="react-grid" style={{ gap: 8 }}>
+                          <button
+                            type="button"
+                            className={isSelected ? 'react-btn' : 'react-btn react-btn-ghost'}
+                            style={{ justifyContent: 'space-between', textAlign: 'left' }}
+                            onClick={() => {
+                              if (!canEditDietPlanSelection) return;
+                              setSelectedPlanDraft(entry.index);
+                            }}
+                            disabled={!canEditDietPlanSelection}
+                          >
+                            <span>{`${entry.min}-${entry.max} kcal | ${entry.dietType} | ${entry.mealsCount} meals`}</span>
+                            <span>{`${entry.min} Min / ${entry.max} Max`}</span>
+                          </button>
+                          {canEditDietPlanNames ? (
+                            <label className="react-grid" style={{ gap: 6 }}>
+                              <span className="react-label" style={{ margin: 0 }}>Plan Name</span>
+                              <input
+                                className="react-input"
+                                value={entry.dietType}
+                                onChange={(event) => updateDietPlanName(entry.index, event.target.value)}
+                                disabled={!isEditingPrograms}
+                                placeholder={`Plan ${entry.index + 1}`}
+                              />
+                            </label>
+                          ) : null}
+                        </div>
                       );
                     })}
                     {!dietPlansWithSummary.length ? <p className="react-muted" style={{ margin: 0 }}>No saved plans found in Diet Management.</p> : null}
@@ -1209,32 +1261,39 @@ function ClientDetail() {
                     <button
                       className="react-btn"
                       type="button"
-                      disabled={!canEditDietPlanSelection || selectedPlanDraft === null || selectedPlanDraft === undefined}
+                      disabled={!canEditDietPlanSelection}
                       onClick={() => {
                         if (!canEditDietPlanSelection) return;
-                        if (selectedPlanDraft === null || selectedPlanDraft === undefined) return;
-                        applyDietPlan(selectedPlanDraft);
+                        if (canEditDietPlanNames && isEditingPrograms) {
+                          saveDietPlanNames();
+                        }
+                        if (selectedPlanDraft !== null && selectedPlanDraft !== undefined) {
+                          applyDietPlan(selectedPlanDraft);
+                        }
                       }}
                     >
-                      Save Selection
+                      Save
                     </button>
                     <button
                       className="react-btn react-btn-ghost"
                       type="button"
-                      onClick={() => setSelectedPlanDraft(programsState.selectedPlanIndex)}
+                      onClick={() => {
+                        if (canEditDietPlanNames && isEditingPrograms) {
+                          resetDietPlanNames();
+                        }
+                        setSelectedPlanDraft(programsState.selectedPlanIndex);
+                      }}
                     >
                       Cancel
                     </button>
                   </div>
                 </section>
 
-                <div className="react-inline-actions" style={{ justifyContent: 'flex-end' }}>
-                  {!isEditingPrograms ? (
-                    <button className="react-btn react-btn-ghost" type="button" onClick={() => setIsEditingPrograms(true)}>Edit</button>
-                  ) : (
-                    <button className="react-btn react-btn-ghost" type="button" onClick={() => setIsEditingPrograms(false)}>Stop Editing</button>
-                  )}
-                </div>
+                {!isAdminUser ? (
+                  <div className="react-inline-actions" style={{ justifyContent: 'flex-end' }}>
+                    <span className="react-muted" style={{ fontSize: '14px' }}>Admin only - View and select Plan Mode for PDF</span>
+                  </div>
+                ) : null}
 
                 <label>
                   <span className="react-label">Notes</span>
@@ -1242,7 +1301,7 @@ function ClientDetail() {
                     className="react-textarea"
                     rows={5}
                     value={programsState.programFields.notesText}
-                    readOnly={!isEditingPrograms}
+                    readOnly={!isEditingPrograms || !isAdminUser}
                     onChange={(event) => updateNotes(event.target.value)}
                     placeholder="Enter notes from Programs section"
                   />
@@ -1268,7 +1327,7 @@ function ClientDetail() {
                       className="react-textarea"
                       rows={3}
                       value={programsState.programFields.mentalText}
-                      readOnly={!isEditingPrograms}
+                      readOnly={!isEditingPrograms || !isAdminUser}
                       onChange={(event) => updateProgramField('mentalText', event.target.value)}
                     />
                   </label>
@@ -1278,7 +1337,7 @@ function ClientDetail() {
                       className="react-textarea"
                       rows={3}
                       value={programsState.programFields.supplementsText}
-                      readOnly={!isEditingPrograms}
+                      readOnly={!isEditingPrograms || !isAdminUser}
                       onChange={(event) => updateProgramField('supplementsText', event.target.value)}
                     />
                   </label>
@@ -1286,28 +1345,42 @@ function ClientDetail() {
                 <div className="react-grid react-grid-2">
                   <label>
                     <span className="react-label">Competition Status</span>
-                    <input
+                    <select
                       className="react-input"
                       value={programsState.programFields.competitionStatus}
-                      readOnly={!isEditingPrograms}
+                      disabled={!isEditingPrograms || !isAdminUser}
                       onChange={(event) => updateProgramField('competitionStatus', event.target.value)}
-                      placeholder="On / Off"
-                    />
+                    >
+                      <option value="">None</option>
+                      <option value="set">Set</option>
+                    </select>
                   </label>
-                  <label className="react-inline-toggle">
-                    <input
-                      type="checkbox"
-                      checked={programsState.programFields.competitionEnabled}
-                      disabled={!isEditingPrograms}
-                      onChange={(event) => updateProgramField('competitionEnabled', event.target.checked)}
-                    />
-                    <span>Competition Enabled</span>
+                  <label>
+                    <span className="react-label">Plan Mode {!isAdminUser ? '(for PDF generation)' : ''}</span>
+                    <div className="react-inline-actions" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={programsState.programFields.competitionEnabled ? 'react-btn' : 'react-btn react-btn-ghost'}
+                        disabled={isAdminUser && !isEditingPrograms}
+                        onClick={() => updateProgramField('competitionEnabled', true)}
+                      >
+                        Competition Enabled
+                      </button>
+                      <button
+                        type="button"
+                        className={!programsState.programFields.competitionEnabled ? 'react-btn' : 'react-btn react-btn-ghost'}
+                        disabled={isAdminUser && !isEditingPrograms}
+                        onClick={() => updateProgramField('competitionEnabled', false)}
+                      >
+                        Normal plan Enabled
+                      </button>
+                    </div>
                   </label>
                 </div>
 
                 <div className="react-row-between" style={{ marginTop: 8 }}>
                   <h3 style={{ margin: 0 }}>Weekly Meal Plan</h3>
-                  <button className="react-btn" type="button" onClick={addMeal} disabled={!isEditingPrograms}>+ Add Meal</button>
+                  <button className="react-btn" type="button" onClick={addMeal} disabled={!isEditingPrograms || !isAdminUser}>+ Add Meal</button>
                 </div>
 
                 <div className="react-day-tabs">
@@ -1335,17 +1408,18 @@ function ClientDetail() {
                             <input
                               className="react-input"
                               value={meal.type}
-                              readOnly={!isEditingPrograms}
+                              readOnly={!isEditingPrograms || !isAdminUser}
                               onChange={(event) => updateMeal(meal.id, 'type', event.target.value)}
                             />
                           </label>
                           <label>
-                            <span className="react-label">Time</span>
+                            <span className="react-label">{competitionEnabled ? 'Notes' : 'Time'}</span>
                             <input
                               className="react-input"
-                              value={meal.time}
-                              readOnly={!isEditingPrograms}
-                              onChange={(event) => updateMeal(meal.id, 'time', event.target.value)}
+                              value={competitionEnabled ? (meal.notes || '') : (meal.time || '')}
+                              readOnly={!isEditingPrograms || !isAdminUser}
+                              onChange={(event) => updateMeal(meal.id, competitionEnabled ? 'notes' : 'time', event.target.value)}
+                              placeholder={competitionEnabled ? 'e.g. before warmup' : 'e.g. 07:00 AM'}
                             />
                           </label>
                         </div>
@@ -1356,7 +1430,7 @@ function ClientDetail() {
                             className="react-textarea"
                             rows={2}
                             value={meal.en}
-                            readOnly={!isEditingPrograms}
+                            readOnly={!isEditingPrograms || !isAdminUser}
                             onChange={(event) => updateMeal(meal.id, 'en', event.target.value)}
                           />
                         </label>
@@ -1367,7 +1441,7 @@ function ClientDetail() {
                             className="react-textarea"
                             rows={2}
                             value={meal.ar}
-                            readOnly={!isEditingPrograms}
+                            readOnly={!isEditingPrograms || !isAdminUser}
                             onChange={(event) => updateMeal(meal.id, 'ar', event.target.value)}
                           />
                         </label>
@@ -1375,9 +1449,9 @@ function ClientDetail() {
                         <div className="react-row-between">
                           <small className="react-muted">Meal #{index + 1}</small>
                           <div className="react-inline-actions">
-                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms} onClick={() => moveMealUp(meal.id)}>Up</button>
-                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms} onClick={() => moveMealDown(meal.id)}>Down</button>
-                            <button className="react-btn react-btn-danger" type="button" disabled={!isEditingPrograms} onClick={() => deleteMeal(meal.id)}>Delete</button>
+                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms || !isAdminUser} onClick={() => moveMealUp(meal.id)}>Up</button>
+                            <button className="react-btn react-btn-ghost" type="button" disabled={!isEditingPrograms || !isAdminUser} onClick={() => moveMealDown(meal.id)}>Down</button>
+                            <button className="react-btn react-btn-danger" type="button" disabled={!isEditingPrograms || !isAdminUser} onClick={() => deleteMeal(meal.id)}>Delete</button>
                           </div>
                         </div>
                       </article>
@@ -1393,6 +1467,15 @@ function ClientDetail() {
           ) : null}
         </section>
       </div>
+      {activeTab === 'programs' && isAdminUser ? (
+        <button
+          className="react-btn react-btn-ghost detail-floating-programs-edit"
+          type="button"
+          onClick={() => setIsEditingPrograms((prev) => !prev)}
+        >
+          {isEditingPrograms ? 'Stop Editing' : 'Edit'}
+        </button>
+      ) : null}
     </main>
   );
 }

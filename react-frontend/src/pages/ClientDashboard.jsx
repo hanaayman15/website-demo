@@ -86,6 +86,19 @@ function formatTimeForStorage(value) {
   return `${String(hour).padStart(2, '0')}:${minute} ${suffix}`;
 }
 
+function stripCompetitionText(value) {
+  const text = String(value || '');
+  return text
+    .replace(/\bsalad\b/gi, '')
+    .replace(/سلطة/g, '')
+    .replace(/\s*\+\s*/g, ' + ')
+    .replace(/\+\s*\+/g, '+')
+    .replace(/^\s*\+\s*/, '')
+    .replace(/\s*\+\s*$/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function ClientDashboard() {
   const {
     loading,
@@ -111,6 +124,7 @@ function ClientDashboard() {
   const [trainingTime, setTrainingTime] = useState(normalizeTimeForInput(profile?.training_time || profile?.training_start_time || ''));
   const [trainingEndTime, setTrainingEndTime] = useState(normalizeTimeForInput(profile?.training_end_time || ''));
   const [showAllDays, setShowAllDays] = useState(false);
+  const [planMode, setPlanMode] = useState('normal');
   const [swapTarget, setSwapTarget] = useState(null);
   const [showCompetitionEditor, setShowCompetitionEditor] = useState(false);
   const [competitionDateDraft, setCompetitionDateDraft] = useState(formatDateInput(summary.competitionDate));
@@ -129,6 +143,11 @@ function ClientDashboard() {
     profile?.training_start_time,
     profile?.training_end_time,
   ]);
+
+  useEffect(() => {
+    const competitionEnabled = Boolean(profile?.meal_swaps?.programFields?.competitionEnabled);
+    setPlanMode(competitionEnabled ? 'competition' : 'normal');
+  }, [profile?.meal_swaps?.programFields?.competitionEnabled]);
 
   const todayName = getTodayName();
   const currentDate = formatLongDate(new Date());
@@ -198,6 +217,34 @@ function ClientDashboard() {
     });
     return options;
   }, [swapTarget, weeklyMeals]);
+
+  const competitionMode = planMode === 'competition';
+
+  const visibleTodayMeals = useMemo(() => {
+    if (!Array.isArray(todayMeals)) return [];
+    if (!competitionMode) return todayMeals;
+    return todayMeals.map((meal) => ({
+      ...meal,
+      en: stripCompetitionText(meal.en),
+      ar: stripCompetitionText(meal.ar),
+    }));
+  }, [todayMeals, competitionMode]);
+
+  const visibleWeeklyMeals = useMemo(() => {
+    if (!weeklyMeals || typeof weeklyMeals !== 'object') return {};
+    if (!competitionMode) return weeklyMeals;
+    const next = {};
+    Object.entries(weeklyMeals).forEach(([dayName, meals]) => {
+      next[dayName] = Array.isArray(meals)
+        ? meals.map((meal) => ({
+          ...meal,
+          en: stripCompetitionText(meal.en),
+          ar: stripCompetitionText(meal.ar),
+        }))
+        : [];
+    });
+    return next;
+  }, [weeklyMeals, competitionMode]);
 
   const competitionDaysLabel = useMemo(() => {
     const days = summary.daysUntilCompetition;
@@ -417,6 +464,20 @@ function ClientDashboard() {
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="plan-mode-select">
+                    Plan Mode
+                  </label>
+                  <select
+                    id="plan-mode-select"
+                    className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={planMode}
+                    onChange={(event) => setPlanMode(event.target.value)}
+                  >
+                    <option value="competition">Competition Enabled</option>
+                    <option value="normal">Normal plan Enabled</option>
+                  </select>
+                </div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold">{todayName}'s Meal Plan</h2>
                   <div className="flex gap-3">
@@ -425,11 +486,11 @@ function ClientDashboard() {
                   </div>
                 </div>
 
-                {!todayMeals.length ? (
+                {!visibleTodayMeals.length ? (
                   <p className="text-gray-500 text-center py-8">No meal plan assigned yet.</p>
                 ) : (
                   <div className="space-y-4">
-                    {todayMeals.map((meal) => {
+                    {visibleTodayMeals.map((meal) => {
                       const isComplete = mealStatuses[meal.mealId] === 'completed';
                       return (
                         <div key={meal.mealId} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
@@ -447,7 +508,10 @@ function ClientDashboard() {
                             </div>
                             {meal.en ? <p className="text-sm text-gray-600">{meal.en}</p> : null}
                             {meal.ar ? <p className="text-sm text-gray-600 mt-1" style={{ direction: 'rtl', fontFamily: 'Cairo, Tahoma, sans-serif' }}>{meal.ar}</p> : null}
-                            {meal.scheduledTime && meal.scheduledTime !== 'N/A' ? <p className="text-xs text-gray-500 mt-1"><strong>⏰ {meal.scheduledTime}</strong></p> : null}
+                            {competitionMode
+                              ? (String(meal.notes || '').trim() ? <p className="text-xs text-gray-500 mt-1"><strong>📝 {String(meal.notes || '').trim()}</strong></p> : null)
+                              : (meal.scheduledTime && meal.scheduledTime !== 'N/A' ? <p className="text-xs text-gray-500 mt-1"><strong>⏰ {meal.scheduledTime}</strong></p> : null)
+                            }
                           </div>
                           <div className="flex flex-col gap-2">
                             <button
@@ -571,7 +635,7 @@ function ClientDashboard() {
               <button type="button" className="px-3 py-1 border rounded-lg text-sm" onClick={() => setShowAllDays(false)}>Close</button>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
-              {Object.entries(weeklyMeals || {}).map(([dayName, meals]) => (
+              {Object.entries(visibleWeeklyMeals || {}).map(([dayName, meals]) => (
                 <div key={dayName} className="border border-gray-200 rounded-xl p-4">
                   <h4 className="font-bold mb-2">{dayName}</h4>
                   {Array.isArray(meals) && meals.length ? (
@@ -580,6 +644,10 @@ function ClientDashboard() {
                         <li key={`${dayName}-${meal.mealLabel}-${index}`} className="bg-gray-50 rounded-lg px-3 py-2">
                           <strong>{meal.mealLabel}</strong>
                           <div>{meal.en || 'No meal text'}</div>
+                          {competitionMode
+                            ? (String(meal.notes || '').trim() ? <div className="text-xs text-gray-500 mt-1">📝 {String(meal.notes || '').trim()}</div> : null)
+                            : (meal.scheduledTime && meal.scheduledTime !== 'N/A' ? <div className="text-xs text-gray-500 mt-1">⏰ {meal.scheduledTime}</div> : null)
+                          }
                         </li>
                       ))}
                     </ul>
@@ -609,19 +677,23 @@ function ClientDashboard() {
                     key={`${dayName}-${meal.mealLabel}-${index}`}
                     className="w-full text-left border border-gray-200 hover:border-blue-300 rounded-lg p-3"
                     onClick={async () => {
+                      const nextEn = competitionMode ? stripCompetitionText(meal.en) : meal.en;
+                      const nextAr = competitionMode ? stripCompetitionText(meal.ar) : meal.ar;
                       await swapMeal({
                         dayName: swapTarget.dayName,
                         mealIndex: swapTarget.mealIndex,
                         replacementMeal: {
                           ...meal,
                           type: swapTarget.mealKey || meal.mealLabel,
+                          en: nextEn,
+                          ar: nextAr,
                         },
                       });
                       setSwapTarget(null);
                     }}
                   >
                     <strong>{meal.mealLabel}</strong> <span className="text-xs text-gray-500">from {dayName}</span>
-                    <div className="text-sm text-gray-700">{meal.en || 'No meal text'}</div>
+                    <div className="text-sm text-gray-700">{competitionMode ? (stripCompetitionText(meal.en) || 'No meal text') : (meal.en || 'No meal text')}</div>
                   </button>
                 ))
               ) : (

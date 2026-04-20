@@ -62,6 +62,7 @@ function mapTeamPlayerToClient(player, teamId) {
     goal_weight: player.goal_weight || '',
     progression_type: player.progression_type || '',
     competition_status: player.competition_status || '',
+    competition_date: player.competition_date || '',
     medical_notes: player.medical_notes || '',
     food_allergies: player.food_allergies || '',
     injuries: player.injuries || '',
@@ -250,6 +251,80 @@ function resolveTrainingScheduleFromClient(client) {
   };
 }
 
+function stripSaladText(value) {
+  const text = String(value || '');
+  
+  // Remove salad (English) and سلطة (Arabic)
+  // Use multiple passes to handle all variations since \b doesn't work with Arabic
+  let result = text
+    // Remove patterns like " salad ", " سلطة ", "salad ", " salad", etc.
+    // This handles the word surrounded by spaces and/or operators
+    .replace(/\s+salad\s+/gi, ' ')           // " salad " → " "
+    .replace(/\s+سلطة\s+/gi, ' ')            // " سلطة " → " "
+    .replace(/^salad\s+/gi, '')              // "salad " → ""
+    .replace(/^سلطة\s+/gi, '')               // "سلطة " → ""
+    .replace(/\s+salad$/gi, '')              // " salad" → ""
+    .replace(/\s+سلطة$/gi, '')               // " سلطة" → ""
+    .replace(/\bsalad\b/gi, '')              // Standalone "salad" (for English)
+    // Handle operator patterns: " + salad", "salad + ", etc.
+    .replace(/\s*\+\s*salad\s*\+\s*/gi, ' + ')
+    .replace(/\s*\+\s*سلطة\s*\+\s*/gi, ' + ')
+    .replace(/\s*\+\s*salad\s*/gi, '')
+    .replace(/\s*\+\s*سلطة\s*/gi, '')
+    // Clean up spacing
+    .replace(/\s\s+/g, ' ')
+    .replace(/\s*\+\s*/g, ' + ')
+    .replace(/\+\s*\+/g, '+')
+    .replace(/\s*\+\s*$/, '')
+    .replace(/^\s*\+\s*/, '')
+    .trim();
+  
+  return result;
+}
+
+function sanitizeDietPlan(plan) {
+  if (!plan || typeof plan !== 'object') return plan;
+
+  const next = { ...plan };
+  Object.keys(next).forEach((key) => {
+    if (typeof next[key] !== 'object' || next[key] === null || Array.isArray(next[key])) return;
+    const sanitizedMeals = {};
+    Object.entries(next[key]).forEach(([mealKey, mealValue]) => {
+      if (!mealValue || typeof mealValue !== 'object' || Array.isArray(mealValue)) return;
+      const en = stripSaladText(mealValue.en);
+      const ar = stripSaladText(mealValue.ar);
+      if (!en && !ar) return;
+      sanitizedMeals[mealKey] = {
+        ...mealValue,
+        en,
+        ar,
+      };
+    });
+    next[key] = sanitizedMeals;
+  });
+
+  return next;
+}
+
+function sanitizeDayMeals(dayMeals) {
+  if (!dayMeals || typeof dayMeals !== 'object') return dayMeals;
+
+  const next = { ...dayMeals };
+  Object.keys(next).forEach((day) => {
+    if (!Array.isArray(next[day])) return;
+    next[day] = next[day].map((meal) => {
+      if (!meal || typeof meal !== 'object') return meal;
+      return {
+        ...meal,
+        en: stripSaladText(meal.en),
+        ar: stripSaladText(meal.ar),
+      };
+    });
+  });
+
+  return next;
+}
+
 export function useClientDetail() {
   const local = getStorage('local');
   const [searchParams] = useSearchParams();
@@ -260,9 +335,16 @@ export function useClientDetail() {
   const [client, setClient] = useState(null);
   const [selectedDay, setSelectedDay] = useState('Monday');
   const [programsState, dispatch] = useReducer(programsReducer, undefined, buildInitialProgramsState);
-  const dietPlans = useMemo(() => safeReadDietPlans(local), [local]);
+  const [dietPlans, setDietPlans] = useState(() => safeReadDietPlans(local));
+  const competitionEnabled = Boolean(programsState.programFields.competitionEnabled);
+  const visibleDietPlans = useMemo(() => (
+    competitionEnabled ? dietPlans.map((plan) => sanitizeDietPlan(plan)) : dietPlans
+  ), [competitionEnabled, dietPlans]);
+  const visibleDayMeals = useMemo(() => (
+    competitionEnabled ? sanitizeDayMeals(programsState.dayMeals) : programsState.dayMeals
+  ), [competitionEnabled, programsState.dayMeals]);
   const dietPlansWithSummary = useMemo(() => (
-    dietPlans.map((plan, index) => ({
+    visibleDietPlans.map((plan, index) => ({
       index,
       plan,
       min: Number(plan?.minCalories || 0),
@@ -270,7 +352,7 @@ export function useClientDetail() {
       dietType: String(plan?.dietType || 'No type specified'),
       mealsCount: countPlanMeals(plan),
     }))
-  ), [dietPlans]);
+  ), [visibleDietPlans]);
   const teamId = parsePositiveInt(searchParams.get('team_id'));
   const playerId = parsePositiveInt(searchParams.get('player_id'));
   const isAdminUser = String(resolveAuthRole() || '').toLowerCase() === 'admin';
@@ -344,6 +426,10 @@ export function useClientDetail() {
             const nutritionClient = nutritionResponse?.data || {};
             // Keep existing identity fields and fill/refresh with non-empty nutrition values.
             resolvedClient = mergePreferNonEmpty(resolvedClient, nutritionClient);
+
+            // Keep nutrition competition fields authoritative even when caches have stale values.
+            resolvedClient.__nutritionCompetitionStatus = nutritionClient.competition_status;
+            resolvedClient.__nutritionCompetitionDate = nutritionClient.competition_date;
           } catch {
             // Keep base profile if nutrition endpoint is not available.
           }
@@ -352,7 +438,12 @@ export function useClientDetail() {
         if (selectedClientId) {
           const clientCache = safeJsonGet(local, `clientData_${selectedClientId}`, null);
           if (clientCache && typeof clientCache === 'object') {
-            resolvedClient = mergePreferNonEmpty(resolvedClient || {}, clientCache);
+            const sanitizedClientCache = { ...clientCache };
+            delete sanitizedClientCache.competition_status;
+            delete sanitizedClientCache.competitionStatus;
+            delete sanitizedClientCache.competition_date;
+            delete sanitizedClientCache.competitionDate;
+            resolvedClient = mergePreferNonEmpty(resolvedClient || {}, sanitizedClientCache);
           }
         }
 
@@ -364,7 +455,25 @@ export function useClientDetail() {
         if (detailStorageKey) {
           const localDetail = safeJsonGet(local, detailStorageKey, null);
           if (localDetail && typeof localDetail === 'object') {
-            resolvedClient = { ...resolvedClient, ...localDetail };
+            const sanitizedLocalDetail = { ...localDetail };
+            delete sanitizedLocalDetail.competition_status;
+            delete sanitizedLocalDetail.competitionStatus;
+            delete sanitizedLocalDetail.competition_date;
+            delete sanitizedLocalDetail.competitionDate;
+            resolvedClient = { ...resolvedClient, ...sanitizedLocalDetail };
+          }
+        }
+
+        if (resolvedClient) {
+          if (Object.prototype.hasOwnProperty.call(resolvedClient, '__nutritionCompetitionStatus')) {
+            resolvedClient.competition_status = resolvedClient.__nutritionCompetitionStatus;
+            resolvedClient.competitionStatus = resolvedClient.__nutritionCompetitionStatus;
+            delete resolvedClient.__nutritionCompetitionStatus;
+          }
+          if (Object.prototype.hasOwnProperty.call(resolvedClient, '__nutritionCompetitionDate')) {
+            resolvedClient.competition_date = resolvedClient.__nutritionCompetitionDate;
+            resolvedClient.competitionDate = resolvedClient.__nutritionCompetitionDate;
+            delete resolvedClient.__nutritionCompetitionDate;
           }
         }
 
@@ -438,7 +547,38 @@ export function useClientDetail() {
     return () => {
       mounted = false;
     };
-  }, [selectedClientId, teamId, playerId, dietPlans]);
+  }, [selectedClientId, teamId, playerId]);
+
+  const updateDietPlanName = (planIndex, value) => {
+    const nextName = String(value || '').trim();
+    setDietPlans((prev) => {
+      const current = Array.isArray(prev) ? prev : [];
+      return current.map((plan, index) => {
+        if (index !== planIndex) return plan;
+        return {
+          ...plan,
+          dietType: nextName,
+        };
+      });
+    });
+  };
+
+  const saveDietPlanNames = () => {
+    if (!isAdminUser) return false;
+    const cleanedPlans = (Array.isArray(dietPlans) ? dietPlans : []).map((plan, index) => ({
+      ...plan,
+      dietType: String(plan?.dietType || `Plan ${index + 1}`).trim() || `Plan ${index + 1}`,
+    }));
+    setDietPlans(cleanedPlans);
+    safeJsonSet(local, 'dietPlans', cleanedPlans);
+    setMessage('Diet plan names saved successfully.');
+    return true;
+  };
+
+  const resetDietPlanNames = () => {
+    setDietPlans(safeReadDietPlans(local));
+    setMessage('Diet plan names reverted.');
+  };
 
   const updateProgramField = (field, value) => {
     dispatch({ type: 'UPDATE_FIELD', payload: { field, value } });
@@ -453,7 +593,14 @@ export function useClientDetail() {
   };
 
   const updateMeal = (mealId, field, value) => {
-    dispatch({ type: 'UPDATE_MEAL', payload: { dayName: selectedDay, mealId, field, value } });
+    let finalValue = value;
+    
+    // Sanitize meal descriptions when Competition Enabled is selected
+    if (competitionEnabled && (field === 'en' || field === 'ar')) {
+      finalValue = stripSaladText(value);
+    }
+    
+    dispatch({ type: 'UPDATE_MEAL', payload: { dayName: selectedDay, mealId, field, value: finalValue } });
   };
 
   const moveMealUp = (mealId) => {
@@ -469,7 +616,7 @@ export function useClientDetail() {
   };
 
   const applyDietPlan = (planIndex) => {
-    const selectedPlan = dietPlans[planIndex];
+    const selectedPlan = visibleDietPlans[planIndex];
     if (!selectedPlan) return false;
     const trainingSchedule = resolveTrainingScheduleFromClient(client);
     dispatch({
@@ -652,6 +799,7 @@ export function useClientDetail() {
               goal_weight: toNullableNumber(merged.goal_weight),
               progression_type: normalizeTextOrNull(merged.progression_type),
               competition_status: normalizeTextOrNull(merged.competition_status),
+              competition_date: normalizeDateOrNull(merged.competition_date || merged.competitionDate),
               medical_notes: normalizeTextOrNull(merged.medical_notes),
               injuries: normalizeTextOrNull(merged.injuries),
               food_allergies: normalizeTextOrNull(merged.food_allergies),
@@ -684,13 +832,20 @@ export function useClientDetail() {
     selectedDay,
     setSelectedDay,
     programsState,
+    isAdminUser,
     canEditDietPlanSelection: isAdminUser,
+    canEditDietPlanNames: isAdminUser,
     canEditAdminPersonalNotes: isAdminUser,
     selectedDietScheduleType: normalizeDietScheduleType(client?.diet_schedule_type || client?.dietScheduleType),
     dietPlansWithSummary,
+    competitionEnabled,
+    visibleDayMeals,
     updateNotes,
     updateProgramField,
     applyDietPlan,
+    updateDietPlanName,
+    saveDietPlanNames,
+    resetDietPlanNames,
     addMeal,
     updateMeal,
     moveMealUp,

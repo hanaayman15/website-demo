@@ -234,6 +234,7 @@ export function buildTodayMeals(profile) {
     mealKey: String(meal?.type || '').toLowerCase(),
     mealLabel: meal?.type || `Meal ${index + 1}`,
     scheduledTime: meal?.time || 'N/A',
+    notes: meal?.notes || meal?.note || '',
     en: meal?.en || meal?.description_en || meal?.description || meal?.name || meal?.meal || '',
     ar: meal?.ar || meal?.description_ar || '',
     protein: toNumber(meal?.protein),

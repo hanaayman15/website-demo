@@ -78,6 +78,85 @@ function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function getTodayDayName() {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function normalizeForMatch(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function countMealsWithNotes(mealSwaps, dayName) {
+  const meals = Array.isArray(mealSwaps?.dayMeals?.[dayName]) ? mealSwaps.dayMeals[dayName] : [];
+  return meals.reduce((count, meal) => {
+    const notes = String(meal?.notes || meal?.note || '').trim();
+    return notes ? count + 1 : count;
+  }, 0);
+}
+
+function getLocalProgramSnapshots(local) {
+  const snapshots = [];
+  if (!local || typeof local.length !== 'number' || typeof local.key !== 'function') return snapshots;
+
+  for (let index = 0; index < local.length; index += 1) {
+    const key = local.key(index);
+    if (!key || !String(key).startsWith('clientPrograms_')) continue;
+    const id = String(key).slice('clientPrograms_'.length).trim();
+    if (!id) continue;
+    const payload = safeJsonGet(local, key, null);
+    if (!payload?.dayMeals) continue;
+    const updatedAt = Number(payload?.__updatedAt || 0);
+    snapshots.push({
+      id,
+      payload,
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0,
+    });
+  }
+
+  return snapshots;
+}
+
+function mealSignature(meal = {}) {
+  const type = normalizeForMatch(meal?.type);
+  const en = normalizeForMatch(firstNonEmpty(meal?.en, meal?.description_en, meal?.description, meal?.name, meal?.meal));
+  const ar = normalizeForMatch(firstNonEmpty(meal?.ar, meal?.description_ar));
+  return `${type}|${en}|${ar}`;
+}
+
+function findBestProgramSnapshotByMealOverlap(snapshots, baselineMealSwaps, dayName) {
+  const baselineMeals = Array.isArray(baselineMealSwaps?.dayMeals?.[dayName]) ? baselineMealSwaps.dayMeals[dayName] : [];
+  if (!baselineMeals.length) return null;
+
+  const baselineSignatures = baselineMeals.map((meal) => mealSignature(meal)).filter(Boolean);
+  if (!baselineSignatures.length) return null;
+
+  let best = null;
+  snapshots.forEach((entry) => {
+    const meals = Array.isArray(entry?.payload?.dayMeals?.[dayName]) ? entry.payload.dayMeals[dayName] : [];
+    if (!meals.length) return;
+
+    const notesCount = countMealsWithNotes(entry.payload, dayName);
+    if (!notesCount) return;
+
+    const overlap = meals.reduce((sum, meal) => {
+      const signature = mealSignature(meal);
+      return baselineSignatures.includes(signature) ? sum + 1 : sum;
+    }, 0);
+
+    if (overlap <= 0) return;
+
+    if (!best || overlap > best.overlap || (overlap === best.overlap && entry.updatedAt > best.updatedAt)) {
+      best = {
+        payload: entry.payload,
+        overlap,
+        updatedAt: entry.updatedAt,
+      };
+    }
+  });
+
+  return best?.payload || null;
+}
+
 function isProfileIdentityMismatch(local, remoteProfile = {}) {
   const expectedEmail = normalizeEmail(safeGet(local, 'clientEmail', ''));
   const profileEmail = normalizeEmail(remoteProfile?.email);
@@ -119,10 +198,38 @@ function readCachedProfile(local, remoteProfile = {}) {
     merged[key] = value;
   });
 
-  // Keep backend meal swaps as source of truth so dashboard meal order and extra meals
-  // reflect latest saved programs instead of stale local cache.
-  if (remoteProfile?.meal_swaps?.dayMeals) {
-    merged.meal_swaps = remoteProfile.meal_swaps;
+  // Use the most recent program state (backend meal_swaps vs local clientPrograms_*),
+  // so dashboard reflects latest admin edits including per-meal notes.
+  const allProgramSnapshots = getLocalProgramSnapshots(local);
+  const dayName = getTodayDayName();
+  let latestMealSwaps = merged?.meal_swaps?.dayMeals ? merged.meal_swaps : null;
+  let latestStamp = Number(latestMealSwaps?.__updatedAt || 0);
+
+  uniqueIds.forEach((id) => {
+    const localPrograms = safeJsonGet(local, `clientPrograms_${id}`, null);
+    if (!localPrograms?.dayMeals) return;
+    const localStamp = Number(localPrograms?.__updatedAt || 0);
+    if (!latestMealSwaps || localStamp >= latestStamp) {
+      latestMealSwaps = localPrograms;
+      latestStamp = localStamp;
+    }
+  });
+
+  // Fallback for mixed ID spaces (admin client id vs authenticated user id):
+  // if selected snapshot has no notes for today's meals, try matching snapshots by meal overlap.
+  const selectedHasTodayNotes = countMealsWithNotes(latestMealSwaps, dayName) > 0;
+  if (!selectedHasTodayNotes) {
+    const matched = findBestProgramSnapshotByMealOverlap(allProgramSnapshots, latestMealSwaps || merged?.meal_swaps, dayName);
+    if (matched?.dayMeals) {
+      const matchedStamp = Number(matched?.__updatedAt || 0);
+      if (!latestMealSwaps || matchedStamp >= latestStamp || countMealsWithNotes(matched, dayName) > 0) {
+        latestMealSwaps = matched;
+      }
+    }
+  }
+
+  if (latestMealSwaps?.dayMeals) {
+    merged.meal_swaps = latestMealSwaps;
   }
 
   return normalizeProfileAliases(merged);
@@ -159,18 +266,20 @@ function buildWeeklyMeals(profile) {
     }
     acc[dayName] = meals.map((meal, index) => {
       const normalized = normalizeMealText(meal);
+      const mealNotes = String(meal?.notes || meal?.note || '').trim();
       return {
-      dayName,
-      mealIndex: index,
-      mealKey: String(meal?.type || '').toLowerCase(),
-      mealLabel: meal?.type || `Meal ${index + 1}`,
-      scheduledTime: meal?.time || 'N/A',
-      en: normalized.en,
-      ar: normalized.ar,
-      protein: meal?.protein,
-      carbs: meal?.carbs,
-      fats: meal?.fats,
-      calories: meal?.calories,
+        dayName,
+        mealIndex: index,
+        mealKey: String(meal?.type || '').toLowerCase(),
+        mealLabel: meal?.type || `Meal ${index + 1}`,
+        scheduledTime: meal?.time || 'N/A',
+        notes: mealNotes,
+        en: normalized.en,
+        ar: normalized.ar,
+        protein: meal?.protein,
+        carbs: meal?.carbs,
+        fats: meal?.fats,
+        calories: meal?.calories,
       };
     });
     return acc;

@@ -226,6 +226,7 @@ function createMealRow(partial = {}) {
     id: partial.id || `meal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: normalizeText(partial.type) || 'New Meal',
     time: normalizeText(partial.time) || '12:00 PM',
+    notes: normalizeText(partial.notes || partial.note) || '',
     en: normalizeText(partial.en) || '',
     ar: normalizeText(partial.ar) || '',
   };
@@ -239,7 +240,11 @@ function normalizeDayMeals(rawDayMeals) {
     const meals = Array.isArray(rawDayMeals[day]) ? rawDayMeals[day] : [];
     next[day] = meals
       .filter((meal) => !isSnack2Meal(meal))
-      .map((meal) => createMealRow(meal));
+      .map((meal) => {
+        const mealRow = createMealRow(meal);
+        if (!('notes' in mealRow)) mealRow.notes = '';
+        return mealRow;
+      });
   });
 
   return next;
@@ -258,6 +263,7 @@ function mapDietPlanToDayMeals(plan, scheduleContext = {}) {
       return createMealRow({
         type: mealType,
         time: formatPlanTime(sourceMeal.time),
+        notes: sourceMeal.notes || '',
         en: normalizeText(sourceMeal.en),
         ar: normalizeText(sourceMeal.ar),
       });

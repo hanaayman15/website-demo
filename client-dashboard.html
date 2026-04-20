@@ -255,6 +255,13 @@
                 <!-- Today's Meals -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <div class="mb-4">
+                            <label for="plan-mode-select" class="block text-sm font-semibold text-gray-700 mb-2">Plan Mode</label>
+                            <select id="plan-mode-select" onchange="onPlanModeChange()" class="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                <option value="competition">Competition Enabled</option>
+                                <option value="normal">Normal plan Enabled</option>
+                            </select>
+                        </div>
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-bold" id="meal-plan-title">Today's Meal Plan</h2>
                             <div class="flex gap-3">
@@ -438,6 +445,62 @@
         // Load client data from backend profile
         let currentClient = null;
         let viewingAllDays = false;
+
+        function getClientPlanModeKey() {
+            return currentClient?.id ? `clientDashboardPlanMode_${currentClient.id}` : 'clientDashboardPlanMode';
+        }
+
+        function stripMealTextForCompetition(value) {
+            const text = String(value || '');
+            return text
+                .replace(/\b[sS][aA][lL][aA][dD]\b/g, '')
+                .replace(/سلطة/g, '')
+                .replace(/\s*\+\s*/g, ' + ')
+                .replace(/\+\s*\+/g, '+')
+                .replace(/^\s*\+\s*/, '')
+                .replace(/\s*\+\s*$/, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        }
+
+        function getSelectedPlanMode() {
+            const select = document.getElementById('plan-mode-select');
+            return select?.value === 'competition' ? 'competition' : 'normal';
+        }
+
+        function isCompetitionModeSelected() {
+            return getSelectedPlanMode() === 'competition';
+        }
+
+        function resolveCompetitionEnabledFromPrograms(savedProgramsState) {
+            const raw = savedProgramsState?.programFields?.competitionEnabled;
+            if (typeof raw === 'boolean') return raw;
+            if (typeof raw === 'string') {
+                const normalized = raw.trim().toLowerCase();
+                return normalized === 'true' || normalized === '1' || normalized === 'yes';
+            }
+            return false;
+        }
+
+        function initializePlanMode(savedProgramsState) {
+            const select = document.getElementById('plan-mode-select');
+            if (!select) return;
+
+            const persisted = localStorage.getItem(getClientPlanModeKey());
+            const backendMode = resolveCompetitionEnabledFromPrograms(savedProgramsState) ? 'competition' : 'normal';
+            const selectedMode = persisted === 'competition' || persisted === 'normal'
+                ? persisted
+                : backendMode;
+
+            select.value = selectedMode;
+            localStorage.setItem(getClientPlanModeKey(), selectedMode);
+        }
+
+        function onPlanModeChange() {
+            if (!currentClient) return;
+            localStorage.setItem(getClientPlanModeKey(), getSelectedPlanMode());
+            loadMealPlan();
+        }
 
         function toFiniteNumber(value) {
             const num = Number(value);
@@ -847,6 +910,8 @@
                 Object.values(savedProgramsState.dayMeals).some(meals => Array.isArray(meals) && meals.length > 0)
             );
 
+            initializePlanMode(savedProgramsState);
+
             if (hasSavedDayMeals) {
                 console.log('Using saved dayMeals from', usedProgramsKey || 'backend profile meal_swaps');
                 if (viewingAllDays) {
@@ -924,6 +989,7 @@
             const today = new Date().getDay();
             const todayKey = days[today];
             const todayName = dayNames[today];
+            const competitionMode = isCompetitionModeSelected();
             let meals = (dayMealsByDay?.[todayName] || []).map((meal, originalIndex) => ({ ...meal, __originalIndex: originalIndex }));
 
             document.getElementById('meal-plan-title').textContent = `${todayName}'s Meal Plan`;
@@ -964,24 +1030,37 @@
                 const mealId = `${todayKey}-${mealCategoryKey || `saved-${meal.__originalIndex}`}`;
                 const savedStatus = getMealStatus(mealId);
                 const gradient = gradientClasses[index % gradientClasses.length];
+
+                const englishText = competitionMode ? stripMealTextForCompetition(meal.en) : (meal.en || '');
+                const arabicText = competitionMode ? stripMealTextForCompetition(meal.ar) : (meal.ar || '');
                 
                 // Calculate time based on wake-up time or training time
                 let displayTime = meal.time || 'N/A';
                 
                 // Check for workout-related meals first
-                if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
-                    const trainingStart = exactTrainingTime || todayTraining?.start;
-                    const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
-                    const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
-                    if (calculatedTime !== 'N/A') {
-                        displayTime = calculatedTime;
+                if (!displayTime || displayTime === 'N/A') {
+                    if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
+                        const trainingStart = exactTrainingTime || todayTraining?.start;
+                        const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                        const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
+                        if (calculatedTime !== 'N/A') {
+                            displayTime = calculatedTime;
+                        }
+                    } else if (wakeUpTime) {
+                        // Calculate time based on wake-up time for regular meals
+                        const calcTime = calculateMealTimeFromWakeup(meal.type);
+                        if (calcTime !== 'N/A') {
+                            displayTime = calcTime;
+                        }
                     }
-                } else if (wakeUpTime) {
-                    // Calculate time based on wake-up time for regular meals
-                    const calcTime = calculateMealTimeFromWakeup(meal.type);
-                    if (calcTime !== 'N/A') {
-                        displayTime = calcTime;
-                    }
+                }
+
+                let metaLine = '';
+                if (competitionMode) {
+                    const notes = String(meal.notes || '').trim();
+                    metaLine = notes ? `<p class="text-xs text-gray-500 mt-1"><strong>📝 ${notes}</strong></p>` : '';
+                } else if (displayTime !== 'N/A') {
+                    metaLine = `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>`;
                 }
                 
                 mealsHTML += `
@@ -996,9 +1075,9 @@
                                     🔄 Swap
                                 </button>
                             </div>
-                            ${meal.en ? `<p class="text-sm text-gray-600">${meal.en}</p>` : ''}
-                            ${meal.ar ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
-                            ${displayTime !== 'N/A' ? `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>` : ''}
+                            ${englishText ? `<p class="text-sm text-gray-600">${englishText}</p>` : ''}
+                            ${arabicText ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${arabicText}</p>` : ''}
+                            ${metaLine}
                         </div>
                         <div class="relative">
                             <button onclick="toggleStatusDropdown('${mealId}')" id="status-btn-${mealId}" class="px-4 py-2 rounded-lg border-2 ${savedStatus.class} font-semibold text-sm">${savedStatus.label}</button>
@@ -1023,6 +1102,7 @@
         function displayAllDaysFromSaved(dayMealsByDay) {
             const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const today = new Date().getDay();
+            const competitionMode = isCompetitionModeSelected();
 
             document.getElementById('meal-plan-title').textContent = 'Weekly Meal Plan';
 
@@ -1052,28 +1132,37 @@
                     meals.forEach(meal => {
                         const presentation = getMealPresentation(meal.type, smartSchedule);
                         if (!presentation.visible) return;
+                        const englishText = competitionMode ? stripMealTextForCompetition(meal.en) : (meal.en || '');
+                        const arabicText = competitionMode ? stripMealTextForCompetition(meal.ar) : (meal.ar || '');
                         let displayTime = meal.time || '';
-                        if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
-                            const trainingStart = exactTrainingTime || dayTraining?.start;
-                            const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
-                            const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
-                            if (calculatedTime !== 'N/A') {
-                                displayTime = calculatedTime;
-                            }
-                        } else {
-                            const calcTime = calculateMealTimeFromWakeup(meal.type);
-                            if (calcTime !== 'N/A') {
-                                displayTime = calcTime;
+                        if (!displayTime) {
+                            if (meal.type.toLowerCase().includes('pre') || meal.type.toLowerCase().includes('post')) {
+                                const trainingStart = exactTrainingTime || dayTraining?.start;
+                                const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
+                                const calculatedTime = calculateMealTime(meal.type, trainingStart, trainingEnd);
+                                if (calculatedTime !== 'N/A') {
+                                    displayTime = calculatedTime;
+                                }
+                            } else {
+                                const calcTime = calculateMealTimeFromWakeup(meal.type);
+                                if (calcTime !== 'N/A') {
+                                    displayTime = calcTime;
+                                }
                             }
                         }
+
+                        const notes = String(meal.notes || '').trim();
+                        const metaInline = competitionMode
+                            ? (notes ? `<strong>📝 ${notes}</strong>` : '')
+                            : (displayTime ? `<strong>⏰ ${displayTime}</strong>` : '');
                         
                         allDaysHTML += `
                             <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
                                 <span class="text-xl">🍽️</span>
                                 <div class="flex-1">
-                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${displayTime ? `- <strong>⏰ ${displayTime}</strong>` : ''}</p>
-                                    ${meal.en ? `<p class="text-xs text-gray-600 mt-1">${meal.en}</p>` : ''}
-                                    ${meal.ar ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${metaInline ? `- ${metaInline}` : ''}</p>
+                                    ${englishText ? `<p class="text-xs text-gray-600 mt-1">${englishText}</p>` : ''}
+                                    ${arabicText ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${arabicText}</p>` : ''}
                                 </div>
                             </div>
                         `;
@@ -1434,6 +1523,7 @@
             const today = new Date().getDay();
             const todayKey = days[today];
             const dayData = plan[todayKey];
+            const competitionMode = isCompetitionModeSelected();
 
             document.getElementById('meal-plan-title').textContent = `${dayNames[today]}'s Meal Plan`;
 
@@ -1475,21 +1565,30 @@
                     if (!presentation.visible) return;
                     const mealId = `${todayKey}-${mealType.key}`;
                     const savedStatus = getMealStatus(mealId);
+                    const englishText = competitionMode ? stripMealTextForCompetition(meal.en) : (meal.en || '');
+                    const arabicText = competitionMode ? stripMealTextForCompetition(meal.ar) : (meal.ar || '');
                     
                     let displayTime = meal.time || '';
-                    if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
-                        const trainingStart = exactTrainingTime || todayTraining?.start;
-                        const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
-                        const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
-                        if (calculatedTime !== 'N/A') {
-                            displayTime = calculatedTime;
-                        }
-                    } else {
-                        const calcTime = calculateMealTimeFromWakeup(mealType.label);
-                        if (calcTime !== 'N/A') {
-                            displayTime = calcTime;
+                    if (!displayTime) {
+                        if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
+                            const trainingStart = exactTrainingTime || todayTraining?.start;
+                            const trainingEnd = exactTrainingEndTime || todayTraining?.end || trainingStart;
+                            const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
+                            if (calculatedTime !== 'N/A') {
+                                displayTime = calculatedTime;
+                            }
+                        } else {
+                            const calcTime = calculateMealTimeFromWakeup(mealType.label);
+                            if (calcTime !== 'N/A') {
+                                displayTime = calcTime;
+                            }
                         }
                     }
+
+                    const notes = String(meal.notes || '').trim();
+                    const metaLine = competitionMode
+                        ? (notes ? `<p class="text-xs text-gray-500 mt-1"><strong>📝 ${notes}</strong></p>` : '')
+                        : (displayTime ? `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>` : '');
                     
                     mealsHTML += `
                         <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
@@ -1503,9 +1602,9 @@
                                         title="Substitute this meal">
                                     🔄 Swap
                                 </button>
-                                ${meal.en ? `<p class="text-sm text-gray-600">${meal.en}</p>` : ''}
-                                ${meal.ar ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
-                                ${displayTime ? `<p class="text-xs text-gray-500 mt-1"><strong>⏰ ${displayTime}</strong></p>` : ''}
+                                ${englishText ? `<p class="text-sm text-gray-600">${englishText}</p>` : ''}
+                                ${arabicText ? `<p class="text-sm text-gray-600 mt-1 arabic-text">${arabicText}</p>` : ''}
+                                ${metaLine}
                             </div>
                             <div class="relative">
                                 <button onclick="toggleStatusDropdown('${mealId}')" id="status-btn-${mealId}" class="px-4 py-2 rounded-lg border-2 ${savedStatus.class} font-semibold text-sm">${savedStatus.label}</button>
@@ -1532,6 +1631,7 @@
             const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const today = new Date().getDay();
+            const competitionMode = isCompetitionModeSelected();
 
             document.getElementById('meal-plan-title').textContent = 'Weekly Meal Plan';
 
@@ -1571,28 +1671,37 @@
                     if (meal && (meal.en || meal.ar)) {
                         const presentation = getMealPresentation(mealType.label, smartSchedule);
                         if (!presentation.visible) return;
+                        const englishText = competitionMode ? stripMealTextForCompetition(meal.en) : (meal.en || '');
+                        const arabicText = competitionMode ? stripMealTextForCompetition(meal.ar) : (meal.ar || '');
                         let displayTime = meal.time || '';
-                        if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
-                            const trainingStart = exactTrainingTime || dayTraining?.start;
-                            const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
-                            const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
-                            if (calculatedTime !== 'N/A') {
-                                displayTime = calculatedTime;
-                            }
-                        } else {
-                            const calcTime = calculateMealTimeFromWakeup(mealType.label);
-                            if (calcTime !== 'N/A') {
-                                displayTime = calcTime;
+                        if (!displayTime) {
+                            if (mealType.label.toLowerCase().includes('pre') || mealType.label.toLowerCase().includes('post')) {
+                                const trainingStart = exactTrainingTime || dayTraining?.start;
+                                const trainingEnd = exactTrainingEndTime || dayTraining?.end || trainingStart;
+                                const calculatedTime = calculateMealTime(mealType.label, trainingStart, trainingEnd);
+                                if (calculatedTime !== 'N/A') {
+                                    displayTime = calculatedTime;
+                                }
+                            } else {
+                                const calcTime = calculateMealTimeFromWakeup(mealType.label);
+                                if (calcTime !== 'N/A') {
+                                    displayTime = calcTime;
+                                }
                             }
                         }
+
+                        const notes = String(meal.notes || '').trim();
+                        const metaInline = competitionMode
+                            ? (notes ? `<strong>📝 ${notes}</strong>` : '')
+                            : (displayTime ? `<strong>⏰ ${displayTime}</strong>` : '');
                         
                         allDaysHTML += `
                             <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
                                 <span class="text-xl">${mealType.emoji}</span>
                                 <div class="flex-1">
-                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${displayTime ? `- <strong>⏰ ${displayTime}</strong>` : ''}</p>
-                                    ${meal.en ? `<p class="text-xs text-gray-600 mt-1">${meal.en}</p>` : ''}
-                                    ${meal.ar ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${meal.ar}</p>` : ''}
+                                    <p class="font-semibold text-sm text-gray-900">${presentation.label} ${metaInline ? `- ${metaInline}` : ''}</p>
+                                    ${englishText ? `<p class="text-xs text-gray-600 mt-1">${englishText}</p>` : ''}
+                                    ${arabicText ? `<p class="text-xs text-gray-600 mt-1 arabic-text">${arabicText}</p>` : ''}
                                 </div>
                             </div>
                         `;

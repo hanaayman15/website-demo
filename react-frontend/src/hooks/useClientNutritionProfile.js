@@ -804,12 +804,31 @@ export function useClientNutritionProfile() {
           minerals: payload.minerals,
           diet_schedule_type: payload.diet_schedule_type,
           dietScheduleType: payload.diet_schedule_type,
+          competition_status: payload.competition_status,
+          competitionStatus: payload.competition_status,
+          competition_date: payload.competition_date,
+          competitionDate: payload.competition_date,
+          days_left: payload.days_left,
+          daysLeft: payload.days_left,
+          goal_weight: payload.goal_weight,
+          goalWeight: payload.goal_weight,
           trainingDetails: payload.training_sessions,
         };
         cacheIds.forEach((id) => {
           safeJsonSet(local, `clientData_${id}`, { ...(safeJsonGet(local, `clientData_${id}`, {}) || {}), ...merged });
           safeJsonSet(local, `clientDashboardCache_${id}`, { ...(safeJsonGet(local, `clientDashboardCache_${id}`, {}) || {}), ...merged });
           safeJsonSet(local, `clientFullProfile_${id}`, { ...(safeJsonGet(local, `clientFullProfile_${id}`, {}) || {}), ...merged });
+          safeJsonSet(local, `clientDetail_${id}`, {
+            ...(safeJsonGet(local, `clientDetail_${id}`, {}) || {}),
+            competition_status: payload.competition_status,
+            competitionStatus: payload.competition_status,
+            competition_date: payload.competition_date,
+            competitionDate: payload.competition_date,
+            days_left: payload.days_left,
+            daysLeft: payload.days_left,
+            goal_weight: payload.goal_weight,
+            goalWeight: payload.goal_weight,
+          });
         });
 
         const clients = safeJsonGet(local, 'clients', []);
@@ -827,6 +846,7 @@ export function useClientNutritionProfile() {
               skeletal_muscle: payload.skeletal_muscle,
               tdee: payload.tdee,
               goal_weight: payload.goal_weight,
+              competition_status: payload.competition_status,
               protein_target: payload.protein_target,
               carbs_target: payload.carbs_target,
               fats_target: payload.fats_target,
